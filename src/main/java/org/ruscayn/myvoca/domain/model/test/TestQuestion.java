@@ -101,14 +101,24 @@ public class TestQuestion extends BaseEntity {
         return q;
     }
 
-    /** 보기 1~4 순서대로 */
-    public List<LevelWord> options() {
-        return List.of(option1, option2, option3, option4);
+    /*
+     * 아래 id 조회는 프록시를 초기화하지 않으므로 DB 조회가 없다.
+     * 단어·뜻 텍스트는 WordCatalog(메모리)에서 id 로 찾는다.
+     */
+
+    /** 출제 단어 level_word_id */
+    public long answerLevelWordId() {
+        return answer.getId();
     }
 
-    /** 사용자가 고른 보기. 시간 초과(미입력)면 null */
-    public LevelWord selectedOption() {
-        return selectedOptionNo == null ? null : options().get(selectedOptionNo - 1);
+    /** 보기 1~4 의 level_word_id */
+    public List<Long> optionLevelWordIds() {
+        return List.of(option1.getId(), option2.getId(), option3.getId(), option4.getId());
+    }
+
+    /** 사용자가 고른 보기의 level_word_id. 시간 초과(미입력)면 null */
+    public Long selectedLevelWordId() {
+        return selectedOptionNo == null ? null : optionLevelWordIds().get(selectedOptionNo - 1);
     }
 
     /** 채점. selectedOptionNo 가 null 이면 시간 초과(오답) */

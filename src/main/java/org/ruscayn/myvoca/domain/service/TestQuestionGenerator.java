@@ -2,10 +2,11 @@ package org.ruscayn.myvoca.domain.service;
 
 import org.ruscayn.myvoca.domain.model.level.Level;
 import org.ruscayn.myvoca.domain.model.test.TestQuestion;
-import org.ruscayn.myvoca.domain.model.test.TestSession;
-import org.ruscayn.myvoca.domain.model.vocabulary.LevelWord;
+import org.ruscayn.myvoca.domain.model.vocabulary.CatalogWord;
+import org.ruscayn.myvoca.domain.model.vocabulary.WordCatalog;
 import org.ruscayn.myvoca.shared.exception.CustomException;
 import org.ruscayn.myvoca.shared.exception.ErrorCode;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -14,7 +15,7 @@ import java.util.function.Supplier;
 import java.util.random.RandomGenerator;
 
 /**
- * 시험 문제 생성 도메인 서비스.
+ * 시험 문제 생성 도메인 서비스. 단어는 WordCatalog(메모리)에서만 가져온다.
  *
  * <p>규칙
  * <ul>
@@ -31,68 +32,74 @@ public class TestQuestionGenerator {
     /** 무작위 뽑기 시도 횟수. 초과하면 전체를 섞어 순서대로 검사 */
     private static final int RANDOM_TRY_LIMIT = 200;
 
+    /** 생성된 문제 1개. options 는 섞인 순서이며 answer 를 포함한다 */
+    public record GeneratedQuestion(CatalogWord answer, List<CatalogWord> options) {
+        public GeneratedQuestion {
+            options = List.copyOf(options);
+        }
+    }
+
+    private final WordCatalog wordCatalog;
     /** 싱글톤 빈에서 여러 스레드가 쓰므로 호출마다 스레드 전용 난수를 사용 */
     private final Supplier<RandomGenerator> randomSupplier;
 
-    public TestQuestionGenerator() {
-        this(ThreadLocalRandom::current);
+    @Autowired
+    public TestQuestionGenerator(WordCatalog wordCatalog) {
+        this(wordCatalog, ThreadLocalRandom::current);
     }
 
     /** 테스트에서 시드 고정용 */
-    public TestQuestionGenerator(Supplier<RandomGenerator> randomSupplier) {
+    public TestQuestionGenerator(WordCatalog wordCatalog, Supplier<RandomGenerator> randomSupplier) {
+        this.wordCatalog = wordCatalog;
         this.randomSupplier = randomSupplier;
     }
 
     /**
-     * 세션에 문제를 생성해 추가한다.
+     * 문제를 생성한다.
      *
-     * @param session    문제를 추가할 세션 (questionCount, level 사용)
-     * @param candidates 세션 레벨의 세부 레벨들에 속한 level_word 전체
+     * @param level 사용자가 고른 레벨 (세부 또는 묶음)
+     * @param count 문제 수
      */
-    public void generate(TestSession session, List<LevelWord> candidates) {
-        List<LevelWord> pool = dedupeByWord(candidates, session.getLevel());
-        int count = session.getQuestionCount();
+    public List<GeneratedQuestion> generate(Level level, int count) {
+        List<CatalogWord> pool = dedupeByWord(wordCatalog.findByLevel(level));
         if (pool.size() < count) {
             throw new CustomException(ErrorCode.TEST_NOT_ENOUGH_WORDS,
-                    "레벨 " + session.getLevel() + " 단어 " + pool.size() + "개로 " + count + "문제를 만들 수 없습니다.");
+                    "레벨 " + level + " 단어 " + pool.size() + "개로 " + count + "문제를 만들 수 없습니다.");
         }
 
-        Map<Level, List<LevelWord>> poolByLevel = new EnumMap<>(Level.class);
-        for (LevelWord lw : pool) {
-            poolByLevel.computeIfAbsent(lw.getLevel(), k -> new ArrayList<>()).add(lw);
+        Map<Level, List<CatalogWord>> poolByLevel = new EnumMap<>(Level.class);
+        for (CatalogWord word : pool) {
+            poolByLevel.computeIfAbsent(word.level(), k -> new ArrayList<>()).add(word);
         }
 
         RandomGenerator random = randomSupplier.get();
-        List<LevelWord> answers = new ArrayList<>(pool);
+        List<CatalogWord> answers = new ArrayList<>(pool);
         shuffle(answers, random);
 
-        for (LevelWord answer : answers.subList(0, count)) {
-            List<LevelWord> options = pickOptions(answer, poolByLevel.get(answer.getLevel()), random);
-            session.addQuestion(answer, options);
+        List<GeneratedQuestion> result = new ArrayList<>(count);
+        for (CatalogWord answer : answers.subList(0, count)) {
+            result.add(new GeneratedQuestion(answer, pickOptions(answer, poolByLevel.get(answer.level()), random)));
         }
+        return result;
     }
 
     /** 단어당 하나만 남긴다. 여러 레벨에 있으면 낮은 레벨 */
-    private List<LevelWord> dedupeByWord(List<LevelWord> candidates, Level sessionLevel) {
-        Set<Level> allowed = EnumSet.copyOf(sessionLevel.detailLevels());
-        Map<Long, LevelWord> byWord = new LinkedHashMap<>();
-        for (LevelWord lw : candidates) {
-            if (!allowed.contains(lw.getLevel())) {
-                continue;
-            }
-            byWord.merge(lw.getWord().getId(), lw,
-                    (current, next) -> next.getLevel().isLowerThan(current.getLevel()) ? next : current);
+    private List<CatalogWord> dedupeByWord(List<CatalogWord> candidates) {
+        Map<Long, CatalogWord> byWord = new LinkedHashMap<>();
+        for (CatalogWord word : candidates) {
+            byWord.merge(word.wordId(), word,
+                    (current, next) -> next.level().isLowerThan(current.level()) ? next : current);
         }
         return new ArrayList<>(byWord.values());
     }
 
     /** 정답 + 오답 3개를 섞어서 반환 */
-    private List<LevelWord> pickOptions(LevelWord answer, List<LevelWord> sameLevel, RandomGenerator random) {
-        List<LevelWord> options = new ArrayList<>(TestQuestion.OPTION_COUNT);
+    private List<CatalogWord> pickOptions(CatalogWord answer, List<CatalogWord> sameLevel, RandomGenerator random) {
+        List<CatalogWord> options = new ArrayList<>(TestQuestion.OPTION_COUNT);
         options.add(answer);
         Set<Long> usedWordIds = new HashSet<>();
-        usedWordIds.add(answer.getWord().getId());
-        Set<String> usedMeanings = new HashSet<>(answer.displayMeaningTexts());
+        usedWordIds.add(answer.wordId());
+        Set<String> usedMeanings = new HashSet<>(answer.meanings());
 
         // 1차: 무작위로 뽑아 조건 검사
         for (int i = 0; i < RANDOM_TRY_LIMIT && options.size() < TestQuestion.OPTION_COUNT; i++) {
@@ -100,9 +107,9 @@ public class TestQuestionGenerator {
         }
         // 2차: 전체를 섞어 순서대로 검사
         if (options.size() < TestQuestion.OPTION_COUNT) {
-            List<LevelWord> shuffled = new ArrayList<>(sameLevel);
+            List<CatalogWord> shuffled = new ArrayList<>(sameLevel);
             shuffle(shuffled, random);
-            for (LevelWord candidate : shuffled) {
+            for (CatalogWord candidate : shuffled) {
                 if (options.size() >= TestQuestion.OPTION_COUNT) {
                     break;
                 }
@@ -118,20 +125,19 @@ public class TestQuestionGenerator {
         return options;
     }
 
-    private void tryAdd(LevelWord candidate, List<LevelWord> options,
+    private void tryAdd(CatalogWord candidate, List<CatalogWord> options,
                         Set<Long> usedWordIds, Set<String> usedMeanings) {
-        if (usedWordIds.contains(candidate.getWord().getId())) {
+        if (usedWordIds.contains(candidate.wordId())) {
             return;
         }
-        List<String> meanings = candidate.displayMeaningTexts();
-        for (String meaning : meanings) {
+        for (String meaning : candidate.meanings()) {
             if (usedMeanings.contains(meaning)) {
                 return;
             }
         }
         options.add(candidate);
-        usedWordIds.add(candidate.getWord().getId());
-        usedMeanings.addAll(meanings);
+        usedWordIds.add(candidate.wordId());
+        usedMeanings.addAll(candidate.meanings());
     }
 
     /** Fisher–Yates */

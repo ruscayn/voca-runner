@@ -9,10 +9,12 @@ import org.ruscayn.myvoca.domain.model.level.Level;
 import org.ruscayn.myvoca.domain.model.test.Direction;
 import org.ruscayn.myvoca.domain.model.test.TestQuestion;
 import org.ruscayn.myvoca.domain.model.test.TestSession;
-import org.ruscayn.myvoca.domain.model.vocabulary.LevelWord;
+import org.ruscayn.myvoca.domain.model.vocabulary.CatalogWord;
+import org.ruscayn.myvoca.domain.model.vocabulary.WordCatalog;
 import org.ruscayn.myvoca.domain.repository.LevelWordRepository;
 import org.ruscayn.myvoca.domain.repository.TestSessionRepository;
 import org.ruscayn.myvoca.domain.service.TestQuestionGenerator;
+import org.ruscayn.myvoca.domain.service.TestQuestionGenerator.GeneratedQuestion;
 import org.ruscayn.myvoca.shared.exception.CustomException;
 import org.ruscayn.myvoca.shared.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -37,19 +39,25 @@ public class TestApplicationService {
     private final LevelWordRepository levelWordRepository;
     private final TestSessionRepository testSessionRepository;
     private final TestQuestionGenerator testQuestionGenerator;
+    private final WordCatalog wordCatalog;
 
     /** 시험 문항 수 (application.yaml : my-voca.test.question-count) */
     @Value("${my-voca.test.question-count:" + TestSession.DEFAULT_QUESTION_COUNT + "}")
     private int questionCount;
 
-    /** 시험 시작 : 문제 생성 후 저장. 1단계는 EN_KO 고정 */
+    /** 시험 시작 : 문제 생성(메모리 캐시) 후 저장. 1단계는 EN_KO 고정 */
     @Transactional
     public UUID start(Level level) {
         long begin = System.currentTimeMillis();
-        List<LevelWord> candidates = levelWordRepository.findAllByLevels(level.detailLevels());
+        List<GeneratedQuestion> generated = testQuestionGenerator.generate(level, questionCount);
 
         TestSession session = TestSession.start(level, Direction.EN_KO, questionCount, TestSession.DEFAULT_TIME_LIMIT_SEC);
-        testQuestionGenerator.generate(session, candidates);
+        for (GeneratedQuestion g : generated) {
+            // test_question FK 저장용 참조. DB 조회 없음
+            session.addQuestion(
+                    levelWordRepository.getReference(g.answer().levelWordId()),
+                    g.options().stream().map(o -> levelWordRepository.getReference(o.levelWordId())).toList());
+        }
         TestSession saved = testSessionRepository.save(session);
 
         log.info("시험 시작 session={} level={} 문제={} ({}ms)",
@@ -122,13 +130,14 @@ public class TestApplicationService {
         List<TestResultResponse.WrongItem> wrongItems = session.getQuestions().stream()
                 .filter(q -> !Boolean.TRUE.equals(q.getIsCorrect()))
                 .map(q -> {
-                    LevelWord selected = q.selectedOption();
+                    CatalogWord answer = wordCatalog.get(q.answerLevelWordId());
+                    Long selectedId = q.selectedLevelWordId();
                     return new TestResultResponse.WrongItem(
                             q.getQuestionNo(),
-                            promptText(q.getAnswer(), direction),
-                            selected == null ? null : optionText(selected, direction),
-                            optionText(q.getAnswer(), direction),
-                            q.getAnswer().headword());
+                            promptText(answer, direction),
+                            selectedId == null ? null : optionText(wordCatalog.get(selectedId), direction),
+                            optionText(answer, direction),
+                            answer.headword());
                 })
                 .toList();
         return new TestResultResponse(
@@ -163,19 +172,20 @@ public class TestApplicationService {
     }
 
     private TestQuestionView toView(TestQuestion q, Direction direction) {
-        List<LevelWord> options = q.options();
-        List<TestQuestionView.Option> optionViews = IntStream.range(0, options.size())
-                .mapToObj(i -> new TestQuestionView.Option(i + 1, optionText(options.get(i), direction)))
+        List<Long> optionIds = q.optionLevelWordIds();
+        List<TestQuestionView.Option> optionViews = IntStream.range(0, optionIds.size())
+                .mapToObj(i -> new TestQuestionView.Option(i + 1, optionText(wordCatalog.get(optionIds.get(i)), direction)))
                 .toList();
-        return new TestQuestionView(q.getQuestionNo(), promptText(q.getAnswer(), direction), optionViews);
+        return new TestQuestionView(q.getQuestionNo(),
+                promptText(wordCatalog.get(q.answerLevelWordId()), direction), optionViews);
     }
 
-    private String promptText(LevelWord answer, Direction direction) {
-        return direction == Direction.EN_KO ? answer.headword() : String.join(", ", answer.displayMeaningTexts());
+    private String promptText(CatalogWord answer, Direction direction) {
+        return direction == Direction.EN_KO ? answer.headword() : answer.meaningText();
     }
 
-    private String optionText(LevelWord option, Direction direction) {
-        return direction == Direction.EN_KO ? String.join(", ", option.displayMeaningTexts()) : option.headword();
+    private String optionText(CatalogWord option, Direction direction) {
+        return direction == Direction.EN_KO ? option.meaningText() : option.headword();
     }
 
     private TestSession findWithQuestions(UUID sessionId) {
