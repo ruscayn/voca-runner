@@ -2,6 +2,9 @@ package org.ruscayn.myvoca.presentation.controller;
 
 import org.ruscayn.myvoca.application.service.TestApplicationService;
 import org.ruscayn.myvoca.domain.model.level.Level;
+import org.ruscayn.myvoca.shared.exception.CustomException;
+import org.ruscayn.myvoca.shared.exception.ErrorCode;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -28,8 +31,20 @@ public class TestController {
     private final TestApplicationService testApplicationService;
 
     @PostMapping("/test/start")
-    public String start(@RequestParam Level level, HttpSession httpSession) {
-        UUID sessionId = testApplicationService.start(level);
+    public String start(@RequestParam Level level, HttpSession httpSession,
+                        HttpServletRequest request, RedirectAttributes redirect) {
+        UUID sessionId;
+        try {
+            // 사용자 구분 값 = IP. Nginx 뒤에 둘 때는 server.forward-headers-strategy 설정 필요
+            sessionId = testApplicationService.start(level, request.getRemoteAddr());
+        } catch (CustomException e) {
+            if (e.getErrorCode() == ErrorCode.TEST_SERVER_BUSY
+                    || e.getErrorCode() == ErrorCode.TEST_TOO_MANY_IN_PROGRESS) {
+                redirect.addFlashAttribute("message", e.getErrorCode().getMessage());
+                return "redirect:/";
+            }
+            throw e;
+        }
         httpSession.setAttribute(ENTRY_TOKEN, sessionId);
         return "redirect:/test/" + sessionId;
     }

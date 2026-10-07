@@ -1,7 +1,7 @@
 package org.ruscayn.myvoca.domain.service;
 
 import org.ruscayn.myvoca.domain.model.level.Level;
-import org.ruscayn.myvoca.domain.model.test.TestQuestion;
+import org.ruscayn.myvoca.domain.model.test.GeneratedQuestion;
 import org.ruscayn.myvoca.domain.model.vocabulary.CatalogWord;
 import org.ruscayn.myvoca.domain.model.vocabulary.WordCatalog;
 import org.ruscayn.myvoca.shared.exception.CustomException;
@@ -28,16 +28,9 @@ import java.util.random.RandomGenerator;
 @Service
 public class TestQuestionGenerator {
 
-    private static final int DISTRACTOR_COUNT = TestQuestion.OPTION_COUNT - 1;
+    private static final int DISTRACTOR_COUNT = GeneratedQuestion.OPTION_COUNT - 1;
     /** 무작위 뽑기 시도 횟수. 초과하면 전체를 섞어 순서대로 검사 */
     private static final int RANDOM_TRY_LIMIT = 200;
-
-    /** 생성된 문제 1개. options 는 섞인 순서이며 answer 를 포함한다 */
-    public record GeneratedQuestion(CatalogWord answer, List<CatalogWord> options) {
-        public GeneratedQuestion {
-            options = List.copyOf(options);
-        }
-    }
 
     private final WordCatalog wordCatalog;
     /** 싱글톤 빈에서 여러 스레드가 쓰므로 호출마다 스레드 전용 난수를 사용 */
@@ -95,28 +88,28 @@ public class TestQuestionGenerator {
 
     /** 정답 + 오답 3개를 섞어서 반환 */
     private List<CatalogWord> pickOptions(CatalogWord answer, List<CatalogWord> sameLevel, RandomGenerator random) {
-        List<CatalogWord> options = new ArrayList<>(TestQuestion.OPTION_COUNT);
+        List<CatalogWord> options = new ArrayList<>(GeneratedQuestion.OPTION_COUNT);
         options.add(answer);
         Set<Long> usedWordIds = new HashSet<>();
         usedWordIds.add(answer.wordId());
         Set<String> usedMeanings = new HashSet<>(answer.meanings());
 
         // 1차: 무작위로 뽑아 조건 검사
-        for (int i = 0; i < RANDOM_TRY_LIMIT && options.size() < TestQuestion.OPTION_COUNT; i++) {
+        for (int i = 0; i < RANDOM_TRY_LIMIT && options.size() < GeneratedQuestion.OPTION_COUNT; i++) {
             tryAdd(sameLevel.get(random.nextInt(sameLevel.size())), options, usedWordIds, usedMeanings);
         }
         // 2차: 전체를 섞어 순서대로 검사
-        if (options.size() < TestQuestion.OPTION_COUNT) {
+        if (options.size() < GeneratedQuestion.OPTION_COUNT) {
             List<CatalogWord> shuffled = new ArrayList<>(sameLevel);
             shuffle(shuffled, random);
             for (CatalogWord candidate : shuffled) {
-                if (options.size() >= TestQuestion.OPTION_COUNT) {
+                if (options.size() >= GeneratedQuestion.OPTION_COUNT) {
                     break;
                 }
                 tryAdd(candidate, options, usedWordIds, usedMeanings);
             }
         }
-        if (options.size() < TestQuestion.OPTION_COUNT) {
+        if (options.size() < GeneratedQuestion.OPTION_COUNT) {
             throw new CustomException(ErrorCode.TEST_NOT_ENOUGH_WORDS,
                     "'" + answer.headword() + "' 의 오답 보기 " + DISTRACTOR_COUNT + "개를 만들 수 없습니다.");
         }

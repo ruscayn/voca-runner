@@ -21,7 +21,10 @@ public enum ErrorCode {
     TEST_NOT_ENOUGH_WORDS("TEST_001", "문제를 만들 단어가 부족합니다."),
     TEST_NOT_IN_PROGRESS("TEST_002", "진행 중인 시험이 아닙니다."),
     TEST_INVALID_OPTION("TEST_003", "올바르지 않은 보기 번호입니다."),
-    TEST_NOT_COMPLETED("TEST_004", "완료되지 않은 시험입니다.");
+    TEST_NOT_COMPLETED("TEST_004", "완료되지 않은 시험입니다."),
+    TEST_TIME_OVER("TEST_005", "제한 시간이 지나 시험이 무효가 되었습니다."),
+    TEST_SERVER_BUSY("TEST_006", "지금은 응시자가 많아 시험을 시작할 수 없습니다. 잠시 후 다시 시도해 주세요."),
+    TEST_TOO_MANY_IN_PROGRESS("TEST_007", "진행 중인 시험이 너무 많습니다. 잠시 후 다시 시도해 주세요.");
 
     private final String code;
     private final String message;
