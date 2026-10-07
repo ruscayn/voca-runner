@@ -2,6 +2,7 @@ package org.ruscayn.myvoca.presentation.controller;
 
 import org.ruscayn.myvoca.application.dto.request.TestSubmitRequest;
 import org.ruscayn.myvoca.application.dto.response.TestQuestionsResponse;
+import org.ruscayn.myvoca.application.dto.response.TestResultResponse;
 import org.ruscayn.myvoca.application.dto.response.TestSubmitResponse;
 import org.ruscayn.myvoca.application.service.TestApplicationService;
 import jakarta.validation.Valid;
@@ -30,6 +31,12 @@ public class TestApiController {
     public TestSubmitResponse submit(@PathVariable UUID sessionId,
                                      @Valid @RequestBody TestSubmitRequest request) {
         return testApplicationService.submit(sessionId, request);
+    }
+
+    /** 결과 (완료된 시험만) */
+    @GetMapping("/{sessionId}/result")
+    public TestResultResponse result(@PathVariable UUID sessionId) {
+        return testApplicationService.getResult(sessionId);
     }
 
     /** 중도 이탈 시 만료 (navigator.sendBeacon 용, 본문 없음) */

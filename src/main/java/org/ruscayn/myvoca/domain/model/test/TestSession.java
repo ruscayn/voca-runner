@@ -145,6 +145,10 @@ public class TestSession extends BaseEntity {
         return status == TestStatus.IN_PROGRESS;
     }
 
+    public boolean isCompleted() {
+        return status == TestStatus.COMPLETED;
+    }
+
     public List<TestQuestion> getQuestions() {
         return Collections.unmodifiableList(questions);
     }

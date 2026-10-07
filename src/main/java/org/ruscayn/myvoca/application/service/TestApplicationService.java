@@ -3,6 +3,7 @@ package org.ruscayn.myvoca.application.service;
 import org.ruscayn.myvoca.application.dto.request.TestSubmitRequest;
 import org.ruscayn.myvoca.application.dto.response.TestQuestionView;
 import org.ruscayn.myvoca.application.dto.response.TestQuestionsResponse;
+import org.ruscayn.myvoca.application.dto.response.TestResultResponse;
 import org.ruscayn.myvoca.application.dto.response.TestSubmitResponse;
 import org.ruscayn.myvoca.domain.model.level.Level;
 import org.ruscayn.myvoca.domain.model.test.Direction;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.IntStream;
 
@@ -97,6 +99,45 @@ public class TestApplicationService {
 
         return new TestSubmitResponse(
                 session.getId(), session.getQuestionCount(), session.getCorrectCount(), session.getScore());
+    }
+
+    /** 결과 (완료된 시험만). 없거나 완료 전이면 empty */
+    public Optional<TestResultResponse> findResult(UUID sessionId) {
+        return testSessionRepository.findByIdWithQuestions(sessionId)
+                .filter(TestSession::isCompleted)
+                .map(this::toResult);
+    }
+
+    /** 결과 (API) */
+    public TestResultResponse getResult(UUID sessionId) {
+        TestSession session = findWithQuestions(sessionId);
+        if (!session.isCompleted()) {
+            throw new CustomException(ErrorCode.TEST_NOT_COMPLETED);
+        }
+        return toResult(session);
+    }
+
+    private TestResultResponse toResult(TestSession session) {
+        Direction direction = session.getDirection();
+        List<TestResultResponse.WrongItem> wrongItems = session.getQuestions().stream()
+                .filter(q -> !Boolean.TRUE.equals(q.getIsCorrect()))
+                .map(q -> {
+                    LevelWord selected = q.selectedOption();
+                    return new TestResultResponse.WrongItem(
+                            q.getQuestionNo(),
+                            promptText(q.getAnswer(), direction),
+                            selected == null ? null : optionText(selected, direction),
+                            optionText(q.getAnswer(), direction),
+                            q.getAnswer().headword());
+                })
+                .toList();
+        return new TestResultResponse(
+                session.getId(),
+                session.getLevel().name(),
+                session.getQuestionCount(),
+                session.getCorrectCount(),
+                session.getScore(),
+                wrongItems);
     }
 
     /** 진행 중이면 만료 처리. 없거나 이미 끝난 시험은 무시 */

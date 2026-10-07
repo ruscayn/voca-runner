@@ -106,6 +106,11 @@ public class TestQuestion extends BaseEntity {
         return List.of(option1, option2, option3, option4);
     }
 
+    /** 사용자가 고른 보기. 시간 초과(미입력)면 null */
+    public LevelWord selectedOption() {
+        return selectedOptionNo == null ? null : options().get(selectedOptionNo - 1);
+    }
+
     /** 채점. selectedOptionNo 가 null 이면 시간 초과(오답) */
     void answer(Integer selectedOptionNo) {
         if (selectedOptionNo != null && (selectedOptionNo < 1 || selectedOptionNo > OPTION_COUNT)) {

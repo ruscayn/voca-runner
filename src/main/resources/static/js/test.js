@@ -196,13 +196,9 @@
                 body: JSON.stringify({ answers: state.answers }),
             });
             if (!res.ok) throw await errorOf(res);
-            const result = await res.json();
 
             state.status = 'DONE';
-            // TODO 결과 화면이 생기면 그 화면으로 이동
-            showOverlay(`${result.score}점`,
-                `${result.questionCount}문제 중 ${result.correctCount}개 맞혔습니다.`,
-                '확인', goMain);
+            location.replace(`/test/${sessionId}/result`);   // 결과 화면 (시험 화면은 기록에서 제거)
         } catch (e) {
             // 제출 실패 시 다시 시도 (답안은 그대로 유지)
             state.status = 'RUNNING';   // 이탈 감지 유지
@@ -245,6 +241,11 @@
         } else {
             goMain();
         }
+    });
+
+    // 결과 화면에서 뒤로가기로 캐시된 시험 화면이 복원되면 메인으로
+    window.addEventListener('pageshow', (e) => {
+        if (e.persisted) goMain();
     });
 
     load();

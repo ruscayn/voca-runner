@@ -34,5 +34,5 @@ server:
 
 my-voca:
   test:
-    question-count: 20   # 개발 테스트용. 실제 서비스는 500
+    question-count: 5   # 개발 테스트용. 실제 서비스는 500
 

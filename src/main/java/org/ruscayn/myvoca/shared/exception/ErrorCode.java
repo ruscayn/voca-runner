@@ -20,7 +20,8 @@ public enum ErrorCode {
     // Test
     TEST_NOT_ENOUGH_WORDS("TEST_001", "문제를 만들 단어가 부족합니다."),
     TEST_NOT_IN_PROGRESS("TEST_002", "진행 중인 시험이 아닙니다."),
-    TEST_INVALID_OPTION("TEST_003", "올바르지 않은 보기 번호입니다.");
+    TEST_INVALID_OPTION("TEST_003", "올바르지 않은 보기 번호입니다."),
+    TEST_NOT_COMPLETED("TEST_004", "완료되지 않은 시험입니다.");
 
     private final String code;
     private final String message;

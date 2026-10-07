@@ -41,13 +41,27 @@ public class TestController {
         httpSession.removeAttribute(ENTRY_TOKEN);
 
         if (!sessionId.equals(token) || !testApplicationService.isInProgress(sessionId)) {
-            testApplicationService.expireIfInProgress(sessionId);
-            redirect.addFlashAttribute("message", "시험이 종료되었습니다. 처음부터 다시 시작해 주세요.");
+            // 진행 중이던 시험에 다시 들어온 경우만 만료 + 안내. 이미 끝난 시험(결과 화면에서 뒤로가기 등)은 메인으로만 이동
+            if (testApplicationService.isInProgress(sessionId)) {
+                testApplicationService.expireIfInProgress(sessionId);
+                redirect.addFlashAttribute("message", "시험이 종료되었습니다. 처음부터 다시 시작해 주세요.");
+            }
             return "redirect:/";
         }
 
         model.addAttribute("sessionId", sessionId);
         return "test";
+    }
+
+    /** 결과 화면 (완료된 시험만) */
+    @GetMapping("/test/{sessionId}/result")
+    public String result(@PathVariable UUID sessionId, Model model) {
+        return testApplicationService.findResult(sessionId)
+                .map(result -> {
+                    model.addAttribute("result", result);
+                    return "result";
+                })
+                .orElse("redirect:/");
     }
 
 }
