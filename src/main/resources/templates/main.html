@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#f6f7f9">
+    <title>My Voca</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+<form class="app" th:action="@{/test/start}" method="post">
+
+    <header class="app-header">
+        <h1>My Voca</h1>
+        <p class="sub">레벨을 선택하세요</p>
+    </header>
+
+    <main class="app-content">
+        <fieldset class="level-grid">
+            <legend class="sr-only">레벨 선택</legend>
+            <label class="level-card" th:each="lv, stat : ${levels}">
+                <input type="radio" name="level" th:value="${lv.code()}" th:checked="${stat.first}" required>
+                <span class="level-code" th:text="${lv.code()}">A1</span>
+                <span class="level-count" th:text="|${#numbers.formatInteger(lv.wordCount(), 1, 'COMMA')} 단어|">1,049 단어</span>
+            </label>
+        </fieldset>
+    </main>
+
+    <footer class="app-footer">
+        <p class="info">
+            <span th:text="|${questionCount}문항|">500문항</span> ·
+            <span th:text="|문제당 ${timeLimitSec}초|">문제당 5초</span>
+        </p>
+        <button type="submit" class="primary-btn">시험 시작</button>
+    </footer>
+
+</form>
+</body>
+</html>
