@@ -1,0 +1,77 @@
+/* 시험 화면 */
+.test-header { padding-top: 16px; padding-bottom: 12px; text-align: left; }
+
+.progress-text { font-size: 1rem; color: var(--muted); margin-bottom: 10px; }
+.progress-text strong { color: var(--text); font-size: 1.15rem; }
+
+.timer {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.timer-bar {
+    height: 100%;
+    background: var(--primary);
+    transform-origin: left center;
+    transform: scaleX(1);
+}
+.timer-bar.urgent { background: #e5484d; }
+
+.test-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.prompt {
+    margin: 0;
+    font-size: 2.4rem;
+    font-weight: 700;
+    text-align: center;
+    word-break: break-word;
+}
+
+.test-footer { border-top: 0; }
+
+.options { display: flex; flex-direction: column; gap: 10px; }
+
+.option-btn {
+    min-height: 60px;
+    padding: 12px 16px;
+    font-size: 1.05rem;
+    line-height: 1.35;
+    text-align: left;
+    color: var(--text);
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    font-family: inherit;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.option-btn:active { border-color: var(--primary); background: var(--primary-soft); }
+.option-btn:disabled { opacity: 1; }
+
+/* 오버레이 */
+.overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--side);
+    background: rgba(17, 24, 39, .45);
+    z-index: 10;
+}
+.overlay[hidden] { display: none; }
+.overlay-box {
+    width: 100%;
+    max-width: calc(var(--app-max-width) - 2 * var(--side));
+    padding: 24px var(--side) var(--side);
+    background: var(--card);
+    border-radius: var(--radius);
+    text-align: center;
+}
+.overlay-title { margin: 0 0 8px; font-size: 1.2rem; font-weight: 700; }
+.overlay-text { margin: 0 0 20px; color: var(--muted); white-space: pre-line; }
+.overlay-text:empty { margin: 0; }

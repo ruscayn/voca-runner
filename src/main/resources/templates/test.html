@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#f6f7f9">
+    <title>시험 - My Voca</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <link rel="stylesheet" th:href="@{/css/test.css}">
+</head>
+<body>
+<div class="app" id="test-app" th:attr="data-session-id=${sessionId}">
+
+    <header class="app-header test-header">
+        <div class="progress-text"><strong id="current-no">0</strong> / <span id="total-count">0</span></div>
+        <div class="timer"><div class="timer-bar" id="timer-bar"></div></div>
+    </header>
+
+    <main class="app-content test-content">
+        <p class="prompt" id="prompt"></p>
+    </main>
+
+    <footer class="app-footer test-footer">
+        <div class="options" id="options">
+            <button type="button" class="option-btn" data-no="1"></button>
+            <button type="button" class="option-btn" data-no="2"></button>
+            <button type="button" class="option-btn" data-no="3"></button>
+            <button type="button" class="option-btn" data-no="4"></button>
+        </div>
+    </footer>
+
+    <!-- 안내 / 결과 오버레이 -->
+    <div class="overlay" id="overlay" hidden>
+        <div class="overlay-box">
+            <p class="overlay-title" id="overlay-title">문제 불러오는 중...</p>
+            <p class="overlay-text" id="overlay-text"></p>
+            <button type="button" class="primary-btn" id="overlay-btn" hidden>확인</button>
+        </div>
+    </div>
+
+</div>
+<script th:src="@{/js/test.js}"></script>
+</body>
+</html>
