@@ -31,3 +31,8 @@ logging:
 
 server:
   port: 8080
+
+my-voca:
+  test:
+    question-count: 20   # 개발 테스트용. 실제 서비스는 500
+

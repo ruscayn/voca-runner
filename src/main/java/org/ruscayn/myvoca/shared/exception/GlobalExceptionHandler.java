@@ -17,7 +17,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ErrorResponse> handleCustomException(CustomException e, WebRequest request) {
         log.error("CustomException occurred: {}", e.getMessage(), e);
-        ErrorResponse errorResponse = ErrorResponse.of(e.getErrorCode(), getPath(request));
+        ErrorResponse errorResponse = ErrorResponse.of(e.getErrorCode().getCode(), e.getMessage(), getPath(request));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 

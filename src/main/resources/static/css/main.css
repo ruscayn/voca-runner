@@ -122,6 +122,19 @@ body {
 }
 .primary-btn:active { background: var(--primary-dark); }
 
+.primary-btn:disabled { background: var(--muted); }
+
+/* 안내 메시지 */
+.notice {
+    flex: none;
+    margin: 0 var(--side) 8px;
+    padding: 12px 14px;
+    font-size: .9rem;
+    color: #8a4b00;
+    background: #fff4e0;
+    border-radius: 10px;
+}
+
 .sr-only {
     position: absolute; width: 1px; height: 1px;
     overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;

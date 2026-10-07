@@ -8,12 +8,14 @@
     <link rel="stylesheet" th:href="@{/css/main.css}">
 </head>
 <body>
-<form class="app" th:action="@{/test/start}" method="post">
+<form class="app" id="start-form" th:action="@{/test/start}" method="post">
 
     <header class="app-header">
         <h1>My Voca</h1>
         <p class="sub">레벨을 선택하세요</p>
     </header>
+
+    <div class="notice" th:if="${message}" th:text="${message}">시험이 종료되었습니다.</div>
 
     <main class="app-content">
         <fieldset class="level-grid">
@@ -31,9 +33,23 @@
             <span th:text="|${questionCount}문항|">500문항</span> ·
             <span th:text="|문제당 ${timeLimitSec}초|">문제당 5초</span>
         </p>
-        <button type="submit" class="primary-btn">시험 시작</button>
+        <button type="submit" class="primary-btn" id="start-btn">시험 시작</button>
     </footer>
 
 </form>
+<script>
+    // 문제 생성 중 중복 클릭 방지
+    document.getElementById('start-form').addEventListener('submit', () => {
+        const btn = document.getElementById('start-btn');
+        btn.disabled = true;
+        btn.textContent = '문제 만드는 중...';
+    });
+    // 뒤로가기로 돌아왔을 때(bfcache) 버튼 복구
+    window.addEventListener('pageshow', () => {
+        const btn = document.getElementById('start-btn');
+        btn.disabled = false;
+        btn.textContent = '시험 시작';
+    });
+</script>
 </body>
 </html>
