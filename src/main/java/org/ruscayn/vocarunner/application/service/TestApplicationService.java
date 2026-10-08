@@ -93,9 +93,11 @@ public class TestApplicationService {
         return new TestQuestionsResponse(
                 session.getId(),
                 session.getLevel().name(),
+                session.getLevel().groupName(),
                 direction.name(),
                 session.getQuestionCount(),
                 session.getTimeLimitSec(),
+                Duration.between(session.getStartedAt(), session.getDeadline()).toMinutes(),
                 remainingSec,
                 questions);
     }
@@ -164,10 +166,10 @@ public class TestApplicationService {
         return testProperties.questionCount();
     }
 
-    /** 시험을 마쳐야 하는 전체 시간(초) = 문항 수 × 제한 시간 + 여유 시간. 시작 전 안내용 */
-    public long getAllowedSec() {
+    /** 시험을 마쳐야 하는 전체 시간(분, 올림). 시작 전 안내용 */
+    public long getAllowedMinutes() {
         return TestSession.allowedDuration(
-                testProperties.questionCount(), TestSession.DEFAULT_TIME_LIMIT_SEC, testProperties.grace()).toSeconds();
+                testProperties.questionCount(), TestSession.DEFAULT_TIME_LIMIT_SEC, testProperties.grace()).toMinutes();
     }
 
     /** 진행 중(마감 전)인 시험인지 */
@@ -197,6 +199,7 @@ public class TestApplicationService {
         return new TestResultResponse(
                 session.getId(),
                 session.getLevel().name(),
+                session.getLevel().groupName(),
                 session.getQuestionCount(),
                 session.getCorrectCount(),
                 session.getScore(),

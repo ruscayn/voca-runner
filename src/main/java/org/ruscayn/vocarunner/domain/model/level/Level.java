@@ -20,6 +20,18 @@ public enum Level {
         return name().length() == 1;
     }
 
+    /**
+     * CEFR 묶음 이름 (화면 표시용). 유럽평의회 CEFR 원문의 단계 묶음 이름을 그대로 사용한다.
+     * A = Basic User, B = Independent User, C = Proficient User
+     */
+    public String groupName() {
+        return switch (name().charAt(0)) {
+            case 'A' -> "Basic";
+            case 'B' -> "Independent";
+            default -> "Proficient";
+        };
+    }
+
     /** 실제 출제 대상 세부 레벨. 세부 레벨이면 자기 자신, 묶음이면 소속 세부 레벨들. */
     public List<Level> detailLevels() {
         if (!isGroup()) {

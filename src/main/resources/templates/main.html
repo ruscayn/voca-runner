@@ -1,59 +1,99 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#f6f7f9">
+    <th:block th:replace="~{fragments/common :: head}"></th:block>
     <title>VocaRunner</title>
-    <link rel="stylesheet" th:href="@{/css/main.css}">
 </head>
 <body>
 <form class="app" id="start-form" th:action="@{/test/start}" method="post">
 
-    <header class="app-header">
-        <h1>VocaRunner</h1>
-        <p class="sub">레벨을 선택하세요</p>
+    <header class="app-header main-header">
+        <span th:replace="~{fragments/common :: brand}"></span>
+        <a class="about-link" th:href="@{/about}">
+            정보 · 출처
+            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 4 L10 8 L6 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
     </header>
 
     <div class="notice" th:if="${message}" th:text="${message}">시험이 종료되었습니다.</div>
 
     <main class="app-content">
-        <fieldset class="level-grid">
-            <legend class="sr-only">레벨 선택</legend>
-            <label class="level-card" th:each="lv, stat : ${levels}">
-                <input type="radio" name="level" th:value="${lv.code()}" th:checked="${stat.first}" required>
-                <span class="level-code" th:text="${lv.code()}">A1</span>
-                <span class="level-count" th:text="|${#numbers.formatInteger(lv.wordCount(), 1, 'COMMA')} 단어|">1,049 단어</span>
-            </label>
-        </fieldset>
+        <h1 class="hero">오늘은 어떤 코스를<br>달려볼까요?</h1>
+
+        <div class="level-groups">
+            <fieldset class="level-group" th:each="group, groupStat : ${levelGroups}">
+                <legend th:text="${group.name()}">Basic</legend>
+                <div class="level-grid">
+                    <label class="level-card" th:each="lv, stat : ${group.levels()}">
+                        <input type="radio" name="level" required
+                               th:value="${lv.code()}"
+                               th:checked="${groupStat.first and stat.first}">
+                        <span class="level-top">
+                            <span class="level-code" th:text="${lv.code()}">A1</span>
+                            <span class="level-check">
+                                <svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 6.2 L5 8.5 L9.5 3.5" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </span>
+                        </span>
+                        <span class="level-count" th:text="|${#numbers.formatInteger(lv.wordCount(), 1, 'COMMA')} 단어|">1,049 단어</span>
+                    </label>
+                </div>
+            </fieldset>
+        </div>
     </main>
 
-    <footer class="app-footer">
-        <p class="info">
-            <span th:text="|${questionCount}문항|">500문항</span> ·
-            <span th:text="|문제당 ${timeLimitSec}초|">문제당 5초</span>
+    <footer class="app-footer main-footer">
+        <div class="stat-strip">
+            <div class="stat">
+                <span class="stat-value" th:text="${questionCount}">500</span>
+                <span class="stat-label">문항</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value"><th:block th:text="${timeLimitSec}">5</th:block><span class="stat-unit">초</span></span>
+                <span class="stat-label">문제당</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value"><th:block th:text="${allowedMinutes}">45</th:block><span class="stat-unit">분</span></span>
+                <span class="stat-label">제한 시간</span>
+            </div>
+        </div>
+        <p class="rule-note">
+            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 7.2 V11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="5" r=".9" fill="currentColor"/></svg>
+            <span th:text="|${allowedMinutes}분 안에 제출하지 않으면 무효 처리됩니다.|">45분 안에 제출하지 않으면 무효 처리됩니다.</span>
         </p>
-        <p class="info time-info" th:with="m=${allowedSec / 60}, s=${allowedSec % 60}">
-            <strong th:text="|${m}분${s != 0 ? ' ' + s + '초' : ''}|">44분 40초</strong> 안에 마쳐야 하며,
-            지나면 시험이 무효가 됩니다.
-        </p>
-        <button type="submit" class="primary-btn" id="start-btn">시험 시작</button>
+        <button type="submit" class="primary-btn" id="start-btn">
+            <span id="start-label">A1 코스 시작</span>
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10 H16 M11 5 L16 10 L11 15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
     </footer>
 
 </form>
 <script>
-    // 문제 생성 중 중복 클릭 방지
-    document.getElementById('start-form').addEventListener('submit', () => {
+    (() => {
+        const form = document.getElementById('start-form');
         const btn = document.getElementById('start-btn');
-        btn.disabled = true;
-        btn.textContent = '문제 만드는 중...';
-    });
-    // 뒤로가기로 돌아왔을 때(bfcache) 버튼 복구
-    window.addEventListener('pageshow', () => {
-        const btn = document.getElementById('start-btn');
-        btn.disabled = false;
-        btn.textContent = '시험 시작';
-    });
+        const label = document.getElementById('start-label');
+
+        // 버튼 문구에 선택한 레벨 표시 (예: B1 코스 시작)
+        function syncLabel() {
+            const checked = form.querySelector('input[name="level"]:checked');
+            label.textContent = checked ? `${checked.value} 코스 시작` : '코스 시작';
+        }
+        form.addEventListener('change', syncLabel);
+
+        // 문제 생성 중 중복 클릭 방지
+        form.addEventListener('submit', () => {
+            btn.disabled = true;
+            label.textContent = '문제 만드는 중...';
+        });
+
+        // 뒤로가기로 돌아왔을 때(bfcache) 버튼 복구
+        window.addEventListener('pageshow', () => {
+            btn.disabled = false;
+            syncLabel();
+        });
+
+        syncLabel();
+    })();
 </script>
 </body>
 </html>

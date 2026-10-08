@@ -1,0 +1,64 @@
+/* 정보 · 출처 화면 */
+.about-header {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 12px 8px 0;
+}
+.about-header h1 { margin: 0; font-size: 18px; font-weight: 700; }
+.back-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text);
+    border-radius: 12px;
+}
+.back-btn svg { width: 22px; height: 22px; }
+
+.about-content {
+    padding-top: 16px;
+    padding-bottom: calc(32px + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.about-lead { margin: 0 0 4px; font-size: 14px; line-height: 1.65; color: var(--text-2); }
+
+.credit {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+.credit-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.credit h2 { margin: 0; font-size: 15.5px; font-weight: 700; }
+.credit-range {
+    flex: none;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--primary-text);
+    background: var(--primary-soft);
+    border-radius: 6px;
+}
+.credit-quote {
+    margin: 0;
+    padding: 12px 14px;
+    font-family: var(--font-en);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+    background: var(--bg);
+    border-radius: 12px;
+}
+.credit ul { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.65; color: var(--text-2); }
+.credit p { margin: 0; font-size: 13.5px; line-height: 1.65; color: var(--text-2); }
+.credit .credit-quote { color: var(--text); }
+
+.about-note { margin: 4px 0 0; font-size: 12.5px; line-height: 1.6; color: var(--muted); }

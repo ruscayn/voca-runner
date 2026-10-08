@@ -45,7 +45,7 @@ public class TestSession {
     /** 시작한 사용자 구분 값 (현재는 IP). 동시 진행 개수 제한용 */
     private final String clientKey;
     private final Instant startedAt;
-    /** 이 시각이 지나면 시험 무효 = 시작 + 문항 수 × 제한 시간 + 여유 시간 */
+    /** 이 시각이 지나면 시험 무효 = 시작 + allowedDuration (분 단위 올림) */
     private final Instant deadline;
 
     @Getter(AccessLevel.NONE)
@@ -99,9 +99,14 @@ public class TestSession {
         return new TestSession(level, direction, timeLimitSec, questions, clientKey, now, grace);
     }
 
-    /** 시험을 마쳐야 하는 전체 시간 = 문항 수 × 제한 시간 + 여유 시간 (시작 전 안내에도 사용) */
+    /**
+     * 시험을 마쳐야 하는 전체 시간 = (문항 수 × 제한 시간 + 여유 시간)을 분 단위로 올림.
+     * 안내 문구를 "45분"처럼 분 단위로 보여주므로 실제 마감도 같은 값으로 맞춘다.
+     * 예: 500문항 × 5초 + 3분 = 44분 40초 → 45분
+     */
     public static Duration allowedDuration(int questionCount, int timeLimitSec, Duration grace) {
-        return Duration.ofSeconds((long) questionCount * timeLimitSec).plus(grace);
+        long seconds = Duration.ofSeconds((long) questionCount * timeLimitSec).plus(grace).toSeconds();
+        return Duration.ofMinutes(Math.ceilDiv(seconds, 60));
     }
 
     // ---------- 상태 변경 ----------

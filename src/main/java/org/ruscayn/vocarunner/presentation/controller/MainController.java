@@ -18,11 +18,17 @@ public class MainController {
 
     @GetMapping("/")
     public String main(Model model) {
-        model.addAttribute("levels", levelApplicationService.getDetailLevels());
+        model.addAttribute("levelGroups", levelApplicationService.getDetailLevelGroups());
         model.addAttribute("questionCount", testApplicationService.getQuestionCount());
         model.addAttribute("timeLimitSec", TestSession.DEFAULT_TIME_LIMIT_SEC);
-        model.addAttribute("allowedSec", testApplicationService.getAllowedSec());
+        model.addAttribute("allowedMinutes", testApplicationService.getAllowedMinutes());
         return "main";
+    }
+
+    /** 정보 · 출처 (데이터 라이선스 표기) */
+    @GetMapping("/about")
+    public String about() {
+        return "about";
     }
 
 }

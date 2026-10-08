@@ -1,44 +1,84 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#f6f7f9">
-    <title>시험 - VocaRunner</title>
-    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <th:block th:replace="~{fragments/common :: head}"></th:block>
     <link rel="stylesheet" th:href="@{/css/test.css}">
+    <title>시험 - VocaRunner</title>
 </head>
 <body>
 <div class="app" id="test-app" th:attr="data-session-id=${sessionId}">
 
     <header class="app-header test-header">
         <div class="test-status">
-            <div class="progress-text"><strong id="current-no">0</strong> / <span id="total-count">0</span></div>
-            <div class="remain-text" id="remain">남은 시간 <strong id="remain-time">--:--</strong></div>
+            <p class="progress-text" aria-live="off">
+                <strong id="current-no">0</strong><span class="progress-total">/ <span id="total-count">0</span></span>
+            </p>
+            <div class="remain-pill" id="remain" aria-label="남은 전체 시간">
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8.5" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 5.5 V8.5 L10 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                <span class="remain-time" id="remain-time">--:--</span>
+            </div>
         </div>
-        <div class="timer"><div class="timer-bar" id="timer-bar"></div></div>
+        <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
     </header>
 
     <main class="app-content test-content">
-        <p class="prompt" id="prompt"></p>
+        <p class="prompt" id="prompt" lang="en"></p>
     </main>
+
+    <div class="q-timer" aria-label="이 문제의 남은 시간">
+        <div class="q-timer-track"><div class="q-timer-bar" id="timer-bar"></div></div>
+        <p class="q-timer-sec" id="timer-sec-box"><span id="timer-sec">5</span><span class="q-timer-unit">초</span></p>
+    </div>
 
     <footer class="app-footer test-footer">
         <div class="options" id="options">
-            <button type="button" class="option-btn" data-no="1"></button>
-            <button type="button" class="option-btn" data-no="2"></button>
-            <button type="button" class="option-btn" data-no="3"></button>
-            <button type="button" class="option-btn" data-no="4"></button>
+            <button type="button" class="option-btn" data-no="1"><span class="option-no">1</span><span class="option-text"></span></button>
+            <button type="button" class="option-btn" data-no="2"><span class="option-no">2</span><span class="option-text"></span></button>
+            <button type="button" class="option-btn" data-no="3"><span class="option-no">3</span><span class="option-text"></span></button>
+            <button type="button" class="option-btn" data-no="4"><span class="option-no">4</span><span class="option-text"></span></button>
         </div>
+        <p class="level-caption" id="level-caption"></p>
     </footer>
 
-    <!-- 안내 / 결과 오버레이 -->
-    <div class="overlay" id="overlay" hidden>
-        <div class="overlay-box">
-            <p class="overlay-title" id="overlay-title">문제 불러오는 중...</p>
-            <p class="overlay-text" id="overlay-text"></p>
-            <button type="button" class="primary-btn" id="overlay-btn" hidden>확인</button>
-        </div>
+    <!-- 안내 시트 (시작 전 / 채점 중 / 종료·오류) -->
+    <div class="sheet-backdrop" id="overlay" hidden>
+        <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
+            <p class="sheet-eyebrow" id="sheet-eyebrow" hidden></p>
+            <h2 class="sheet-title" id="overlay-title">문제 불러오는 중...</h2>
+            <p class="sheet-text" id="overlay-text"></p>
+
+            <div class="ready-info" id="ready-info" hidden>
+                <div class="stat-strip ready-stats">
+                    <div class="stat">
+                        <span class="stat-value" id="ready-count">500</span>
+                        <span class="stat-label">문항</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value"><span id="ready-sec">5</span><span class="stat-unit">초</span></span>
+                        <span class="stat-label">문제당</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value"><span id="ready-min">45</span><span class="stat-unit">분</span></span>
+                        <span class="stat-label">제한 시간</span>
+                    </div>
+                </div>
+                <ul class="rules">
+                    <li>
+                        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10.5" r="7.5" stroke="currentColor" stroke-width="1.6"/><path d="M10 6.5 V10.5 L12.5 12.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                        <span>제한 시간 <strong><span id="ready-min-text">45</span>분</strong> 안에 제출하지 않으면 무효 처리됩니다.</span>
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 8 H6 L10 4.5 V15.5 L6 12 H3 Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 7.5 C14.3 8.8 14.3 11.2 13 12.5 M15.5 5.5 C18 8 18 12 15.5 14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                        <span>단어마다 발음이 함께 재생됩니다. 소리를 켜 두세요.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="sheet-actions">
+                <button type="button" class="secondary-btn" id="overlay-back" hidden>이전</button>
+                <button type="button" class="primary-btn" id="overlay-btn" hidden>확인</button>
+            </div>
+        </section>
     </div>
 
 </div>

@@ -4,33 +4,46 @@
  * - [시작] 버튼을 누르면 1번 문제부터 진행 (iOS 는 터치가 있어야 소리가 나므로)
  * - 문제 단어가 뜨면 TTS 로 읽어준다 (브라우저 내장 Web Speech API)
  * - 보기를 누르거나 제한 시간이 지나면 바로 다음 문제 (시간 초과 = 답 없음)
- * - 시험 중 화면을 벗어나면(새로고침/뒤로가기/앱 전환/화면 꺼짐) 시험은 만료된다
- * - 마감(문항 수 × 제한 시간 + 여유)까지 남은 전체 시간을 표시하고, 지나면 시험은 무효
+ * - 문제당 남은 시간은 막대(흐름) + 숫자(정확한 초)로 표시. 2초 이하면 빨간색
+ * - 시간은 화면을 보고 있든 아니든 실제 시간 기준으로 흐른다
+ *   앱 전환·화면 꺼짐 동안 브라우저가 타이머를 늦추거나 멈춰도, 돌아오면 그동안 지나간 문제를
+ *   모두 시간 초과로 처리하고 그 시점의 문제를 남은 초부터 이어서 보여준다
+ * - 새로고침·뒤로가기·창 닫기는 답안이 사라지므로 시험을 만료한다
+ * - 마감(분 단위)까지 남은 전체 시간을 표시하고, 지나면 시험은 무효
  *   마감 시각은 메인에서 시험을 만든 순간부터 계산되므로 [시작] 대기 시간도 포함된다
  */
 (() => {
     'use strict';
 
     const INPUT_LOCK_MS = 150;   // 직전 탭이 다음 문제로 넘어가 눌리는 것 방지
-    const CLOCK_TICK_MS = 250;   // 남은 시간 갱신 주기
-    const URGENT_SEC = 60;       // 남은 시간이 이 값 이하이면 빨간색
+    const CLOCK_TICK_MS = 100;   // 시간 확인 주기
+    const URGENT_SEC = 60;       // 남은 전체 시간이 이 값 이하이면 빨간색
+    const Q_URGENT_SEC = 2;      // 문제당 남은 초가 이 값 이하이면 빨간색
 
     const app = document.getElementById('test-app');
     const sessionId = app.dataset.sessionId;
     const api = (path) => `/api/tests/${sessionId}${path}`;
+    const $ = (id) => document.getElementById(id);
 
     const el = {
-        currentNo: document.getElementById('current-no'),
-        total: document.getElementById('total-count'),
-        timerBar: document.getElementById('timer-bar'),
-        remain: document.getElementById('remain'),
-        remainTime: document.getElementById('remain-time'),
-        prompt: document.getElementById('prompt'),
+        currentNo: $('current-no'),
+        total: $('total-count'),
+        progressFill: $('progress-fill'),
+        remain: $('remain'),
+        remainTime: $('remain-time'),
+        prompt: $('prompt'),
+        timerBar: $('timer-bar'),
+        timerSecBox: $('timer-sec-box'),
+        timerSec: $('timer-sec'),
         options: Array.from(document.querySelectorAll('.option-btn')),
-        overlay: document.getElementById('overlay'),
-        overlayTitle: document.getElementById('overlay-title'),
-        overlayText: document.getElementById('overlay-text'),
-        overlayBtn: document.getElementById('overlay-btn'),
+        levelCaption: $('level-caption'),
+        overlay: $('overlay'),
+        sheetEyebrow: $('sheet-eyebrow'),
+        overlayTitle: $('overlay-title'),
+        overlayText: $('overlay-text'),
+        readyInfo: $('ready-info'),
+        overlayBack: $('overlay-back'),
+        overlayBtn: $('overlay-btn'),
     };
 
     const state = {
@@ -38,12 +51,11 @@
         timeLimitMs: 5000,
         direction: 'EN_KO',
         questionCount: 0,
-        deadlineAt: 0,        // 마감 시각 (performance.now() 기준, 기기 시계와 무관)
+        deadlineAt: 0,        // 전체 마감 시각 (performance.now() 기준, 기기 시계와 무관)
+        questionEndAt: 0,     // 현재 문제 마감 시각 (performance.now() 기준)
         clockId: null,
         index: -1,
         answers: [],          // { questionNo, selectedOptionNo | null }
-        timerId: null,
-        urgentId: null,
         lockedUntil: 0,
         status: 'LOADING',    // LOADING → READY → RUNNING → SUBMITTING → DONE | ABORTED
     };
@@ -91,8 +103,11 @@
         };
     })();
 
-    // ---------- 화면 표시 ----------
+    // ---------- 안내 시트 ----------
     function showOverlay(title, text = '', buttonText = null, onClick = null) {
+        el.sheetEyebrow.hidden = true;
+        el.readyInfo.hidden = true;
+        el.overlayBack.hidden = true;
         el.overlayTitle.textContent = title;
         el.overlayText.textContent = text;
         el.overlayBtn.hidden = !buttonText;
@@ -103,22 +118,73 @@
         el.overlay.hidden = false;
     }
 
+    /** 시작 전 안내 : 레벨, 500문항 / 5초 / 45분, 안내 2가지, [이전] [시작] */
+    function showReady(data) {
+        showOverlay('준비되면 출발하세요', '', '시작', begin);
+        el.sheetEyebrow.textContent = `${data.level} · ${data.levelGroup}`;
+        el.sheetEyebrow.hidden = false;
+        $('ready-count').textContent = data.questionCount;
+        $('ready-sec').textContent = data.timeLimitSec;
+        $('ready-min').textContent = data.allowedMinutes;
+        $('ready-min-text').textContent = data.allowedMinutes;
+        el.readyInfo.hidden = false;
+        el.overlayBack.onclick = cancelReady;
+        el.overlayBack.hidden = false;
+    }
+
+    /** 시작 전 [이전] : 아직 풀지 않았으므로 안내 없이 시험을 취소하고 메인으로 */
+    function cancelReady() {
+        if (state.status !== 'READY') return;
+        state.status = 'ABORTED';
+        stopClock();
+        navigator.sendBeacon(api('/expire'));
+        goMain();
+    }
+
     function goMain() {
         location.replace('/');
     }
 
-    function startTimerBar() {
+    // ---------- 문제당 타이머 (막대 + 남은 초) ----------
+    /** 현재 문제의 남은 시간만큼 막대를 이어서 줄인다 (중간부터 시작 가능) */
+    function startQuestionBar() {
+        const remainMs = Math.max(0, state.questionEndAt - performance.now());
         const bar = el.timerBar;
-        bar.classList.remove('urgent');
         bar.style.transition = 'none';
-        bar.style.transform = 'scaleX(1)';
+        bar.style.transform = `scaleX(${remainMs / state.timeLimitMs})`;
         void bar.offsetWidth;                          // 애니메이션 재시작
-        bar.style.transition = `transform ${state.timeLimitMs}ms linear`;
+        bar.style.transition = `transform ${remainMs}ms linear`;
         bar.style.transform = 'scaleX(0)';
-        clearTimeout(state.urgentId);
-        state.urgentId = setTimeout(() => {
-            if (state.status === 'RUNNING') bar.classList.add('urgent');
-        }, state.timeLimitMs * 0.7);
+    }
+
+    function updateQuestionSec() {
+        const sec = Math.max(0, Math.ceil((state.questionEndAt - performance.now()) / 1000));
+        el.timerSec.textContent = sec;
+        const urgent = sec <= Q_URGENT_SEC;
+        el.timerSecBox.classList.toggle('urgent', urgent);
+        el.timerBar.classList.toggle('urgent', urgent);
+    }
+
+    /**
+     * 실제 시간 기준으로 지나간 문제를 모두 시간 초과 처리.
+     * 다음 문제는 이전 문제의 마감 시각부터 시작한 것으로 본다 (화면을 벗어나 있어도 기다려 주지 않음)
+     */
+    function settleTimeouts() {
+        if (state.status !== 'RUNNING' || state.answers.length >= state.questions.length) return;
+        const now = performance.now();
+        if (now < state.questionEndAt) return;
+
+        while (now >= state.questionEndAt) {
+            const q = state.questions[state.index];
+            state.answers.push({ questionNo: q.no, selectedOptionNo: null });
+            if (state.index + 1 >= state.questions.length) {
+                finish();
+                return;
+            }
+            state.index += 1;
+            state.questionEndAt += state.timeLimitMs;
+        }
+        showQuestion(state.index);
     }
 
     // ---------- 남은 전체 시간 (마감까지) ----------
@@ -126,25 +192,11 @@
         return Math.max(0, Math.ceil((state.deadlineAt - performance.now()) / 1000));
     }
 
-    /** 03:25 형식 (헤더) */
+    /** 03:25 형식 */
     function formatClock(sec) {
         const m = Math.floor(sec / 60);
         const s = sec % 60;
         return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    }
-
-    /** 3분 25초 형식 (안내 문구) */
-    function formatKorean(sec) {
-        const m = Math.floor(sec / 60);
-        const s = sec % 60;
-        if (m === 0) return `${s}초`;
-        return s === 0 ? `${m}분` : `${m}분 ${s}초`;
-    }
-
-    function readyText(sec) {
-        return `${state.questionCount}문항 · 문제당 ${state.timeLimitMs / 1000}초\n`
-            + `${formatKorean(sec)} 안에 마쳐야 하며,\n지나면 시험이 무효가 됩니다.\n`
-            + '시작하면 화면을 벗어나지 마세요.';
     }
 
     function tickClock() {
@@ -152,10 +204,12 @@
         el.remainTime.textContent = formatClock(sec);
         el.remain.classList.toggle('urgent', sec <= URGENT_SEC);
 
-        // 시작 대기 중에도 마감 시간은 흐르므로 안내 문구를 함께 갱신
-        if (state.status === 'READY') el.overlayText.textContent = readyText(sec);
-
-        if (sec === 0) timeOver();
+        if (sec === 0) {
+            timeOver();
+            return;
+        }
+        settleTimeouts();
+        if (state.status === 'RUNNING') updateQuestionSec();
     }
 
     function startClock(remainSecFromServer) {
@@ -174,46 +228,56 @@
         if (state.status !== 'RUNNING' && state.status !== 'READY') return;
         state.status = 'ABORTED';
         stopClock();
-        clearTimeout(state.timerId);
-        clearTimeout(state.urgentId);
         tts.stop();
         navigator.sendBeacon(api('/expire'));
-        showOverlay('시험이 무효가 되었습니다', '제한 시간이 지나\n시험이 무효가 되었습니다.', '확인', goMain);
+        showOverlay('시험이 무효 처리되었습니다', '제한 시간 안에 제출하지 않아\n시험이 무효 처리되었습니다.', '확인', goMain);
     }
 
     // ---------- 진행 ----------
+    /** state.index 문제를 표시. 마감 시각(state.questionEndAt)은 호출 전에 정해 둔다 */
     function showQuestion(index) {
         state.index = index;
         const q = state.questions[index];
         el.currentNo.textContent = q.no;
+        el.progressFill.style.width = `${(index / state.questionCount) * 100}%`;
         el.prompt.textContent = q.prompt;
         q.options.forEach((opt, i) => {
-            el.options[i].textContent = opt.text;
+            el.options[i].querySelector('.option-text').textContent = opt.text;
             el.options[i].dataset.no = opt.no;
         });
         state.lockedUntil = performance.now() + INPUT_LOCK_MS;
 
-        // 영어 단어가 문제일 때만 읽어준다 (KO_EN 은 추후)
-        if (state.direction === 'EN_KO') tts.speak(q.prompt);
+        // 영어 단어가 문제일 때만 읽어준다 (KO_EN 은 추후). 화면이 가려져 있으면 읽지 않음
+        if (state.direction === 'EN_KO' && !document.hidden) tts.speak(q.prompt);
 
-        clearTimeout(state.timerId);
-        state.timerId = setTimeout(() => answer(null), state.timeLimitMs);
-        startTimerBar();
+        startQuestionBar();
+        updateQuestionSec();
     }
 
     function answer(selectedOptionNo) {
         if (state.status !== 'RUNNING') return;
-        clearTimeout(state.timerId);
 
-        const q = state.questions[state.index];
+        // 시간이 이미 지난 뒤의 클릭은 무시 (시간 초과로 먼저 처리)
+        const index = state.index;
+        settleTimeouts();
+        if (state.status !== 'RUNNING' || state.index !== index) return;
+
+        const q = state.questions[index];
         state.answers.push({ questionNo: q.no, selectedOptionNo });
 
-        if (state.index + 1 < state.questions.length) {
-            showQuestion(state.index + 1);
+        if (index + 1 < state.questions.length) {
+            state.questionEndAt = performance.now() + state.timeLimitMs;
+            showQuestion(index + 1);
         } else {
-            tts.stop();
-            submit();
+            finish();
         }
+    }
+
+    /** 마지막 문제까지 끝남 → 제출 */
+    function finish() {
+        el.progressFill.style.width = '100%';
+        tts.stop();
+        submit();
     }
 
     el.options.forEach((btn) => {
@@ -228,6 +292,7 @@
         tts.unlock();                 // 터치 이벤트 안에서 호출 (iOS)
         el.overlay.hidden = true;
         state.status = 'RUNNING';
+        state.questionEndAt = performance.now() + state.timeLimitMs;
         showQuestion(0);
     }
 
@@ -244,9 +309,11 @@
             state.direction = data.direction;
             state.questionCount = data.questionCount;
             el.total.textContent = data.questionCount;
+            el.timerSec.textContent = data.timeLimitSec;
+            el.levelCaption.textContent = `${data.level} · ${data.levelGroup}`;
 
             state.status = 'READY';
-            showOverlay('준비되었습니다', readyText(data.remainingSec), '시작', begin);
+            showReady(data);
             startClock(data.remainingSec);
         } catch (e) {
             state.status = 'ABORTED';
@@ -256,7 +323,6 @@
 
     async function submit() {
         state.status = 'SUBMITTING';
-        clearTimeout(state.timerId);
         showOverlay('채점 중...');
         try {
             const res = await fetch(api('/submit'), {
@@ -274,12 +340,12 @@
                 // 서버가 거절 (마감 초과·이미 종료·없는 시험 등) : 다시 제출해도 소용없으므로 메인으로
                 state.status = 'ABORTED';
                 stopClock();
-                const title = e.code === 'TEST_005' ? '시험이 무효가 되었습니다' : '제출할 수 없습니다';
+                const title = e.code === 'TEST_005' ? '시험이 무효 처리되었습니다' : '제출할 수 없습니다';
                 showOverlay(title, e.message, '확인', goMain);
                 return;
             }
-            // 네트워크 오류·서버 오류 : 다시 시도 (답안은 그대로 유지)
-            state.status = 'RUNNING';   // 이탈 감지·마감 확인 유지
+            // 네트워크 오류·서버 오류 : 다시 시도 (답안은 그대로 유지, 마감 확인은 계속)
+            state.status = 'RUNNING';
             showOverlay('제출하지 못했습니다', e.message, '다시 제출', () => {
                 if (state.status !== 'RUNNING') return;
                 submit();
@@ -305,26 +371,29 @@
         return error;
     }
 
-    // ---------- 이탈 감지 : 시험 중(시작 대기 포함) 화면을 벗어나면 만료 ----------
+    // ---------- 화면 복귀 : 그동안 지나간 시간을 바로 반영 ----------
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') tickClock();
+    });
+
+    // ---------- 페이지 이탈 (새로고침·창 닫기·뒤로가기) : 답안이 사라지므로 만료 ----------
     function abort() {
         if (state.status !== 'RUNNING' && state.status !== 'READY') return;
         state.status = 'ABORTED';
         stopClock();
-        clearTimeout(state.timerId);
         tts.stop();
         navigator.sendBeacon(api('/expire'));
-        showOverlay('시험이 종료되었습니다', '시험 중에 화면을 벗어나면\n시험은 종료됩니다.', '확인', goMain);
+        showOverlay('시험이 종료되었습니다', '시험 중에 이전 화면으로 이동해\n시험이 종료되었습니다.', '확인', goMain);
     }
 
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') abort();
-    });
     window.addEventListener('pagehide', abort);
 
-    // 뒤로가기 : 한 번 막고 만료 처리
+    // 뒤로가기 : 시작 전이면 조용히 취소, 진행 중이면 만료 처리 후 안내
     history.pushState(null, '', location.href);
     window.addEventListener('popstate', () => {
-        if (state.status === 'RUNNING' || state.status === 'READY') {
+        if (state.status === 'READY') {
+            cancelReady();
+        } else if (state.status === 'RUNNING') {
             abort();          // 종료 안내 → 확인 시 메인
         } else {
             goMain();

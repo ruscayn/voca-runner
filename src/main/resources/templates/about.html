@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/common :: head}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/about.css}">
+    <title>정보 · 출처 - VocaRunner</title>
+</head>
+<body>
+<div class="app">
+
+    <header class="about-header">
+        <a class="back-btn" th:href="@{/}" aria-label="뒤로">
+            <svg viewBox="0 0 22 22" fill="none" aria-hidden="true"><path d="M13.5 5 L7.5 11 L13.5 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <h1>정보 · 출처</h1>
+    </header>
+
+    <main class="app-content about-content">
+        <p class="about-lead">VocaRunner의 영어 단어와 레벨 분류는 아래 공개 자료를 바탕으로 합니다.</p>
+
+        <!-- CEFR-J : 지정 문구 그대로 표기 (출처 표기 조건) -->
+        <section class="credit">
+            <div class="credit-head">
+                <h2>CEFR-J Wordlist</h2>
+                <span class="credit-range">A1 – B2</span>
+            </div>
+            <p class="credit-quote" lang="en">The CEFR-J Wordlist Version 1.5. Compiled by Yukio Tono, Tokyo University of Foreign Studies.</p>
+            <ul>
+                <li>저작권: Tono Laboratory, Tokyo University of Foreign Studies</li>
+                <li>연구·상업 목적 무료 이용 (출처 표기 조건)</li>
+                <li>배포처: <a href="https://github.com/openlanguageprofiles/olp-en-cefrj" rel="noopener" target="_blank">Open Language Profiles</a> · <a href="http://www.cefr-j.org/" rel="noopener" target="_blank">CEFR-J</a></li>
+            </ul>
+        </section>
+
+        <!-- Octanove : CC BY-SA 4.0 (저작자, 라이선스, 변경 사항, 동일조건) -->
+        <section class="credit">
+            <div class="credit-head">
+                <h2>Octanove Vocabulary Profile</h2>
+                <span class="credit-range">C1 – C2</span>
+            </div>
+            <p class="credit-quote" lang="en">Octanove Vocabulary Profile C1/C2 Version 1.0, created by Octanove Labs, licensed under CC BY-SA 4.0.</p>
+            <ul>
+                <li>제작: <a href="http://www.octanove.com/" rel="noopener" target="_blank">Octanove Labs</a></li>
+                <li>라이선스: <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.ko" rel="noopener" target="_blank">CC BY-SA 4.0 (저작자표시-동일조건변경허락 4.0 국제)</a></li>
+                <li>변경 사항: CEFR-J Wordlist와 합치면서 중복 단어를 정리하고, 한국어 뜻과 레벨별 표시 뜻을 추가했습니다.</li>
+                <li>VocaRunner가 가공한 C1–C2 단어 데이터는 같은 CC BY-SA 4.0 라이선스를 따릅니다.</li>
+            </ul>
+        </section>
+
+        <section class="credit">
+            <h2>레벨 표기에 대해</h2>
+            <p>A1~C2와 Basic · Independent · Proficient는 유럽평의회(Council of Europe)의 CEFR(유럽 언어 공통 참조 기준) 단계 이름입니다. VocaRunner는 위 단어 목록의 레벨 분류를 그대로 사용하며, 시험 결과는 해당 레벨 단어를 얼마나 아는지 보여줄 뿐 CEFR 등급 판정이나 공인 시험이 아닙니다. 유럽평의회와 CEFR-J 프로젝트, Octanove Labs는 VocaRunner와 관련이 없으며 이 서비스를 보증하지 않습니다.</p>
+        </section>
+
+        <section class="credit">
+            <h2>글꼴</h2>
+            <p>Pretendard, Barlow, Barlow Condensed — <a href="https://openfontlicense.org/" rel="noopener" target="_blank">SIL Open Font License 1.1</a></p>
+        </section>
+
+        <p class="about-note">한국어 뜻은 VocaRunner가 작성했습니다.</p>
+    </main>
+
+</div>
+</body>
+</html>

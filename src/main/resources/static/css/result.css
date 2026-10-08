@@ -1,54 +1,85 @@
 /* =========================================================
-   결과 화면 - "채점된 시험지"
-   - 위 : 레벨, 맞힌 수, 점수
-   - 아래 : 틀린 단어. 내 답은 빨간 글씨, 그 아래 정답
+   결과 화면
+   - 위 : 민트색 기록 카드 (점수, 정답 / 오답 / 시간 초과)
+   - 아래 : 틀린 단어 목록 (정답, 내 답, 발음 듣기)
    ========================================================= */
-:root {
-    --wrong: #e5484d;
-    --pen: var(--primary);
-    --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
-}
+.result-content { padding-top: 18px; }
 
-/* ---------- 상단 ---------- */
-.result-header {
-    padding: 20px var(--side) 16px;
-    text-align: left;
-    background: var(--card);
-    border-bottom: 1px solid var(--border);
-}
-
-.score-line {
+.result-top {
     display: flex;
-    align-items: baseline;
-    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
 }
-.level-tag {
-    align-self: center;
-    padding: 3px 8px;
-    font-size: .8rem;
-    font-weight: 700;
-    color: var(--primary);
+.result-top .brand-mark { width: 28px; height: 28px; }
+.result-top .brand-name { font-size: 22px; }
+.result-level { font-size: 13px; font-weight: 600; color: var(--text-2); }
+
+/* ---------- 기록 카드 ---------- */
+.record {
+    padding: 22px 22px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
     background: var(--primary-soft);
-    border-radius: 6px;
+    border-radius: 24px;
 }
-.score { margin: 0; line-height: 1; }
-.score strong { font-size: 2.6rem; font-weight: 800; letter-spacing: -.02em; }
-.score-total { margin-left: 2px; font-size: 1.2rem; font-weight: 600; color: var(--muted); }
-.score-point { margin-left: auto; font-size: 1rem; font-weight: 700; color: var(--muted); }
+.record-head { display: flex; align-items: center; justify-content: space-between; }
+.record-tag {
+    font-family: var(--font-num);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: var(--primary-text);
+}
+
+.record-score { margin: 0; display: flex; align-items: baseline; gap: 6px; }
+.record-score strong {
+    font-family: var(--font-num);
+    font-style: italic;
+    font-weight: 700;
+    font-size: 100px;
+    line-height: .85;
+    letter-spacing: -2px;
+    color: var(--primary-text);
+}
+.record-score span { font-size: 22px; font-weight: 600; }
+
+.record-bar { height: 6px; background: #FFFFFF; border-radius: 99px; overflow: hidden; }
+.record-bar-fill { height: 100%; background: var(--primary); border-radius: 99px; }
+
+.record-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding-top: 2px; }
+.record-stat { display: flex; flex-direction: column; gap: 2px; }
+.record-stat + .record-stat { padding-left: 14px; border-left: 1px solid var(--primary-line); }
+.record-num { font-family: var(--font-num); font-weight: 600; font-size: 26px; line-height: 1; }
+.record-label { font-size: 12px; color: var(--muted); }
 
 /* ---------- 틀린 단어 ---------- */
-.section-title {
-    margin: 8px 0 4px;
-    font-size: .95rem;
+.review-section { padding-top: 26px; display: flex; flex-direction: column; gap: 12px; }
+.section-title { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; }
+.count-badge {
+    padding: 2px 9px;
+    font-family: var(--font-num);
     font-weight: 700;
-    color: var(--muted);
+    font-size: 15px;
+    color: var(--primary-text);
+    background: var(--primary-soft);
+    border-radius: 999px;
 }
 
-.review { margin: 0; padding: 0; list-style: none; }
-
+.review {
+    margin: 0;
+    padding: 0 16px;
+    list-style: none;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+}
 .entry {
-    padding: 18px 0 16px;
-    border-bottom: 1px solid var(--border);
+    padding: 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--fill);
     scroll-margin-top: 12px;
 }
 .entry:last-child { border-bottom: 0; }
@@ -58,76 +89,53 @@
     to   { background: transparent; }
 }
 
-.entry-head { display: flex; align-items: center; gap: 10px; }
-.entry-no {
-    min-width: 26px;
-    font-size: .8rem;
-    font-weight: 700;
-    color: var(--muted);
-}
+.entry-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .entry-word {
-    flex: 1;
-    min-width: 0;
     margin: 0;
-    font-family: var(--serif);
-    font-size: 1.55rem;
-    font-weight: 700;
-    line-height: 1.2;
+    font-family: var(--font-en);
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 1.1;
     word-break: break-word;
+}
+.entry-line { margin: 0; display: flex; align-items: baseline; gap: 8px; font-size: 14.5px; }
+.entry-label { flex: none; font-size: 12px; font-weight: 600; color: var(--muted); }
+.entry-label.answer { color: var(--primary-text); }
+.entry-answer { font-weight: 600; }
+.entry-mine {
+    font-size: 14px;
+    color: var(--danger);
+    text-decoration: line-through;
+    text-decoration-color: rgba(217, 45, 32, .4);
+}
+.entry-timeout {
+    padding: 2px 8px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--muted);
+    background: var(--fill);
+    border-radius: 6px;
 }
 
 .speak {
     flex: none;
     width: 44px;
     height: 44px;
-    padding: 10px;
-    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-2);
     background: var(--bg);
     border: 0;
-    border-radius: 50%;
+    border-radius: 14px;
+    cursor: pointer;
 }
-.speak svg { width: 100%; height: 100%; }
-.speak path { fill: currentColor; }
-.speak .wave { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
-.speak:active { color: var(--primary); background: var(--primary-soft); }
-
-/* 내 답 : 빨간 글씨 */
-.mine {
-    margin: 10px 0 0 36px;
-    font-size: .95rem;
-    color: var(--wrong);
-}
-.mine.none { font-size: .9rem; }
-
-/* 정답 : 고쳐 적은 글씨 */
-.fix {
-    position: relative;
-    margin: 4px 0 0 36px;
-    padding-left: 18px;
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: var(--pen);
-}
-.fix::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: .3em;
-    width: 10px;
-    height: 6px;
-    border-left: 2.5px solid var(--pen);
-    border-bottom: 2.5px solid var(--pen);
-    transform: rotate(-45deg);
-}
+.speak svg { width: 20px; height: 20px; }
+.speak:active { color: var(--primary-text); background: var(--primary-soft); }
 
 /* 모두 정답 */
 .perfect { padding: 56px 0; text-align: center; }
 .perfect-title { margin: 0 0 6px; font-size: 1.25rem; font-weight: 700; }
 .perfect-text { margin: 0; color: var(--muted); }
 
-.link-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-}
+.result-footer { border-top: 1px solid var(--border); }
