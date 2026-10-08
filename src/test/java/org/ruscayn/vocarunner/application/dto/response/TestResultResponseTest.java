@@ -1,0 +1,43 @@
+package org.ruscayn.vocarunner.application.dto.response;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@DisplayName("TestResultResponse : 결과 화면 집계")
+class TestResultResponseTest {
+
+    @Test
+    @DisplayName("틀린 문제를 오답(답을 고름)과 시간 초과(답 없음)로 나눠 센다")
+    void wrongAndTimeoutCount() {
+        List<TestResultResponse.WrongItem> wrongItems = List.of(
+                new TestResultResponse.WrongItem(1, "abandon", "채택하다", "버리다", "abandon"),
+                new TestResultResponse.WrongItem(2, "reluctant", null, "꺼리는", "reluctant"),
+                new TestResultResponse.WrongItem(3, "distinct", "먼", "뚜렷한", "distinct"),
+                new TestResultResponse.WrongItem(4, "compensate", null, "보상하다", "compensate"),
+                new TestResultResponse.WrongItem(5, "sufficient", null, "충분한", "sufficient"));
+
+        TestResultResponse result = new TestResultResponse(
+                UUID.randomUUID(), "B1", "Independent", 10, 5, 50, wrongItems);
+
+        assertThat(result.wrongCount()).isEqualTo(2);
+        assertThat(result.timeoutCount()).isEqualTo(3);
+        assertThat(result.correctCount() + result.wrongCount() + result.timeoutCount())
+                .isEqualTo(result.questionCount());
+    }
+
+    @Test
+    @DisplayName("모두 맞히면 오답·시간 초과 0")
+    void perfect() {
+        TestResultResponse result = new TestResultResponse(
+                UUID.randomUUID(), "A1", "Basic", 5, 5, 100, List.of());
+
+        assertThat(result.wrongCount()).isZero();
+        assertThat(result.timeoutCount()).isZero();
+    }
+
+}
