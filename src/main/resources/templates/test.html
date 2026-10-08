@@ -12,7 +12,10 @@
 <div class="app" id="test-app" th:attr="data-session-id=${sessionId}">
 
     <header class="app-header test-header">
-        <div class="progress-text"><strong id="current-no">0</strong> / <span id="total-count">0</span></div>
+        <div class="test-status">
+            <div class="progress-text"><strong id="current-no">0</strong> / <span id="total-count">0</span></div>
+            <div class="remain-text" id="remain">남은 시간 <strong id="remain-time">--:--</strong></div>
+        </div>
         <div class="timer"><div class="timer-bar" id="timer-bar"></div></div>
     </header>
 

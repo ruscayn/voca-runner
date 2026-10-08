@@ -1,8 +1,23 @@
 /* 시험 화면 */
 .test-header { padding-top: 16px; padding-bottom: 12px; text-align: left; }
 
-.progress-text { font-size: 1rem; color: var(--muted); margin-bottom: 10px; }
+.test-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+}
+.progress-text { font-size: 1rem; color: var(--muted); }
 .progress-text strong { color: var(--text); font-size: 1.15rem; }
+
+/* 남은 전체 시간 (마감까지) */
+.remain-text { font-size: .9rem; color: var(--muted); }
+.remain-text strong {
+    color: var(--text);
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;   /* 숫자 폭 고정 (깜빡임 방지) */
+}
+.remain-text.urgent strong { color: #e5484d; }
 
 .timer {
     height: 8px;

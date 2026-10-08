@@ -5,11 +5,15 @@
  * - 문제 단어가 뜨면 TTS 로 읽어준다 (브라우저 내장 Web Speech API)
  * - 보기를 누르거나 제한 시간이 지나면 바로 다음 문제 (시간 초과 = 답 없음)
  * - 시험 중 화면을 벗어나면(새로고침/뒤로가기/앱 전환/화면 꺼짐) 시험은 만료된다
+ * - 마감(문항 수 × 제한 시간 + 여유)까지 남은 전체 시간을 표시하고, 지나면 시험은 무효
+ *   마감 시각은 메인에서 시험을 만든 순간부터 계산되므로 [시작] 대기 시간도 포함된다
  */
 (() => {
     'use strict';
 
     const INPUT_LOCK_MS = 150;   // 직전 탭이 다음 문제로 넘어가 눌리는 것 방지
+    const CLOCK_TICK_MS = 250;   // 남은 시간 갱신 주기
+    const URGENT_SEC = 60;       // 남은 시간이 이 값 이하이면 빨간색
 
     const app = document.getElementById('test-app');
     const sessionId = app.dataset.sessionId;
@@ -19,6 +23,8 @@
         currentNo: document.getElementById('current-no'),
         total: document.getElementById('total-count'),
         timerBar: document.getElementById('timer-bar'),
+        remain: document.getElementById('remain'),
+        remainTime: document.getElementById('remain-time'),
         prompt: document.getElementById('prompt'),
         options: Array.from(document.querySelectorAll('.option-btn')),
         overlay: document.getElementById('overlay'),
@@ -31,6 +37,9 @@
         questions: [],
         timeLimitMs: 5000,
         direction: 'EN_KO',
+        questionCount: 0,
+        deadlineAt: 0,        // 마감 시각 (performance.now() 기준, 기기 시계와 무관)
+        clockId: null,
         index: -1,
         answers: [],          // { questionNo, selectedOptionNo | null }
         timerId: null,
@@ -112,6 +121,66 @@
         }, state.timeLimitMs * 0.7);
     }
 
+    // ---------- 남은 전체 시간 (마감까지) ----------
+    function remainingSec() {
+        return Math.max(0, Math.ceil((state.deadlineAt - performance.now()) / 1000));
+    }
+
+    /** 03:25 형식 (헤더) */
+    function formatClock(sec) {
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    /** 3분 25초 형식 (안내 문구) */
+    function formatKorean(sec) {
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        if (m === 0) return `${s}초`;
+        return s === 0 ? `${m}분` : `${m}분 ${s}초`;
+    }
+
+    function readyText(sec) {
+        return `${state.questionCount}문항 · 문제당 ${state.timeLimitMs / 1000}초\n`
+            + `${formatKorean(sec)} 안에 마쳐야 하며,\n지나면 시험이 무효가 됩니다.\n`
+            + '시작하면 화면을 벗어나지 마세요.';
+    }
+
+    function tickClock() {
+        const sec = remainingSec();
+        el.remainTime.textContent = formatClock(sec);
+        el.remain.classList.toggle('urgent', sec <= URGENT_SEC);
+
+        // 시작 대기 중에도 마감 시간은 흐르므로 안내 문구를 함께 갱신
+        if (state.status === 'READY') el.overlayText.textContent = readyText(sec);
+
+        if (sec === 0) timeOver();
+    }
+
+    function startClock(remainSecFromServer) {
+        state.deadlineAt = performance.now() + remainSecFromServer * 1000;
+        clearInterval(state.clockId);
+        state.clockId = setInterval(tickClock, CLOCK_TICK_MS);
+        tickClock();
+    }
+
+    function stopClock() {
+        clearInterval(state.clockId);
+    }
+
+    /** 마감 시각 경과 : 시험 무효 (서버도 마감 후 제출은 거절) */
+    function timeOver() {
+        if (state.status !== 'RUNNING' && state.status !== 'READY') return;
+        state.status = 'ABORTED';
+        stopClock();
+        clearTimeout(state.timerId);
+        clearTimeout(state.urgentId);
+        tts.stop();
+        navigator.sendBeacon(api('/expire'));
+        showOverlay('시험이 무효가 되었습니다', '제한 시간이 지나\n시험이 무효가 되었습니다.', '확인', goMain);
+    }
+
     // ---------- 진행 ----------
     function showQuestion(index) {
         state.index = index;
@@ -173,12 +242,12 @@
             state.questions = data.questions;
             state.timeLimitMs = data.timeLimitSec * 1000;
             state.direction = data.direction;
+            state.questionCount = data.questionCount;
             el.total.textContent = data.questionCount;
 
             state.status = 'READY';
-            showOverlay('준비되었습니다',
-                `${data.questionCount}문항 · 문제당 ${data.timeLimitSec}초\n시작하면 화면을 벗어나지 마세요.`,
-                '시작', begin);
+            showOverlay('준비되었습니다', readyText(data.remainingSec), '시작', begin);
+            startClock(data.remainingSec);
         } catch (e) {
             state.status = 'ABORTED';
             showOverlay('시험을 시작할 수 없습니다', e.message, '확인', goMain);
@@ -198,30 +267,49 @@
             if (!res.ok) throw await errorOf(res);
 
             state.status = 'DONE';
+            stopClock();
             location.replace(`/test/${sessionId}/result`);   // 결과 화면 (시험 화면은 기록에서 제거)
         } catch (e) {
-            // 제출 실패 시 다시 시도 (답안은 그대로 유지)
-            state.status = 'RUNNING';   // 이탈 감지 유지
+            if (isFinalError(e)) {
+                // 서버가 거절 (마감 초과·이미 종료·없는 시험 등) : 다시 제출해도 소용없으므로 메인으로
+                state.status = 'ABORTED';
+                stopClock();
+                const title = e.code === 'TEST_005' ? '시험이 무효가 되었습니다' : '제출할 수 없습니다';
+                showOverlay(title, e.message, '확인', goMain);
+                return;
+            }
+            // 네트워크 오류·서버 오류 : 다시 시도 (답안은 그대로 유지)
+            state.status = 'RUNNING';   // 이탈 감지·마감 확인 유지
             showOverlay('제출하지 못했습니다', e.message, '다시 제출', () => {
-                state.status = 'RUNNING';
+                if (state.status !== 'RUNNING') return;
                 submit();
             });
         }
     }
 
+    /** 4xx 응답 = 요청 자체가 거절됨 (재시도 무의미). 네트워크 오류·5xx 는 재시도 가능 */
+    function isFinalError(e) {
+        return typeof e.status === 'number' && e.status >= 400 && e.status < 500;
+    }
+
     async function errorOf(res) {
+        let error;
         try {
             const body = await res.json();
-            return new Error(body.message || `오류 (${res.status})`);
+            error = new Error(body.message || `오류 (${res.status})`);
+            error.code = body.code;
         } catch {
-            return new Error(`오류 (${res.status})`);
+            error = new Error(`오류 (${res.status})`);
         }
+        error.status = res.status;
+        return error;
     }
 
     // ---------- 이탈 감지 : 시험 중(시작 대기 포함) 화면을 벗어나면 만료 ----------
     function abort() {
         if (state.status !== 'RUNNING' && state.status !== 'READY') return;
         state.status = 'ABORTED';
+        stopClock();
         clearTimeout(state.timerId);
         tts.stop();
         navigator.sendBeacon(api('/expire'));

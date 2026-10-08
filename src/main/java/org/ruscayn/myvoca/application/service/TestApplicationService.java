@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -77,7 +78,11 @@ public class TestApplicationService {
     /** 시험 화면용 문제 (진행 중인 시험만, 정답 번호 제외) */
     public TestQuestionsResponse getQuestions(UUID sessionId) {
         TestSession session = find(sessionId);
-        requireInProgress(session);
+        Instant now = Instant.now();
+        if (!session.isInProgress(now)) {
+            throw new CustomException(ErrorCode.TEST_NOT_IN_PROGRESS);
+        }
+        long remainingSec = Math.max(0, Duration.between(now, session.getDeadline()).toSeconds());
 
         Direction direction = session.getDirection();
         List<TestQuestionView> questions = new ArrayList<>(session.getQuestionCount());
@@ -91,6 +96,7 @@ public class TestApplicationService {
                 direction.name(),
                 session.getQuestionCount(),
                 session.getTimeLimitSec(),
+                remainingSec,
                 questions);
     }
 
@@ -158,6 +164,12 @@ public class TestApplicationService {
         return testProperties.questionCount();
     }
 
+    /** 시험을 마쳐야 하는 전체 시간(초) = 문항 수 × 제한 시간 + 여유 시간. 시작 전 안내용 */
+    public long getAllowedSec() {
+        return TestSession.allowedDuration(
+                testProperties.questionCount(), TestSession.DEFAULT_TIME_LIMIT_SEC, testProperties.grace()).toSeconds();
+    }
+
     /** 진행 중(마감 전)인 시험인지 */
     public boolean isInProgress(UUID sessionId) {
         Instant now = Instant.now();
@@ -210,12 +222,6 @@ public class TestApplicationService {
     private TestSession find(UUID sessionId) {
         return testSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ENTITY_NOT_FOUND, "시험을 찾을 수 없습니다. (종료되었거나 만료됨)"));
-    }
-
-    private void requireInProgress(TestSession session) {
-        if (!session.isInProgress(Instant.now())) {
-            throw new CustomException(ErrorCode.TEST_NOT_IN_PROGRESS);
-        }
     }
 
 }

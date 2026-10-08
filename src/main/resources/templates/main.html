@@ -33,6 +33,10 @@
             <span th:text="|${questionCount}문항|">500문항</span> ·
             <span th:text="|문제당 ${timeLimitSec}초|">문제당 5초</span>
         </p>
+        <p class="info time-info" th:with="m=${allowedSec / 60}, s=${allowedSec % 60}">
+            <strong th:text="|${m}분${s != 0 ? ' ' + s + '초' : ''}|">44분 40초</strong> 안에 마쳐야 하며,
+            지나면 시험이 무효가 됩니다.
+        </p>
         <button type="submit" class="primary-btn" id="start-btn">시험 시작</button>
     </footer>
 

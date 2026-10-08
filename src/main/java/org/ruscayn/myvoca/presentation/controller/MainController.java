@@ -21,6 +21,7 @@ public class MainController {
         model.addAttribute("levels", levelApplicationService.getDetailLevels());
         model.addAttribute("questionCount", testApplicationService.getQuestionCount());
         model.addAttribute("timeLimitSec", TestSession.DEFAULT_TIME_LIMIT_SEC);
+        model.addAttribute("allowedSec", testApplicationService.getAllowedSec());
         return "main";
     }
 

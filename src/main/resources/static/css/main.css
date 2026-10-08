@@ -107,6 +107,8 @@ body {
 
 /* 하단 */
 .info { margin: 0 0 10px; text-align: center; color: var(--muted); font-size: .9rem; }
+.time-info { margin-top: -6px; font-size: .85rem; }
+.time-info strong { color: var(--text); }
 
 .primary-btn {
     width: 100%;
