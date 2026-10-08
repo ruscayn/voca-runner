@@ -1,6 +1,6 @@
 spring:
   application:
-    name: my-voca
+    name: voca-runner
 
   config:
     import: classpath:secret.yml   # DB 계정 (git 제외 파일)
@@ -25,14 +25,14 @@ spring:
 logging:
   level:
     root: INFO
-    org.ruscayn.myvoca: DEBUG
+    org.ruscayn.vocarunner: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.orm.jdbc.bind: TRACE
 
 server:
   port: 8080
 
-my-voca:
+voca-runner:
   test:
     question-count: 5              # 개발 테스트용. 실제 서비스는 500
     grace: 3m                      # 마감 = 문항 수 × 제한 시간 + 여유 시간

@@ -6,7 +6,7 @@ plugins {
 
 group = 'org.ruscayn'
 version = '0.0.1-SNAPSHOT'
-description = 'my-voca'
+description = 'voca-runner'
 
 java {
     toolchain {
