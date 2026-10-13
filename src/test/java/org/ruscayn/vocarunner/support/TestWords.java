@@ -15,11 +15,21 @@ public final class TestWords {
 
     /** 단어 1개. 뜻은 겹치지 않게 "뜻{wordId}" */
     public static CatalogWord word(long levelWordId, long wordId, Level level) {
-        return new CatalogWord(levelWordId, wordId, "word" + wordId, level, List.of("뜻" + wordId));
+        return new CatalogWord(levelWordId, wordId, "word" + wordId, null, level, List.of("뜻" + wordId), false);
     }
 
     public static CatalogWord word(long levelWordId, long wordId, Level level, String... meanings) {
-        return new CatalogWord(levelWordId, wordId, "word" + wordId, level, List.of(meanings));
+        return new CatalogWord(levelWordId, wordId, "word" + wordId, null, level, List.of(meanings), false);
+    }
+
+    /** 시험 제외 단어 1개. 뜻은 "뜻{wordId}" */
+    public static CatalogWord excluded(long levelWordId, long wordId, Level level) {
+        return new CatalogWord(levelWordId, wordId, "word" + wordId, null, level, List.of("뜻" + wordId), true);
+    }
+
+    /** 시험 제외 단어 1개 (뜻 지정) */
+    public static CatalogWord excluded(long levelWordId, long wordId, Level level, String... meanings) {
+        return new CatalogWord(levelWordId, wordId, "word" + wordId, null, level, List.of(meanings), true);
     }
 
     /**

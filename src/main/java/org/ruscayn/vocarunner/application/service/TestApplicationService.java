@@ -192,6 +192,7 @@ public class TestApplicationService {
             wrongItems.add(new TestResultResponse.WrongItem(
                     no,
                     promptText(answer, direction),
+                    promptSubText(answer, direction),
                     selectedId == null ? null : optionText(wordCatalog.get(selectedId), direction),
                     optionText(answer, direction),
                     answer.headword()));
@@ -211,11 +212,17 @@ public class TestApplicationService {
         List<TestQuestionView.Option> optionViews = IntStream.range(0, optionIds.size())
                 .mapToObj(i -> new TestQuestionView.Option(i + 1, optionText(wordCatalog.get(optionIds.get(i)), direction)))
                 .toList();
-        return new TestQuestionView(no, promptText(wordCatalog.get(session.answerLevelWordId(no)), direction), optionViews);
+        CatalogWord answer = wordCatalog.get(session.answerLevelWordId(no));
+        return new TestQuestionView(no, promptText(answer, direction), promptSubText(answer, direction), optionViews);
     }
 
     private String promptText(CatalogWord answer, Direction direction) {
         return direction == Direction.EN_KO ? answer.headword() : answer.meaningText();
+    }
+
+    /** 영어 단어가 문제일 때만 함께 표시할 형태를 붙인다 */
+    private String promptSubText(CatalogWord answer, Direction direction) {
+        return direction == Direction.EN_KO ? answer.headwordSub() : null;
     }
 
     private String optionText(CatalogWord option, Direction direction) {

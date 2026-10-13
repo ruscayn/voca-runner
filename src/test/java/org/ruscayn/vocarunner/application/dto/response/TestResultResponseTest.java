@@ -15,11 +15,12 @@ class TestResultResponseTest {
     @DisplayName("틀린 문제를 오답(답을 고름)과 시간 초과(답 없음)로 나눠 센다")
     void wrongAndTimeoutCount() {
         List<TestResultResponse.WrongItem> wrongItems = List.of(
-                new TestResultResponse.WrongItem(1, "abandon", "채택하다", "버리다", "abandon"),
-                new TestResultResponse.WrongItem(2, "reluctant", null, "꺼리는", "reluctant"),
-                new TestResultResponse.WrongItem(3, "distinct", "먼", "뚜렷한", "distinct"),
-                new TestResultResponse.WrongItem(4, "compensate", null, "보상하다", "compensate"),
-                new TestResultResponse.WrongItem(5, "sufficient", null, "충분한", "sufficient"));
+                new TestResultResponse.WrongItem(1, "abandon", null, "채택하다", "버리다", "abandon"),
+                new TestResultResponse.WrongItem(2, "reluctant", null, null, "꺼리는", "reluctant"),
+                new TestResultResponse.WrongItem(3, "distinct", null, "먼", "뚜렷한", "distinct"),
+                new TestResultResponse.WrongItem(4, "compensate", null, null, "보상하다", "compensate"),
+                new TestResultResponse.WrongItem(5, "for the sake of", "for one's sake", null, "~을 위해서",
+                        "for the sake of"));
 
         TestResultResponse result = new TestResultResponse(
                 UUID.randomUUID(), "B1", "Independent", 10, 5, 50, wrongItems);

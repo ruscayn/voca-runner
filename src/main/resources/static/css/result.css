@@ -98,6 +98,15 @@
     line-height: 1.1;
     word-break: break-word;
 }
+.entry-sub {
+    margin: -2px 0 0;
+    font-family: var(--font-en);
+    font-weight: 500;
+    font-size: 15px;
+    line-height: 1.2;
+    color: var(--text-2);
+    word-break: break-word;
+}
 .entry-line { margin: 0; display: flex; align-items: baseline; gap: 8px; font-size: 14.5px; }
 .entry-label { flex: none; font-size: 12px; font-weight: 600; color: var(--muted); }
 .entry-label.answer { color: var(--primary-text); }

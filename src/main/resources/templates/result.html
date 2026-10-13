@@ -44,6 +44,7 @@
                 <li class="entry" th:each="item : ${result.wrongItems()}" th:id="|q${item.no()}|">
                     <div class="entry-body">
                         <p class="entry-word" lang="en" th:text="${item.prompt()}">abandon</p>
+                        <p class="entry-sub" lang="en" th:if="${item.promptSub() != null}" th:text="${item.promptSub()}">for one's sake</p>
                         <p class="entry-line">
                             <span class="entry-label answer">정답</span>
                             <span class="entry-answer" th:text="${item.answerText()}">버리다, 포기하다</span>

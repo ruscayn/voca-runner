@@ -10,13 +10,16 @@ import java.util.List;
  * <p>JPA Entity 를 캐시에 그대로 두지 않고 필요한 값만 복사해 둔다.
  * (지연 로딩 오류, 공유 객체 변경 위험 방지)
  *
- * @param levelWordId level_word_id
- * @param wordId      word_id (같은 단어 판별용)
- * @param headword    영어 표제어
- * @param level       세부 레벨 A1~C2
- * @param meanings    보기에 보여줄 한국어 뜻 1~2개
+ * @param levelWordId  level_word_id
+ * @param wordId       word_id (같은 단어 판별용)
+ * @param headword     영어 표제어
+ * @param headwordSub  표제어 아래 함께 표시할 형태 (예: for one's sake). 없으면 null
+ * @param level        세부 레벨 A1~C2
+ * @param meanings     보기에 보여줄 한국어 뜻 1~2개
+ * @param testExcluded 이 레벨에서 시험 제외. 정답 문제로는 내지 않고 오답 보기로만 사용
  */
-public record CatalogWord(long levelWordId, long wordId, String headword, Level level, List<String> meanings) {
+public record CatalogWord(long levelWordId, long wordId, String headword, String headwordSub,
+                          Level level, List<String> meanings, boolean testExcluded) {
 
     public CatalogWord {
         if (level == null || level.isGroup()) {
@@ -28,12 +31,20 @@ public record CatalogWord(long levelWordId, long wordId, String headword, Level 
         if (meanings == null || meanings.isEmpty()) {
             throw new IllegalArgumentException("표시 뜻이 없습니다: levelWordId=" + levelWordId);
         }
+        if (headwordSub != null && headwordSub.isBlank()) {
+            headwordSub = null;
+        }
         meanings = List.copyOf(meanings);
     }
 
     /** 보기 표시용 뜻 텍스트 (예: "자유로운, 무료의") */
     public String meaningText() {
         return String.join(", ", meanings);
+    }
+
+    /** 정답 문제로 낼 수 있는지 */
+    public boolean isAnswerable() {
+        return !testExcluded;
     }
 
 }

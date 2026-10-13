@@ -19,6 +19,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.ruscayn.vocarunner.support.TestWords.excluded;
 import static org.ruscayn.vocarunner.support.TestWords.word;
 import static org.ruscayn.vocarunner.support.TestWords.words;
 
@@ -135,6 +136,84 @@ class TestQuestionGeneratorTest {
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.TEST_NOT_ENOUGH_WORDS);
+    }
+
+    @ParameterizedTest(name = "seed {0}")
+    @ValueSource(longs = {1, 3, 42, 2026})
+    @DisplayName("시험 제외 단어는 정답으로 나오지 않고 오답 보기로는 쓰인다")
+    void excludedOnlyAsDistractor(long seed) {
+        // 출제 20개 + 시험 제외 40개 → 오답 보기 후보의 대부분이 제외 단어
+        List<CatalogWord> catalog = new ArrayList<>(words(Level.B1, 1, 20));
+        Set<Long> excludedIds = new HashSet<>();
+        for (long id = 101; id <= 140; id++) {
+            catalog.add(excluded(id, id, Level.B1));
+            excludedIds.add(id);
+        }
+
+        List<GeneratedQuestion> questions = generator(catalog, seed).generate(Level.B1, 20);
+
+        assertThat(questions).hasSize(20);
+        assertQuestionRules(questions);
+        assertThat(questions).extracting(q -> q.answer().levelWordId())
+                .as("정답에 시험 제외 단어 없음")
+                .doesNotContainAnyElementsOf(excludedIds);
+        assertThat(questions).flatExtracting(GeneratedQuestion::options)
+                .extracting(CatalogWord::levelWordId)
+                .as("오답 보기에는 시험 제외 단어 사용")
+                .containsAnyElementsOf(excludedIds);
+    }
+
+    @Test
+    @DisplayName("출제 단어 수는 시험 제외 단어를 빼고 센다 (부족하면 생성하지 않음)")
+    void excludedNotCountedAsAnswerPool() {
+        List<CatalogWord> catalog = new ArrayList<>(words(Level.A1, 1, 10));
+        for (long id = 101; id <= 130; id++) {
+            catalog.add(excluded(id, id, Level.A1));
+        }
+
+        assertThat(new InMemoryWordCatalog(catalog).countByLevel(Level.A1)).isEqualTo(10);
+        assertThatThrownBy(() -> generator(catalog, 1).generate(Level.A1, 11))
+                .isInstanceOf(CustomException.class)
+                .extracting(e -> ((CustomException) e).getErrorCode())
+                .isEqualTo(ErrorCode.TEST_NOT_ENOUGH_WORDS);
+    }
+
+    @ParameterizedTest(name = "seed {0}")
+    @ValueSource(longs = {1, 3, 42, 2026})
+    @DisplayName("묶음 레벨 : 낮은 레벨이 시험 제외면 높은 레벨 행으로 출제")
+    void groupLevelExcludedLowerUsesHigher(long seed) {
+        List<CatalogWord> catalog = new ArrayList<>(words(Level.A1, 1, 30));
+        catalog.addAll(words(Level.A2, 101, 30));
+        // word 900 : A1 은 시험 제외, A2 는 출제
+        catalog.add(excluded(900, 900, Level.A1, "A1뜻900"));
+        catalog.add(word(901, 900, Level.A2, "A2뜻900"));
+
+        // 출제 가능 = A1 30 + A2 30 + word 900(A2) = 61
+        assertThat(new InMemoryWordCatalog(catalog).countByLevel(Level.A)).isEqualTo(61);
+
+        List<GeneratedQuestion> questions = generator(catalog, seed).generate(Level.A, 61);
+
+        assertQuestionRules(questions);
+        assertThat(questions).extracting(q -> q.answer().levelWordId())
+                .as("word 900 은 A2 행으로 출제")
+                .contains(901L)
+                .doesNotContain(900L);
+    }
+
+    @Test
+    @DisplayName("묶음 레벨 출제 단어 수는 같은 단어를 한 번만 센다")
+    void groupLevelCountDedupe() {
+        List<CatalogWord> catalog = new ArrayList<>(words(Level.B1, 1, 10));
+        catalog.addAll(words(Level.B2, 101, 5));
+        for (long wordId = 1; wordId <= 3; wordId++) {      // B1 단어 3개가 B2 에도 있음
+            catalog.add(word(500 + wordId, wordId, Level.B2, "B2뜻" + wordId));
+        }
+
+        InMemoryWordCatalog wordCatalog = new InMemoryWordCatalog(catalog);
+
+        assertThat(wordCatalog.countByLevel(Level.B1)).isEqualTo(10);
+        assertThat(wordCatalog.countByLevel(Level.B2)).isEqualTo(8);
+        assertThat(wordCatalog.countByLevel(Level.B)).isEqualTo(15);
     }
 
     @Test

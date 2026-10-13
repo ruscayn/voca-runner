@@ -24,8 +24,10 @@ public class CatalogWordLoader {
                         lw.getId(),
                         lw.getWord().getId(),
                         lw.headword(),
+                        lw.getWord().getHeadwordSub(),
                         lw.getLevel(),
-                        lw.displayMeaningTexts()))
+                        lw.displayMeaningTexts(),
+                        lw.isTestExcluded()))
                 .toList();
     }
 

@@ -62,8 +62,10 @@
 /* ---------- 단어 ---------- */
 .test-content {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 12px;
 }
 .prompt {
     margin: 0;
@@ -75,6 +77,18 @@
     text-align: center;
     word-break: break-word;
 }
+/* 함께 표시할 형태 (예: for the sake of / for one's sake) */
+.prompt-sub {
+    margin: 0;
+    font-family: var(--font-en);
+    font-weight: 500;
+    font-size: 24px;
+    line-height: 1.2;
+    text-align: center;
+    word-break: break-word;
+    color: var(--text-2);
+}
+.prompt-sub[hidden] { display: none; }
 
 /* ---------- 문제당 타이머 ---------- */
 .q-timer {

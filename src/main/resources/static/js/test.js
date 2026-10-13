@@ -32,6 +32,7 @@
         remain: $('remain'),
         remainTime: $('remain-time'),
         prompt: $('prompt'),
+        promptSub: $('prompt-sub'),
         timerBar: $('timer-bar'),
         timerSecBox: $('timer-sec-box'),
         timerSec: $('timer-sec'),
@@ -241,6 +242,9 @@
         el.currentNo.textContent = q.no;
         el.progressFill.style.width = `${(index / state.questionCount) * 100}%`;
         el.prompt.textContent = q.prompt;
+        // 함께 표시할 형태 (예: for one's sake). 발음은 표제어(q.prompt)만 읽는다
+        el.promptSub.textContent = q.promptSub || '';
+        el.promptSub.hidden = !q.promptSub;
         q.options.forEach((opt, i) => {
             el.options[i].querySelector('.option-text').textContent = opt.text;
             el.options[i].dataset.no = opt.no;

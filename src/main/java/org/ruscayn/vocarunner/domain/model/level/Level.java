@@ -6,8 +6,8 @@ import java.util.List;
 /**
  * 레벨 코드. DB 테이블 없이 enum 으로 관리한다.
  * <ul>
- *   <li>세부 레벨 A1~C2 : level_word.level_code, test_session.level_code</li>
- *   <li>묶음 레벨 A/B/C  : test_session.level_code 에서만 사용 (A = A1 + A2)</li>
+ *   <li>세부 레벨 A1~C2 : level_word.level_code, 시험 레벨</li>
+ *   <li>묶음 레벨 A/B/C  : 시험 레벨로만 사용, DB 에는 저장하지 않음 (A = A1 + A2)</li>
  * </ul>
  * 선언 순서가 낮은 레벨 → 높은 레벨 순서이며, 비교에 사용한다.
  */

@@ -28,8 +28,8 @@ public class WordCatalogConfig {
                 .filter(level -> !level.isGroup())
                 .map(level -> level + "=" + catalog.countByLevel(level))
                 .collect(Collectors.joining(", "));
-        log.info("단어 캐시 로딩 완료: 전체 {}개 ({}) {}ms",
-                catalog.size(), perLevel, System.currentTimeMillis() - begin);
+        log.info("단어 캐시 로딩 완료: 전체 {}행, 시험 제외 {}행, 레벨별 출제 가능 ({}) {}ms",
+                catalog.size(), catalog.excludedCount(), perLevel, System.currentTimeMillis() - begin);
         return catalog;
     }
 

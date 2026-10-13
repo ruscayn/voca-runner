@@ -9,19 +9,24 @@ import java.util.List;
  *
  * <p>구현체는 서버 시작 시 전체 단어를 한 번 읽어 메모리에 보관한다.
  * 문제 생성·결과 표시에서는 DB 를 조회하지 않고 이 목록만 사용한다.
+ *
+ * <p>묶음 레벨(A/B/C)은 소속 세부 레벨 단어를 합치고, 두 레벨에 모두 있는 단어는 낮은 레벨 1행만 남긴다.
  */
 public interface WordCatalog {
 
     /**
-     * 레벨의 출제 단어 목록 (불변).
-     * 묶음 레벨(A/B/C)이면 소속 세부 레벨 단어를 합쳐서 반환한다. (같은 단어 중복 정리는 하지 않음)
+     * 정답 문제 후보 (불변). 시험 제외 행을 먼저 빼고, 그다음 단어당 1행(낮은 레벨)만 남긴다.
+     * <p>순서가 반대면 "낮은 레벨은 제외, 높은 레벨은 출제"인 단어가 아예 출제되지 않으므로 이 순서를 지킨다.
      */
-    List<CatalogWord> findByLevel(Level level);
+    List<CatalogWord> findAnswerPool(Level level);
 
-    /** level_word_id 로 조회. 없으면 예외 */
+    /** 오답 보기 후보 (불변). 시험 제외 행 포함, 단어당 1행(낮은 레벨) */
+    List<CatalogWord> findOptionPool(Level level);
+
+    /** level_word_id 로 조회 (시험 제외 행 포함). 없으면 예외 */
     CatalogWord get(long levelWordId);
 
-    /** 레벨의 출제 단어 수 */
+    /** 레벨의 출제 가능 단어 수 (= 정답 문제 후보 수). 화면 표시용 */
     int countByLevel(Level level);
 
 }

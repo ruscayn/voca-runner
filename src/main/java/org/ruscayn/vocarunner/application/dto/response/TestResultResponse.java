@@ -29,11 +29,13 @@ public record TestResultResponse(
      *
      * @param no           문제 번호
      * @param prompt       문제 (EN_KO: 영어 단어)
+     * @param promptSub    문제 아래 줄에 함께 표시할 형태. 없으면 null
      * @param selectedText 내가 고른 답. 미입력(시간 초과)이면 null
      * @param answerText   정답
      * @param headword     영어 단어 (TTS 용)
      */
-    public record WrongItem(int no, String prompt, String selectedText, String answerText, String headword) {
+    public record WrongItem(int no, String prompt, String promptSub, String selectedText, String answerText,
+                            String headword) {
     }
 
 }
