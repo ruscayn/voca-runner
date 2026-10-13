@@ -8,7 +8,7 @@ import java.time.Duration;
 /**
  * 시험 운영 설정 (application.yaml : voca-runner.test.*)
  *
- * @param questionCount        문항 수
+ * @param questionCount        최대 문항 수. 레벨의 출제 가능 단어가 더 적으면 그 레벨 단어 전체를 출제
  * @param grace                마감 여유 시간. 마감 = (문항 수 × 제한 시간 + 여유)를 분 단위로 올림
  * @param resultRetention      제출 후 결과를 메모리에 보관하는 시간
  * @param maxInProgress        전체 동시 진행 상한. 넘으면 새 시작 거절

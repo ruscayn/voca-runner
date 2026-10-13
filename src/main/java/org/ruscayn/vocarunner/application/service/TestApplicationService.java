@@ -162,16 +162,6 @@ public class TestApplicationService {
                 });
     }
 
-    public int getQuestionCount() {
-        return testProperties.questionCount();
-    }
-
-    /** 시험을 마쳐야 하는 전체 시간(분, 올림). 시작 전 안내용 */
-    public long getAllowedMinutes() {
-        return TestSession.allowedDuration(
-                testProperties.questionCount(), TestSession.DEFAULT_TIME_LIMIT_SEC, testProperties.grace()).toMinutes();
-    }
-
     /** 진행 중(마감 전)인 시험인지 */
     public boolean isInProgress(UUID sessionId) {
         Instant now = Instant.now();

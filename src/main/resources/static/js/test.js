@@ -124,7 +124,7 @@
         showOverlay('준비되면 출발하세요', '', '시작', begin);
         el.sheetEyebrow.textContent = `${data.level} · ${data.levelGroup}`;
         el.sheetEyebrow.hidden = false;
-        $('ready-count').textContent = data.questionCount;
+        $('ready-count').textContent = data.questionCount.toLocaleString('ko-KR');
         $('ready-sec').textContent = data.timeLimitSec;
         $('ready-min').textContent = data.allowedMinutes;
         $('ready-min-text').textContent = data.allowedMinutes;

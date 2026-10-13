@@ -124,7 +124,7 @@ class TestQuestionGeneratorTest {
     }
 
     @Test
-    @DisplayName("묶음 레벨 : 중복 정리 후 단어가 부족하면 생성하지 않는다")
+    @DisplayName("묶음 레벨 : 중복 정리 후 단어 수가 문항 수보다 적으면 고유 단어 전체를 출제")
     void groupLevelCountsAfterDedupe() {
         List<CatalogWord> catalog = new ArrayList<>(words(Level.A1, 1, 10));
         // A2 는 A1 과 같은 단어 10개뿐 → 고유 단어 10개
@@ -132,10 +132,10 @@ class TestQuestionGeneratorTest {
             catalog.add(word(100 + wordId, wordId, Level.A2, "A2뜻" + wordId));
         }
 
-        assertThatThrownBy(() -> generator(catalog, 1).generate(Level.A, 11))
-                .isInstanceOf(CustomException.class)
-                .extracting(e -> ((CustomException) e).getErrorCode())
-                .isEqualTo(ErrorCode.TEST_NOT_ENOUGH_WORDS);
+        List<GeneratedQuestion> questions = generator(catalog, 1).generate(Level.A, 11);
+
+        assertThat(questions).hasSize(10);
+        assertQuestionRules(questions);
     }
 
     @ParameterizedTest(name = "seed {0}")
@@ -164,7 +164,7 @@ class TestQuestionGeneratorTest {
     }
 
     @Test
-    @DisplayName("출제 단어 수는 시험 제외 단어를 빼고 센다 (부족하면 생성하지 않음)")
+    @DisplayName("출제 단어 수는 시험 제외 단어를 빼고 센다 (문항 수가 더 많으면 출제 가능 단어만 출제)")
     void excludedNotCountedAsAnswerPool() {
         List<CatalogWord> catalog = new ArrayList<>(words(Level.A1, 1, 10));
         for (long id = 101; id <= 130; id++) {
@@ -172,7 +172,22 @@ class TestQuestionGeneratorTest {
         }
 
         assertThat(new InMemoryWordCatalog(catalog).countByLevel(Level.A1)).isEqualTo(10);
-        assertThatThrownBy(() -> generator(catalog, 1).generate(Level.A1, 11))
+
+        List<GeneratedQuestion> questions = generator(catalog, 1).generate(Level.A1, 11);
+
+        assertThat(questions).hasSize(10);
+        assertThat(questions).allMatch(q -> !q.answer().testExcluded());
+    }
+
+    @Test
+    @DisplayName("레벨에 출제 가능 단어가 하나도 없으면 TEST_NOT_ENOUGH_WORDS")
+    void noAnswerableWords() {
+        List<CatalogWord> catalog = new ArrayList<>(words(Level.A1, 1, 10));
+        for (long id = 101; id <= 110; id++) {
+            catalog.add(excluded(id, id, Level.A2));
+        }
+
+        assertThatThrownBy(() -> generator(catalog, 1).generate(Level.A2, 5))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.TEST_NOT_ENOUGH_WORDS);
@@ -217,14 +232,15 @@ class TestQuestionGeneratorTest {
     }
 
     @Test
-    @DisplayName("단어가 문제 수보다 적으면 TEST_NOT_ENOUGH_WORDS")
-    void notEnoughWords() {
+    @DisplayName("단어가 문제 수보다 적으면 그 레벨 단어 전체를 한 번씩 출제")
+    void fewerWordsThanCount() {
         List<CatalogWord> catalog = words(Level.A1, 1, 10);
 
-        assertThatThrownBy(() -> generator(catalog, 1).generate(Level.A1, 11))
-                .isInstanceOf(CustomException.class)
-                .extracting(e -> ((CustomException) e).getErrorCode())
-                .isEqualTo(ErrorCode.TEST_NOT_ENOUGH_WORDS);
+        List<GeneratedQuestion> questions = generator(catalog, 1).generate(Level.A1, 10000);
+
+        assertThat(questions).extracting(q -> q.answer().wordId())
+                .containsExactlyInAnyOrderElementsOf(catalog.stream().map(CatalogWord::wordId).toList());
+        assertQuestionRules(questions);
     }
 
     @Test

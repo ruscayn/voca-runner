@@ -49,16 +49,16 @@ public class TestQuestionGenerator {
     }
 
     /**
-     * 문제를 생성한다.
+     * 문제를 생성한다. 출제 가능 단어가 maxCount 보다 적으면 그 레벨 단어 전체를 출제한다.
      *
-     * @param level 사용자가 고른 레벨 (세부 또는 묶음)
-     * @param count 문제 수
+     * @param level    사용자가 고른 레벨 (세부 또는 묶음)
+     * @param maxCount 최대 문제 수 (설정값)
      */
-    public List<GeneratedQuestion> generate(Level level, int count) {
+    public List<GeneratedQuestion> generate(Level level, int maxCount) {
         List<CatalogWord> answerPool = wordCatalog.findAnswerPool(level);
-        if (answerPool.size() < count) {
-            throw new CustomException(ErrorCode.TEST_NOT_ENOUGH_WORDS,
-                    "레벨 " + level + " 출제 가능 단어 " + answerPool.size() + "개로 " + count + "문제를 만들 수 없습니다.");
+        int count = questionCount(answerPool.size(), maxCount);
+        if (count == 0) {
+            throw new CustomException(ErrorCode.TEST_NOT_ENOUGH_WORDS, "레벨 " + level + " 에 출제 가능한 단어가 없습니다.");
         }
 
         // 오답 보기 후보 (시험 제외 단어 포함), 세부 레벨별
@@ -77,6 +77,11 @@ public class TestQuestionGenerator {
             result.add(new GeneratedQuestion(answer, pickOptions(answer, sameLevel, random)));
         }
         return result;
+    }
+
+    /** 실제 문제 수 = min(출제 가능 단어 수, 최대 문제 수). 메인 화면 안내도 같은 규칙을 쓴다 */
+    public static int questionCount(int answerPoolSize, int maxCount) {
+        return Math.min(answerPoolSize, maxCount);
     }
 
     /** 정답 + 오답 3개를 섞어서 반환 */

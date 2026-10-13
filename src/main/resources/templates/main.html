@@ -27,6 +27,7 @@
                     <label class="level-card" th:each="lv, stat : ${group.levels()}">
                         <input type="radio" name="level" required
                                th:value="${lv.code()}"
+                               th:attr="data-question-count=${lv.questionCount()},data-allowed-minutes=${lv.allowedMinutes()}"
                                th:checked="${groupStat.first and stat.first}">
                         <span class="level-top">
                             <span class="level-code" th:text="${lv.code()}">A1</span>
@@ -44,7 +45,7 @@
     <footer class="app-footer main-footer">
         <div class="stat-strip">
             <div class="stat">
-                <span class="stat-value" th:text="${questionCount}">500</span>
+                <span class="stat-value" id="question-count" th:text="${#numbers.formatInteger(questionCount, 1, 'COMMA')}">500</span>
                 <span class="stat-label">문항</span>
             </div>
             <div class="stat">
@@ -52,13 +53,13 @@
                 <span class="stat-label">문제당</span>
             </div>
             <div class="stat">
-                <span class="stat-value"><th:block th:text="${allowedMinutes}">45</th:block><span class="stat-unit">분</span></span>
+                <span class="stat-value"><span id="allowed-minutes" th:text="${allowedMinutes}">45</span><span class="stat-unit">분</span></span>
                 <span class="stat-label">제한 시간</span>
             </div>
         </div>
         <p class="rule-note">
             <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 7.2 V11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="5" r=".9" fill="currentColor"/></svg>
-            <span th:text="|${allowedMinutes}분 안에 제출하지 않으면 무효 처리됩니다.|">45분 안에 제출하지 않으면 무효 처리됩니다.</span>
+            <span><span id="allowed-minutes-text" th:text="${allowedMinutes}">45</span>분 안에 제출하지 않으면 무효 처리됩니다.</span>
         </p>
         <button type="submit" class="primary-btn" id="start-btn">
             <span id="start-label">A1 코스 시작</span>
@@ -72,11 +73,19 @@
         const form = document.getElementById('start-form');
         const btn = document.getElementById('start-btn');
         const label = document.getElementById('start-label');
+        const questionCount = document.getElementById('question-count');
+        const allowedMinutes = document.getElementById('allowed-minutes');
+        const allowedMinutesText = document.getElementById('allowed-minutes-text');
 
         // 버튼 문구에 선택한 레벨 표시 (예: B1 코스 시작)
+        // 문항 수·제한 시간도 선택한 레벨 기준 (단어가 설정 문항 수보다 적으면 그 레벨 전체)
         function syncLabel() {
             const checked = form.querySelector('input[name="level"]:checked');
             label.textContent = checked ? `${checked.value} 코스 시작` : '코스 시작';
+            if (!checked) return;
+            questionCount.textContent = Number(checked.dataset.questionCount).toLocaleString('ko-KR');
+            allowedMinutes.textContent = checked.dataset.allowedMinutes;
+            allowedMinutesText.textContent = checked.dataset.allowedMinutes;
         }
         form.addEventListener('change', syncLabel);
 
