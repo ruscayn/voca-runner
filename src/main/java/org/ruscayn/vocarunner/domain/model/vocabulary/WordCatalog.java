@@ -3,6 +3,7 @@ package org.ruscayn.vocarunner.domain.model.vocabulary;
 import org.ruscayn.vocarunner.domain.model.level.Level;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * 출제 단어 목록 (단어 캐시).
@@ -28,5 +29,12 @@ public interface WordCatalog {
 
     /** 레벨의 출제 가능 단어 수 (= 정답 문제 후보 수). 화면 표시용 */
     int countByLevel(Level level);
+
+    /**
+     * 이 단어와 헷갈리는 단어의 word_id (불변). 같은 묶음의 다른 단어 전체이며, 없으면 빈 집합.
+     * <p>양방향이다: A 의 결과에 B 가 있으면 B 의 결과에도 A 가 있다.
+     * 한 문제의 보기에는 서로 헷갈리는 단어를 함께 내지 않는다.
+     */
+    Set<Long> findConfusableWordIds(long wordId);
 
 }

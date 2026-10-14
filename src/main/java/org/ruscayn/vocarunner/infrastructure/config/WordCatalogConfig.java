@@ -22,14 +22,15 @@ public class WordCatalogConfig {
     @Bean
     public WordCatalog wordCatalog(CatalogWordLoader loader) {
         long begin = System.currentTimeMillis();
-        InMemoryWordCatalog catalog = new InMemoryWordCatalog(loader.loadAll());
+        InMemoryWordCatalog catalog = new InMemoryWordCatalog(loader.loadAll(), loader.loadConfusableGroups());
 
         String perLevel = Arrays.stream(Level.values())
                 .filter(level -> !level.isGroup())
                 .map(level -> level + "=" + catalog.countByLevel(level))
                 .collect(Collectors.joining(", "));
-        log.info("단어 캐시 로딩 완료: 전체 {}행, 시험 제외 {}행, 레벨별 출제 가능 ({}) {}ms",
-                catalog.size(), catalog.excludedCount(), perLevel, System.currentTimeMillis() - begin);
+        log.info("단어 캐시 로딩 완료: 전체 {}행, 시험 제외 {}행, 레벨별 출제 가능 ({}), 헷갈리는 단어 묶음 {}개(단어 {}개) {}ms",
+                catalog.size(), catalog.excludedCount(), perLevel,
+                catalog.confusableGroupCount(), catalog.confusableWordCount(), System.currentTimeMillis() - begin);
         return catalog;
     }
 

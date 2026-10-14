@@ -268,6 +268,86 @@ class TestQuestionGeneratorTest {
         assertThat(first).isEqualTo(second);
     }
 
+    @ParameterizedTest(name = "seed {0}")
+    @ValueSource(longs = {1, 2, 3, 7, 42, 100, 2026, 9999})
+    @DisplayName("헷갈리는 단어 묶음 : 같은 묶음 단어는 한 문제의 보기로 함께 나오지 않는다 (정답·오답 모두)")
+    void confusableNotTogether(long seed) {
+        List<CatalogWord> catalog = words(Level.A1, 1, 60);
+        // 2개 묶음 15개 (1,2) (3,4) ... (29,30) + 3개 묶음 5개 (31,32,33) ... (43,44,45)
+        List<List<Long>> groups = new ArrayList<>();
+        for (long id = 1; id <= 29; id += 2) {
+            groups.add(List.of(id, id + 1));
+        }
+        for (long id = 31; id <= 43; id += 3) {
+            groups.add(List.of(id, id + 1, id + 2));
+        }
+        InMemoryWordCatalog wordCatalog = new InMemoryWordCatalog(catalog, groups);
+
+        List<GeneratedQuestion> questions =
+                new TestQuestionGenerator(wordCatalog, () -> new Random(seed)).generate(Level.A1, 60);
+
+        assertThat(questions).hasSize(60);
+        assertQuestionRules(questions);
+        for (GeneratedQuestion q : questions) {
+            for (CatalogWord a : q.options()) {
+                for (CatalogWord b : q.options()) {
+                    assertThat(wordCatalog.findConfusableWordIds(a.wordId()))
+                            .as("문제 %s : 헷갈리는 보기 %s, %s", q.answer().headword(), a.headword(), b.headword())
+                            .doesNotContain(b.wordId());
+                }
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("헷갈리는 단어 묶음 : 묶음이 다르면 함께 나올 수 있다 (sir-teacher, sir-Mr. 이어도 teacher-Mr. 는 가능)")
+    void confusableNotTransitive() {
+        // 1=sir, 2=teacher, 3=Mr. / 묶음 {1,2}, {1,3}
+        // teacher 만 정답 후보, 나머지는 오답 전용 → teacher 문제의 오답은 sir 를 뺀 3,4,5 로 정해짐
+        List<CatalogWord> catalog = List.of(
+                excluded(1, 1, Level.A1), word(2, 2, Level.A1),
+                excluded(3, 3, Level.A1), excluded(4, 4, Level.A1), excluded(5, 5, Level.A1));
+        InMemoryWordCatalog wordCatalog = new InMemoryWordCatalog(catalog, List.of(List.of(1L, 2L), List.of(1L, 3L)));
+
+        for (long seed = 1; seed <= 20; seed++) {
+            long s = seed;
+            List<GeneratedQuestion> questions =
+                    new TestQuestionGenerator(wordCatalog, () -> new Random(s)).generate(Level.A1, 1);
+
+            assertThat(questions).hasSize(1);
+            assertThat(questions.getFirst().options()).extracting(CatalogWord::wordId)
+                    .containsExactlyInAnyOrder(2L, 3L, 4L, 5L);
+        }
+    }
+
+    @Test
+    @DisplayName("헷갈리는 단어 묶음 때문에 오답 보기를 만들 수 없으면 TEST_NOT_ENOUGH_WORDS")
+    void confusableLeavesNotEnoughDistractors() {
+        // 단어 4개 중 1·2 가 같은 묶음 → 1 문제의 오답 후보는 3, 4 뿐
+        List<CatalogWord> catalog = words(Level.A1, 1, 4);
+        InMemoryWordCatalog wordCatalog = new InMemoryWordCatalog(catalog, List.of(List.of(1L, 2L)));
+
+        assertThatThrownBy(() -> new TestQuestionGenerator(wordCatalog, () -> new Random(1)).generate(Level.A1, 4))
+                .isInstanceOf(CustomException.class)
+                .extracting(e -> ((CustomException) e).getErrorCode())
+                .isEqualTo(ErrorCode.TEST_NOT_ENOUGH_WORDS);
+    }
+
+    @Test
+    @DisplayName("헷갈리는 단어 map : 양방향, 여러 묶음은 합침, 묶음 없는 단어는 빈 집합")
+    void confusableMap() {
+        InMemoryWordCatalog wordCatalog = new InMemoryWordCatalog(words(Level.A1, 1, 10),
+                List.of(List.of(1L, 2L), List.of(1L, 3L), List.of(4L, 5L, 6L)));
+
+        assertThat(wordCatalog.findConfusableWordIds(1L)).containsExactlyInAnyOrder(2L, 3L);
+        assertThat(wordCatalog.findConfusableWordIds(2L)).containsExactly(1L);
+        assertThat(wordCatalog.findConfusableWordIds(3L)).containsExactly(1L);
+        assertThat(wordCatalog.findConfusableWordIds(5L)).containsExactlyInAnyOrder(4L, 6L);
+        assertThat(wordCatalog.findConfusableWordIds(7L)).isEmpty();
+        assertThat(wordCatalog.confusableGroupCount()).isEqualTo(3);
+        assertThat(wordCatalog.confusableWordCount()).isEqualTo(6);
+    }
+
     @Test
     @DisplayName("정답 위치가 한 번호에 몰리지 않는다")
     void answerPositionSpread() {

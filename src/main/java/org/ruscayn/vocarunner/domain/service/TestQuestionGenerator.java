@@ -24,6 +24,8 @@ import java.util.random.RandomGenerator;
  *   <li>시험 제외 단어는 정답 문제로 내지 않고, 오답 보기로만 사용</li>
  *   <li>보기 4개는 정답과 같은 세부 레벨 단어에서 선택</li>
  *   <li>보기 간 표시 뜻(한국어)이 하나라도 겹치면 안 됨</li>
+ *   <li>헷갈리는 단어 묶음(confusable_group)에 함께 속한 단어는 같은 문제의 보기로 내지 않음
+ *       (예: sir 문제에 teacher 를 오답으로 내지 않음. 오답끼리도 마찬가지)</li>
  * </ul>
  */
 @Service
@@ -88,13 +90,15 @@ public class TestQuestionGenerator {
     private List<CatalogWord> pickOptions(CatalogWord answer, List<CatalogWord> sameLevel, RandomGenerator random) {
         List<CatalogWord> options = new ArrayList<>(GeneratedQuestion.OPTION_COUNT);
         options.add(answer);
-        Set<Long> usedWordIds = new HashSet<>();
-        usedWordIds.add(answer.wordId());
+        // 이미 고른 단어 + 그 단어들과 헷갈리는 단어 → 보기로 낼 수 없는 word_id
+        Set<Long> blockedWordIds = new HashSet<>();
+        blockedWordIds.add(answer.wordId());
+        blockedWordIds.addAll(wordCatalog.findConfusableWordIds(answer.wordId()));
         Set<String> usedMeanings = new HashSet<>(answer.meanings());
 
         // 1차: 무작위로 뽑아 조건 검사
         for (int i = 0; !sameLevel.isEmpty() && i < RANDOM_TRY_LIMIT && options.size() < GeneratedQuestion.OPTION_COUNT; i++) {
-            tryAdd(sameLevel.get(random.nextInt(sameLevel.size())), options, usedWordIds, usedMeanings);
+            tryAdd(sameLevel.get(random.nextInt(sameLevel.size())), options, blockedWordIds, usedMeanings);
         }
         // 2차: 전체를 섞어 순서대로 검사
         if (options.size() < GeneratedQuestion.OPTION_COUNT) {
@@ -104,7 +108,7 @@ public class TestQuestionGenerator {
                 if (options.size() >= GeneratedQuestion.OPTION_COUNT) {
                     break;
                 }
-                tryAdd(candidate, options, usedWordIds, usedMeanings);
+                tryAdd(candidate, options, blockedWordIds, usedMeanings);
             }
         }
         if (options.size() < GeneratedQuestion.OPTION_COUNT) {
@@ -116,9 +120,13 @@ public class TestQuestionGenerator {
         return options;
     }
 
+    /**
+     * 조건을 통과하면 보기에 추가한다.
+     * 탈락: 이미 고른 단어 / 고른 단어와 헷갈리는 단어(묶음) / 고른 보기와 표시 뜻이 하나라도 같은 단어
+     */
     private void tryAdd(CatalogWord candidate, List<CatalogWord> options,
-                        Set<Long> usedWordIds, Set<String> usedMeanings) {
-        if (usedWordIds.contains(candidate.wordId())) {
+                        Set<Long> blockedWordIds, Set<String> usedMeanings) {
+        if (blockedWordIds.contains(candidate.wordId())) {
             return;
         }
         for (String meaning : candidate.meanings()) {
@@ -127,7 +135,8 @@ public class TestQuestionGenerator {
             }
         }
         options.add(candidate);
-        usedWordIds.add(candidate.wordId());
+        blockedWordIds.add(candidate.wordId());
+        blockedWordIds.addAll(wordCatalog.findConfusableWordIds(candidate.wordId()));
         usedMeanings.addAll(candidate.meanings());
     }
 

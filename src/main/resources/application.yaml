@@ -34,7 +34,7 @@ server:
 
 voca-runner:
   test:
-    question-count: 5              # 개발 테스트용. 실제 서비스는 500
+    question-count: 10000              # 개발 테스트용. 실제 서비스는 500
     grace: 3m                      # 마감 = (문항 수 × 제한 시간 + 여유 시간)을 분 단위로 올림. 500문항 → 45분
     result-retention: 10m          # 제출 후 결과 화면용 메모리 보관 시간
     max-in-progress: 20000         # 전체 동시 진행 상한 (500문항 1개 약 10KB → 약 200MB 이하)
