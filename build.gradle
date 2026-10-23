@@ -44,6 +44,10 @@ dependencies {
     // Test (Boot 4: 기술별 test starter, spring-boot-starter-test 자동 포함)
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+    // DB 테스트용 임시 PostgreSQL (테스트 실행 중에만 Docker 로 띄우고 끝나면 지움. Docker 가 켜져 있어야 함)
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
+    testImplementation 'org.testcontainers:testcontainers-postgresql'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
