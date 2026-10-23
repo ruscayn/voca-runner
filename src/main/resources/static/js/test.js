@@ -321,7 +321,11 @@
             startClock(data.remainingSec);
         } catch (e) {
             state.status = 'ABORTED';
-            showOverlay('시험을 시작할 수 없습니다', e.message, '확인', goMain);
+            if (isSessionGone(e)) {
+                showOverlay('시험이 종료되었습니다', MSG_SESSION_GONE, '확인', goMain);
+                return;
+            }
+            showOverlay('시험을 시작할 수 없습니다', isNetworkError(e) ? MSG_OFFLINE_LOAD : e.message, '확인', goMain);
         }
     }
 
@@ -344,17 +348,38 @@
                 // 서버가 거절 (마감 초과·이미 종료·없는 시험 등) : 다시 제출해도 소용없으므로 메인으로
                 state.status = 'ABORTED';
                 stopClock();
+                if (isSessionGone(e)) {
+                    showOverlay('시험이 종료되었습니다', MSG_SESSION_GONE, '확인', goMain);
+                    return;
+                }
                 const title = e.code === 'TEST_005' ? '시험이 무효 처리되었습니다' : '제출할 수 없습니다';
                 showOverlay(title, e.message, '확인', goMain);
                 return;
             }
             // 네트워크 오류·서버 오류 : 다시 시도 (답안은 그대로 유지, 마감 확인은 계속)
             state.status = 'RUNNING';
-            showOverlay('제출하지 못했습니다', e.message, '다시 제출', () => {
+            showOverlay('제출하지 못했습니다', isNetworkError(e) ? MSG_OFFLINE_SUBMIT : e.message, '다시 제출', () => {
                 if (state.status !== 'RUNNING') return;
                 submit();
             });
         }
+    }
+
+    const MSG_SESSION_GONE = '서버 점검 등으로 시험 정보가 사라졌습니다.\n불편을 드려 죄송합니다. 처음부터 다시 시작해 주세요.';
+    const MSG_OFFLINE_LOAD = '서버와 연결할 수 없습니다.\n인터넷 연결을 확인한 뒤 다시 시작해 주세요.';
+    const MSG_OFFLINE_SUBMIT = '서버와 연결할 수 없습니다.\n인터넷 연결을 확인한 뒤 다시 제출해 주세요.';
+
+    /**
+     * 서버에 시험이 없음 (BUSINESS_001).
+     * 시험은 서버 메모리에 있어 앱 재시작·배포 때 사라진다. 만료되어 정리된 경우도 같은 응답이라 구분하지 않는다
+     */
+    function isSessionGone(e) {
+        return e.code === 'BUSINESS_001';
+    }
+
+    /** fetch 자체 실패 (서버 꺼짐·인터넷 끊김). 브라우저 영어 문구(Failed to fetch) 대신 한국어 안내를 쓴다 */
+    function isNetworkError(e) {
+        return typeof e.status !== 'number';
     }
 
     /** 4xx 응답 = 요청 자체가 거절됨 (재시도 무의미). 네트워크 오류·5xx 는 재시도 가능 */
