@@ -83,7 +83,10 @@
 
         if (supported) {
             pickVoice();
-            synth.addEventListener?.('voiceschanged', pickVoice);
+            synth.addEventListener?.('voiceschanged', () => {
+                pickVoice();
+                syncSoundNotice();   // 목록이 늦게 채워지는 브라우저 : 시작 안내가 떠 있으면 다시 맞춤
+            });
         }
 
         return {
@@ -99,6 +102,10 @@
             stop() {
                 if (supported) synth.cancel();
             },
+            /** 영어 발음을 낼 수 있는지 (음성 기능 + 영어 목소리). 일부 안드로이드는 목소리 목록이 늦게 채워진다 */
+            available() {
+                return supported && voice !== null;
+            },
             /** iOS: 사용자 터치 이벤트 안에서 한 번 호출해야 이후 자동 재생 가능 */
             unlock() {
                 if (!supported) return;
@@ -110,6 +117,16 @@
     })();
 
     // ---------- 안내 시트 ----------
+
+    /**
+     * 시작 안내의 "단어마다 발음이 함께 나옵니다"는 발음이 되는 브라우저에서만 보인다 (U22).
+     * 음성 기능이 없는 앱 안 브라우저 등에서 보이면 고장으로 오해할 수 있다. 기기 무음은 알 수 없어 따로 안내하지 않는다
+     */
+    function syncSoundNotice() {
+        const notice = $('ready-sound');
+        if (notice) notice.hidden = !tts.available();
+    }
+
     function showOverlay(title, text = '', buttonText = null, onClick = null) {
         el.sheetEyebrow.hidden = true;
         el.readyInfo.hidden = true;
@@ -148,6 +165,7 @@
         $('ready-min').textContent = data.allowedMinutes;
         $('ready-min-text').textContent = data.allowedMinutes;
         el.readyInfo.hidden = false;
+        syncSoundNotice();
         el.overlayBack.onclick = cancelReady;
         el.overlayBack.hidden = false;
     }
