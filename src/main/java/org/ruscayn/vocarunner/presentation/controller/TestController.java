@@ -5,13 +5,10 @@ import org.ruscayn.vocarunner.domain.model.level.Level;
 import org.ruscayn.vocarunner.domain.model.test.TestClient;
 import org.ruscayn.vocarunner.shared.exception.CustomException;
 import org.ruscayn.vocarunner.shared.exception.ErrorCode;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,7 +17,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.time.Duration;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
@@ -46,10 +42,6 @@ public class TestController {
     private static final DateTimeFormatter AVAILABLE_UNTIL_FORMAT =
             DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of("Asia/Seoul"));
 
-    /** 기기 구분 쿠키 (동시 진행 개수 제한용 무작위 값) */
-    private static final String DEVICE_COOKIE = "VR_DEVICE";
-    private static final Duration DEVICE_COOKIE_MAX_AGE = Duration.ofDays(365);
-
     private final TestApplicationService testApplicationService;
 
     @PostMapping("/test/start")
@@ -58,7 +50,7 @@ public class TestController {
         UUID sessionId;
         try {
             // 사용자 구분 = 기기 쿠키 + IP. 프록시(Nginx 등) 뒤에 둘 때는 server.forward-headers-strategy 설정 필요 (실제 사용자 IP)
-            TestClient client = new TestClient(deviceId(request, response), request.getRemoteAddr());
+            TestClient client = new TestClient(DeviceCookie.findOrCreate(request, response), request.getRemoteAddr());
             sessionId = testApplicationService.start(level, client);
         } catch (CustomException e) {
             if (e.getErrorCode() == ErrorCode.TEST_SERVER_BUSY
@@ -70,40 +62,6 @@ public class TestController {
         }
         httpSession.setAttribute(ENTRY_TOKEN, sessionId);
         return "redirect:/test/" + sessionId;
-    }
-
-    /**
-     * 기기 구분 값. 쿠키에 있으면 그대로, 없거나 형식이 다르면 새로 만들어 1년짜리 쿠키로 저장한다.
-     * 같은 공인 IP를 쓰는 여러 사람(학교 와이파이·통신사 망)을 따로 세기 위함 (U32)
-     */
-    private String deviceId(HttpServletRequest request, HttpServletResponse response) {
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if (DEVICE_COOKIE.equals(cookie.getName()) && isUuid(cookie.getValue())) {
-                    return cookie.getValue();
-                }
-            }
-        }
-        String deviceId = UUID.randomUUID().toString();
-        ResponseCookie cookie = ResponseCookie.from(DEVICE_COOKIE, deviceId)
-                .maxAge(DEVICE_COOKIE_MAX_AGE)
-                .path("/")
-                .httpOnly(true)
-                .secure(request.isSecure())
-                .sameSite("Lax")
-                .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        return deviceId;
-    }
-
-    private static boolean isUuid(String value) {
-        try {
-            UUID.fromString(value);
-            return value.length() == 36;
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
     }
 
     @GetMapping("/test/{sessionId}")
@@ -135,7 +93,7 @@ public class TestController {
 
         // 3) 이 시험을 연 브라우저가 다시 들어옴 (새로고침·재접속·같은 브라우저 새 탭) : 다시 풀 수 없게 만료
         if (sessionId.equals(opened)) {
-            testApplicationService.expireIfInProgress(sessionId);
+            testApplicationService.expireIfInProgress(sessionId, DeviceCookie.find(request));
             redirect.addFlashAttribute("message", "시험이 종료되었습니다. 처음부터 다시 시작해 주세요.");
             return "redirect:/";
         }

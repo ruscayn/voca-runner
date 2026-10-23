@@ -106,10 +106,10 @@ public class TestApplicationService {
         return byDevice;
     }
 
-    /** 시험 화면용 문제 (진행 중인 시험만, 정답 번호 제외) */
+    /** 시험 화면용 문제 (진행 중인 시험만, 정답 번호 제외). 시작한 기기만 */
     @Transactional
-    public TestQuestionsResponse getQuestions(UUID sessionId) {
-        TestSession session = find(sessionId);
+    public TestQuestionsResponse getQuestions(UUID sessionId, String deviceId) {
+        TestSession session = findStartedBy(sessionId, deviceId);
         Instant now = Instant.now();
         if (!session.isInProgress(now)) {
             throw new CustomException(ErrorCode.TEST_NOT_IN_PROGRESS);
@@ -136,12 +136,12 @@ public class TestApplicationService {
     }
 
     /**
-     * 제출 및 채점. 마감 시각이 지났으면 무효(삭제).
+     * 제출 및 채점. 마감 시각이 지났으면 무효(삭제). 시작한 기기만.
      * 거절(예외)해도 마감 초과 삭제는 반영해야 하므로 업무 예외로는 되돌리지 않는다 (채점 전 검사에서 거절하면 바뀐 내용 없음)
      */
     @Transactional(noRollbackFor = CustomException.class)
-    public TestSubmitResponse submit(UUID sessionId, TestSubmitRequest request) {
-        TestSession session = find(sessionId);
+    public TestSubmitResponse submit(UUID sessionId, String deviceId, TestSubmitRequest request) {
+        TestSession session = findStartedBy(sessionId, deviceId);
 
         Map<Integer, Integer> selectedByNo = new HashMap<>();  // null 값 허용 (시간 초과)
         for (TestSubmitRequest.Answer answer : request.answers()) {
@@ -197,12 +197,12 @@ public class TestApplicationService {
         return toResult(session);
     }
 
-    /** 진행 중이면 무효 처리(삭제). 없거나 이미 끝난 시험은 무시 */
+    /** 진행 중이면 무효 처리(삭제). 없거나 이미 끝났거나 다른 기기에서 시작한 시험은 무시 */
     @Transactional
-    public void expireIfInProgress(UUID sessionId) {
+    public void expireIfInProgress(UUID sessionId, String deviceId) {
         Instant now = Instant.now();
         testSessionRepository.findById(sessionId)
-                .filter(session -> session.isInProgress(now))
+                .filter(session -> session.isStartedBy(deviceId) && session.isInProgress(now))
                 .ifPresent(session -> {
                     testSessionRepository.delete(sessionId);
                     log.info("시험 만료 session={}", sessionId);
@@ -269,9 +269,26 @@ public class TestApplicationService {
         return direction == Direction.EN_KO ? option.meaningText() : option.headword();
     }
 
+    /**
+     * 이 기기에서 시작한 시험. 다른 기기면 없는 시험과 같은 응답을 준다.
+     * 주소(시험 id)가 새어도 다른 사람이 문제를 받아 가거나 대신 제출해 끝내 버릴 수 없게 한다 (U9)
+     */
+    private TestSession findStartedBy(UUID sessionId, String deviceId) {
+        TestSession session = find(sessionId);
+        if (!session.isStartedBy(deviceId)) {
+            log.warn("다른 기기의 시험 요청 거절 session={}", sessionId);
+            throw notFound();
+        }
+        return session;
+    }
+
     private TestSession find(UUID sessionId) {
         return testSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new CustomException(ErrorCode.ENTITY_NOT_FOUND, "시험을 찾을 수 없습니다. (종료되었거나 만료됨)"));
+                .orElseThrow(TestApplicationService::notFound);
+    }
+
+    private static CustomException notFound() {
+        return new CustomException(ErrorCode.ENTITY_NOT_FOUND, "시험을 찾을 수 없습니다. (종료되었거나 만료됨)");
     }
 
 }

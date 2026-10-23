@@ -219,6 +219,11 @@ public class TestSession extends BaseEntity {
         return new TestClient(deviceId, clientIp);
     }
 
+    /** 이 기기에서 시작한 시험인지. 문제 받기·제출·만료는 시작한 기기만 할 수 있다 (U9) */
+    public boolean isStartedBy(String deviceId) {
+        return this.deviceId.equals(deviceId);
+    }
+
     /** 진행 중이고 마감 시각 전인지 */
     public boolean isInProgress(Instant now) {
         return status == TestStatus.IN_PROGRESS && !now.isAfter(deadline);

@@ -83,6 +83,16 @@ class TestSessionTest {
         }
 
         @Test
+        @DisplayName("시작한 기기만 일치한다 (다른 기기·쿠키 없음은 불일치)")
+        void startedBy() {
+            TestSession session = start(1);
+
+            assertThat(session.isStartedBy("device-1")).isTrue();
+            assertThat(session.isStartedBy("device-2")).isFalse();
+            assertThat(session.isStartedBy(null)).isFalse();
+        }
+
+        @Test
         @DisplayName("문제가 없으면 시작할 수 없다")
         void emptyQuestions() {
             assertThatThrownBy(() -> TestSession.start(Level.A1, Direction.EN_KO, 5, List.of(), CLIENT, NOW, GRACE))
