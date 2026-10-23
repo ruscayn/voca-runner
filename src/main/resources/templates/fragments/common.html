@@ -6,6 +6,10 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="theme-color" content="#F7F8FA">
+        <!-- 사이트 아이콘 (U15). svg = 요즘 브라우저 탭, ico = svg 를 못 읽는 곳, png = 홈 화면에 추가 -->
+        <link rel="icon" th:href="@{/favicon.ico}" sizes="32x32">
+        <link rel="icon" th:href="@{/favicon.svg}" type="image/svg+xml">
+        <link rel="apple-touch-icon" th:href="@{/apple-touch-icon.png}">
         <link rel="stylesheet" th:href="@{/fonts/pretendard/pretendardvariable-dynamic-subset.css}">
         <link rel="stylesheet" th:href="@{/fonts/barlow/barlow.css}">
         <link rel="stylesheet" th:href="@{/css/main.css}">
@@ -13,13 +17,30 @@
 </head>
 <body>
 
-<!-- 로고 (달리는 사람 + 글자) -->
+<!-- 로고 (달리는 사람 + 뒤쪽 줄무늬 + 글자). 파비콘(static/favicon.*)과 같은 그림 -->
 <span class="brand" th:fragment="brand">
     <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <defs><clipPath id="brand-mark-clip"><rect width="32" height="32" rx="9"></rect></clipPath></defs>
         <rect width="32" height="32" rx="9" class="brand-mark-bg"></rect>
-        <circle cx="19.6" cy="7.6" r="2.5" fill="#FFFFFF"></circle>
-        <path d="M18.2 11.6 L14.6 17.4 L19.4 19.6 L19.8 24.8 M14.6 17.4 L12.2 21.6 L7.6 22.2" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path>
-        <path d="M11.4 12.8 L14.6 11.6 L18.2 11.6 L21.4 14.4 L24.4 13" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+        <g transform="translate(16 16) scale(1.12) translate(-15.6 -15)">
+            <circle cx="19.6" cy="7.6" r="2.9" fill="#FFFFFF"></circle>
+            <path d="M18.2 11.6 L14.6 17.4 L19.4 19.6 L19.8 24.8 M14.6 17.4 L12.2 21.6 L7.6 22.2" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M11.4 12.8 L14.6 11.6 L18.2 11.6 L21.4 14.4 L24.4 13" fill="none" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></path>
+        </g>
+        <!-- 줄무늬 = 배경색 선을 사람 위에 겹쳐 그림 (속도감) -->
+        <g clip-path="url(#brand-mark-clip)" class="brand-mark-bg">
+            <rect x="0" y="3.6" width="17" height="1"></rect>
+            <rect x="0" y="6.1" width="17" height="1"></rect>
+            <rect x="0" y="8.6" width="17" height="1"></rect>
+            <rect x="0" y="11.1" width="17" height="1"></rect>
+            <rect x="0" y="13.6" width="17" height="1"></rect>
+            <rect x="0" y="16.1" width="17" height="1"></rect>
+            <rect x="0" y="18.6" width="17" height="1"></rect>
+            <rect x="0" y="21.1" width="17" height="1"></rect>
+            <rect x="0" y="23.6" width="17" height="1"></rect>
+            <rect x="0" y="26.1" width="17" height="1"></rect>
+            <rect x="0" y="28.6" width="17" height="1"></rect>
+        </g>
     </svg>
     <span class="brand-name">VOCARUNNER</span>
 </span>

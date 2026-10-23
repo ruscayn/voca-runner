@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+    <!-- 로고 (fragments/common.html brand-mark) 와 같은 그림 : 크게 그린 달리는 사람 + 뒤쪽 절반만 가로 줄무늬(속도감). 배경색 = --primary -->
+    <defs><clipPath id="vr-icon"><rect width="32" height="32" rx="9"/></clipPath></defs>
+    <rect width="32" height="32" rx="9" fill="#10A85F"/>
+    <g transform="translate(16 16) scale(1.12) translate(-15.6 -15)">
+        <circle cx="19.6" cy="7.6" r="2.9" fill="#FFFFFF"/>
+        <path d="M18.2 11.6 L14.6 17.4 L19.4 19.6 L19.8 24.8 M14.6 17.4 L12.2 21.6 L7.6 22.2" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M11.4 12.8 L14.6 11.6 L18.2 11.6 L21.4 14.4 L24.4 13" fill="none" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <!-- 줄무늬 = 배경색 선을 사람 위에 겹쳐 그림 -->
+    <g clip-path="url(#vr-icon)" fill="#10A85F">
+        <rect x="0" y="3.6" width="17" height="1"/>
+        <rect x="0" y="6.1" width="17" height="1"/>
+        <rect x="0" y="8.6" width="17" height="1"/>
+        <rect x="0" y="11.1" width="17" height="1"/>
+        <rect x="0" y="13.6" width="17" height="1"/>
+        <rect x="0" y="16.1" width="17" height="1"/>
+        <rect x="0" y="18.6" width="17" height="1"/>
+        <rect x="0" y="21.1" width="17" height="1"/>
+        <rect x="0" y="23.6" width="17" height="1"/>
+        <rect x="0" y="26.1" width="17" height="1"/>
+        <rect x="0" y="28.6" width="17" height="1"/>
+    </g>
+</svg>
