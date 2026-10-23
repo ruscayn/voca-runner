@@ -170,6 +170,19 @@ a { color: var(--primary-text); }
     border-radius: 12px;
 }
 
+/* ---------- 오류 안내 화면 (error.html) ---------- */
+.error-content { padding-top: 24px; }
+.error-code {
+    margin: 0;
+    font-family: var(--font-num);
+    font-weight: 600;
+    font-size: 40px;
+    line-height: 1;
+    color: var(--subtle);
+}
+.error-content .hero { margin: 12px 0 10px; }
+.error-text { margin: 0; color: var(--muted); }
+
 .sr-only {
     position: absolute; width: 1px; height: 1px;
     overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;

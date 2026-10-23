@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 /**
@@ -33,6 +35,10 @@ public class TestController {
     private static final String ENTRY_TOKEN = "TEST_ENTRY_TOKEN";
     /** 이 브라우저(세션)가 마지막으로 연 시험 id. 같은 브라우저의 재입장과 다른 브라우저의 입장을 구분한다 */
     private static final String OPENED_TEST = "TEST_OPENED";
+
+    /** 결과 화면의 "HH:mm까지" (사용자는 한국 기준) */
+    private static final DateTimeFormatter AVAILABLE_UNTIL_FORMAT =
+            DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of("Asia/Seoul"));
 
     private final TestApplicationService testApplicationService;
 
@@ -94,15 +100,16 @@ public class TestController {
         return "redirect:/?notice=" + MainController.NOTICE_TEST_IN_USE;
     }
 
-    /** 결과 화면 (완료된 시험만) */
+    /** 결과 화면 (완료된 시험만). 보관 시간이 지나 정리됐으면 안내와 함께 메인 (U17) */
     @GetMapping("/test/{sessionId}/result")
     public String result(@PathVariable UUID sessionId, Model model) {
         return testApplicationService.findResult(sessionId)
                 .map(result -> {
                     model.addAttribute("result", result);
+                    model.addAttribute("availableUntil", AVAILABLE_UNTIL_FORMAT.format(result.availableUntil()));
                     return "result";
                 })
-                .orElse("redirect:/");
+                .orElse("redirect:/?notice=" + MainController.NOTICE_RESULT_EXPIRED);
     }
 
 }

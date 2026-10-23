@@ -20,7 +20,7 @@ import java.time.Duration;
 public record TestProperties(
         @DefaultValue("500") int questionCount,
         @DefaultValue("3m") Duration grace,
-        @DefaultValue("10m") Duration resultRetention,
+        @DefaultValue("20m") Duration resultRetention,
         @DefaultValue("20000") int maxInProgress,
         @DefaultValue("3") int maxInProgressPerClient,
         @DefaultValue("1m") Duration cleanupInterval

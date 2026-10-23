@@ -3,6 +3,7 @@ package org.ruscayn.vocarunner.application.dto.response;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,7 +24,7 @@ class TestResultResponseTest {
                         "for the sake of"));
 
         TestResultResponse result = new TestResultResponse(
-                UUID.randomUUID(), "B1", "Independent", 10, 5, 50, wrongItems);
+                UUID.randomUUID(), "B1", "Independent", 10, 5, 50, Instant.now(), 20, wrongItems);
 
         assertThat(result.wrongCount()).isEqualTo(2);
         assertThat(result.timeoutCount()).isEqualTo(3);
@@ -35,7 +36,7 @@ class TestResultResponseTest {
     @DisplayName("모두 맞히면 오답·시간 초과 0")
     void perfect() {
         TestResultResponse result = new TestResultResponse(
-                UUID.randomUUID(), "A1", "Basic", 5, 5, 100, List.of());
+                UUID.randomUUID(), "A1", "Basic", 5, 5, 100, Instant.now(), 20, List.of());
 
         assertThat(result.wrongCount()).isZero();
         assertThat(result.timeoutCount()).isZero();

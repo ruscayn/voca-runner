@@ -21,6 +21,8 @@ public class MainController {
     public static final String NOTICE_TEST_IN_USE = "test-in-use";
     /** 이미 끝났고 결과 보관 시간도 지난 시험 주소로 들어온 경우 (TestController) */
     public static final String NOTICE_TEST_FINISHED = "test-finished";
+    /** 결과 보관 시간이 지난 결과 주소로 들어온 경우 (TestController) */
+    public static final String NOTICE_RESULT_EXPIRED = "result-expired";
 
     private final LevelApplicationService levelApplicationService;
 
@@ -34,6 +36,8 @@ public class MainController {
                 model.addAttribute("message", "이미 시작된 시험입니다. 시험을 시작한 화면에서만 풀 수 있습니다.");
             } else if (NOTICE_TEST_FINISHED.equals(notice)) {
                 model.addAttribute("message", "이미 끝난 시험입니다. 새 시험을 시작해 주세요.");
+            } else if (NOTICE_RESULT_EXPIRED.equals(notice)) {
+                model.addAttribute("message", "결과 보관 시간이 지났습니다. 결과는 제출 후 잠시 동안만 볼 수 있어요.");
             }
         }
         List<LevelGroupSummary> levelGroups = levelApplicationService.getDetailLevelGroups();

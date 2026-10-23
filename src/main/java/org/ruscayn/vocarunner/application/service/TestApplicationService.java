@@ -201,6 +201,8 @@ public class TestApplicationService {
                 session.getQuestionCount(),
                 session.getCorrectCount(),
                 session.getScore(),
+                session.getSubmittedAt().plus(testProperties.resultRetention()),
+                testProperties.resultRetention().toMinutes(),
                 wrongItems);
     }
 

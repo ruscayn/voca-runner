@@ -1,9 +1,15 @@
 package org.ruscayn.vocarunner.application.dto.response;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/** 시험 결과 (틀린 문제 목록 포함) */
+/**
+ * 시험 결과 (틀린 문제 목록 포함)
+ *
+ * @param availableUntil   결과를 볼 수 있는 마지막 시각 (제출 시각 + 보관 시간). 지나면 메모리에서 정리된다
+ * @param retentionMinutes 결과 보관 시간 (분)
+ */
 public record TestResultResponse(
         UUID sessionId,
         String level,
@@ -11,6 +17,8 @@ public record TestResultResponse(
         int questionCount,
         int correctCount,
         int score,
+        Instant availableUntil,
+        long retentionMinutes,
         List<WrongItem> wrongItems
 ) {
 

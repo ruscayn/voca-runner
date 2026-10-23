@@ -1,60 +1,88 @@
 package org.ruscayn.vocarunner.shared.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+/**
+ * 공통 오류 응답.
+ * <p>API(/api/**)는 JSON, 화면 요청은 한국어 안내 화면(error.html)으로 답한다.
+ * 화면에서 주소를 잘못 입력해도 JSON 글자나 500 이 보이지 않게 한다 (B4·U3)
+ */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(CustomException.class)
-    public ResponseEntity<ErrorResponse> handleCustomException(CustomException e, WebRequest request) {
+    public Object handleCustomException(CustomException e, HttpServletRequest request) {
         log.error("CustomException occurred: {}", e.getMessage(), e);
-        ErrorResponse errorResponse = ErrorResponse.of(e.getErrorCode().getCode(), e.getMessage(), getPath(request));
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        ErrorResponse errorResponse = ErrorResponse.of(e.getErrorCode().getCode(), e.getMessage(), request.getRequestURI());
+        return respond(request, HttpStatus.BAD_REQUEST, errorResponse, e.getMessage());
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
-    public ResponseEntity<ErrorResponse> handleValidationException(Exception e, WebRequest request) {
+    public Object handleValidationException(Exception e, HttpServletRequest request) {
         log.error("Validation exception occurred: {}", e.getMessage(), e);
-        ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, getPath(request));
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, request.getRequestURI());
+        return respond(request, HttpStatus.BAD_REQUEST, errorResponse, null);
+    }
+
+    /** 주소·파라미터 형식 오류 (UUID 아닌 시험 id, 없는 레벨, 레벨 누락, GET /test/start 등). 사용자 입력 문제라 스택 없이 남긴다 */
+    @ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class})
+    public Object handleBadRequestParameter(Exception e, HttpServletRequest request) {
+        log.warn("Bad request parameter: {} {}", request.getRequestURI(), e.getMessage());
+        ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, request.getRequestURI());
+        return respond(request, HttpStatus.BAD_REQUEST, errorResponse, null);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<ErrorResponse> handleMethodNotSupportedException(
-            HttpRequestMethodNotSupportedException e, WebRequest request) {
+    public Object handleMethodNotSupportedException(
+            HttpRequestMethodNotSupportedException e, HttpServletRequest request) {
         log.error("Method not supported exception occurred: {}", e.getMessage(), e);
-        ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.METHOD_NOT_ALLOWED, getPath(request));
-        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(errorResponse);
+        ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.METHOD_NOT_ALLOWED, request.getRequestURI());
+        return respond(request, HttpStatus.METHOD_NOT_ALLOWED, errorResponse, null);
     }
 
     /** 없는 경로·정적 파일 (favicon.ico 등). 흔한 요청이라 스택 없이 DEBUG 로만 남긴다 */
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNoResourceFoundException(
-            NoResourceFoundException e, WebRequest request) {
+    public Object handleNoResourceFoundException(
+            NoResourceFoundException e, HttpServletRequest request) {
         log.debug("Resource not found: {}", e.getResourcePath());
-        ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.RESOURCE_NOT_FOUND, getPath(request));
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.RESOURCE_NOT_FOUND, request.getRequestURI());
+        return respond(request, HttpStatus.NOT_FOUND, errorResponse, null);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGeneralException(Exception e, WebRequest request) {
+    public Object handleGeneralException(Exception e, HttpServletRequest request) {
         log.error("Unexpected exception occurred: {}", e.getMessage(), e);
-        ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR, getPath(request));
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR, request.getRequestURI());
+        return respond(request, HttpStatus.INTERNAL_SERVER_ERROR, errorResponse, null);
     }
 
-    private String getPath(WebRequest request) {
-        return request.getDescription(false).replace("uri=", "");
+    /**
+     * API 는 JSON(ResponseEntity), 화면은 error.html(ModelAndView).
+     * 반환 처리기는 실제 반환 객체의 타입으로 고르므로 반환형이 Object 여도 각각 처리된다
+     *
+     * @param detail 화면에 보여줄 안내 문구. null 이면 상태 코드별 기본 문구
+     */
+    private Object respond(HttpServletRequest request, HttpStatus status, ErrorResponse errorResponse, String detail) {
+        if (request.getRequestURI().startsWith("/api/")) {
+            return ResponseEntity.status(status).body(errorResponse);
+        }
+        ModelAndView mav = new ModelAndView("error", status);
+        mav.addObject("status", status.value());
+        mav.addObject("detail", detail);
+        return mav;
     }
 
 }
