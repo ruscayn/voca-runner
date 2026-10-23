@@ -8,7 +8,9 @@
 <body class="test-page">
 <div class="app" id="test-app" th:attr="data-session-id=${sessionId}">
 
-    <header class="app-header test-header">
+    <!-- 처음에는 뒤 화면을 막아 두고 "문제 불러오는 중..." 안내를 보인다. 느린 인터넷에서 test.js 가 늦게 실행돼도
+         빈 보기 버튼·0 / 0 이 먼저 보이지 않게 (U20). 문제를 받으면 test.js 가 안내를 바꾸고 막은 것을 푼다 -->
+    <header class="app-header test-header" inert>
         <div class="test-status">
             <p class="progress-text" aria-live="off">
                 <strong id="current-no">0</strong><span class="progress-total">/ <span id="total-count">0</span></span>
@@ -21,17 +23,17 @@
         <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
     </header>
 
-    <main class="app-content test-content">
+    <main class="app-content test-content" inert>
         <p class="prompt" id="prompt" lang="en"></p>
         <p class="prompt-sub" id="prompt-sub" lang="en" hidden></p>
     </main>
 
-    <div class="q-timer" aria-label="이 문제의 남은 시간">
+    <div class="q-timer" aria-label="이 문제의 남은 시간" inert>
         <div class="q-timer-track"><div class="q-timer-bar" id="timer-bar"></div></div>
         <p class="q-timer-sec" id="timer-sec-box"><span id="timer-sec">5</span><span class="q-timer-unit">초</span></p>
     </div>
 
-    <footer class="app-footer test-footer">
+    <footer class="app-footer test-footer" inert>
         <div class="options" id="options">
             <button type="button" class="option-btn" data-no="1"><span class="option-no">1</span><span class="option-text"></span></button>
             <button type="button" class="option-btn" data-no="2"><span class="option-no">2</span><span class="option-text"></span></button>
@@ -42,7 +44,7 @@
     </footer>
 
     <!-- 안내 시트 (시작 전 / 채점 중 / 종료·오류) -->
-    <div class="sheet-backdrop" id="overlay" hidden>
+    <div class="sheet-backdrop" id="overlay">
         <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
             <p class="sheet-eyebrow" id="sheet-eyebrow" hidden></p>
             <h2 class="sheet-title" id="overlay-title">문제 불러오는 중...</h2>
