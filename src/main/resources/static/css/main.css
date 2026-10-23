@@ -193,6 +193,7 @@ a { color: var(--primary-text); }
    ========================================================= */
 .main-header {
     display: flex;
+    flex-wrap: wrap;                     /* 아주 좁은 화면(큰 글자)에서 링크가 화면 밖으로 넘치지 않게 */
     align-items: center;
     justify-content: space-between;
 }
@@ -283,6 +284,12 @@ a { color: var(--primary-text); }
 .level-card:has(input:checked) .level-count { color: var(--text-2); }
 
 .main-footer { display: flex; flex-direction: column; gap: 12px; }
+
+/* 낮은 화면(가로 화면, 큰 글자) : 레벨 목록 칸이 너무 낮아지므로 안쪽 스크롤 대신 페이지 전체를 스크롤 */
+@media (max-height: 540px) {
+    .main-app { height: auto; min-height: 100dvh; }
+    .main-app .app-content { flex: none; overflow-y: visible; }
+}
 .rule-note {
     margin: 0;
     display: flex;

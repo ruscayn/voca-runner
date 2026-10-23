@@ -255,17 +255,19 @@
 
     // ---------- 문제 단어 크기 ----------
     /**
-     * 단어가 폭에 들어가고(단어 중간 줄바꿈 없음) 구는 2줄 이하가 될 때까지 글자를 줄인다.
+     * 단어가 폭에 들어가고(단어 중간 줄바꿈 없음) 구는 2줄 이하, 단어 영역 높이 안에 들어갈 때까지 글자를 줄인다.
      * 최소 크기에서도 넘치면(아주 좁은 화면) 그때만 단어 중간 줄바꿈을 허용한다
      */
     function fitPrompt() {
         const p = el.prompt;
+        const area = p.parentElement;      // 단어 영역 (가로 화면 등 낮은 화면에서는 높이가 작다)
         p.classList.remove('prompt-break');
         for (let px = PROMPT_MAX_PX; px >= PROMPT_MIN_PX; px -= 2) {
             p.style.fontSize = `${px}px`;
             const fitsWidth = p.scrollWidth <= p.clientWidth;
+            const fitsHeight = area.scrollHeight <= area.clientHeight;
             const lines = Math.round(p.offsetHeight / (px * 1.1));   // line-height 1.1
-            if (fitsWidth && lines <= PROMPT_MAX_LINES) return;
+            if (fitsWidth && fitsHeight && lines <= PROMPT_MAX_LINES) return;
         }
         p.classList.add('prompt-break');
     }

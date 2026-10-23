@@ -238,3 +238,25 @@
 .rules li { display: flex; gap: 12px; align-items: flex-start; font-size: 14.5px; line-height: 1.55; color: var(--text-2); }
 .rules svg { flex: none; width: 20px; height: 20px; margin-top: 1px; color: var(--muted); }
 .rules strong { color: var(--text); font-weight: 600; }
+
+/* ---------- 낮은 화면 (가로 화면, 큰 글자) : 단어와 보기 4개가 스크롤 없이 보이게 ---------- */
+@media (max-height: 540px) {
+    .test-header { padding-top: 8px; }
+    .test-status { margin-bottom: 8px; }
+    .progress-text strong { font-size: 24px; }
+    .progress-total { font-size: 15px; }
+    .remain-pill { padding: 5px 12px; }
+    .remain-time { font-size: 17px; }
+    .test-content { gap: 6px; padding-bottom: 8px; }
+    .q-timer-sec #timer-sec { font-size: 22px; }
+    .options { gap: 8px; }
+    .option-btn { min-height: 48px; padding: 8px 14px; font-size: 16px; }
+    .test-footer { padding-top: 8px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+    .level-caption { display: none; }
+}
+
+/* 가로 화면 : 화면 폭을 넓게 쓰고 보기를 2×2 로 */
+@media (max-height: 540px) and (min-aspect-ratio: 1/1) {
+    .test-page { --app-max-width: 760px; }
+    .options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
