@@ -1,10 +1,15 @@
 package org.ruscayn.vocarunner.domain.model.test;
 
 import org.ruscayn.vocarunner.domain.model.level.Level;
+import org.ruscayn.vocarunner.shared.common.BaseEntity;
 import org.ruscayn.vocarunner.shared.exception.CustomException;
 import org.ruscayn.vocarunner.shared.exception.ErrorCode;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -14,9 +19,10 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 진행 중인 시험 1회 (정답지). DB 에 저장하지 않고 메모리에만 둔다.
+ * 시험 1회 (정답지·고른 답·채점 결과). test_session 1행.
+ * 재시작·배포 때 진행 중 시험이 사라지지 않도록 DB 에 저장한다 (U21).
  *
- * <p>메모리 절약을 위해 문항을 객체로 만들지 않고 배열로 보관한다.
+ * <p>문항을 행으로 나누지 않고 배열로 1행에 보관한다.
  * <ul>
  *   <li>optionIds : 보기 level_word_id. 문항 n(1부터)의 보기 i(1~4) = optionIds[(n-1)*4 + (i-1)]</li>
  *   <li>correctOptionNo : 정답 보기 번호 1~4</li>
@@ -24,11 +30,13 @@ import java.util.UUID;
  * </ul>
  * 500문항 기준 약 10KB.
  *
- * <p>동시성: 상태 변경(submit, expire)은 synchronized. status 는 volatile 이며 마지막에 쓰므로,
- * 다른 스레드는 isCompleted() 확인 후 채점 결과를 읽으면 된다.
+ * <p>동시성: 같은 시험을 동시에 두 번 제출하면 version(낙관적 잠금)으로 하나만 반영된다.
  */
 @Getter
-public class TestSession {
+@Entity
+@Table(name = "test_session")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class TestSession extends BaseEntity {
 
     public static final int DEFAULT_QUESTION_COUNT = 500;
     public static final int DEFAULT_TIME_LIMIT_SEC = 5;
@@ -37,31 +45,77 @@ public class TestSession {
 
     private static final int OPTION_COUNT = GeneratedQuestion.OPTION_COUNT;
 
-    private final UUID id;
-    private final Level level;
-    private final Direction direction;
-    private final int questionCount;
-    private final int timeLimitSec;
-    /** 시작한 사용자 (기기·IP). 동시 진행 개수 제한용 */
-    private final TestClient client;
-    private final Instant startedAt;
+    @Id
+    @Column(name = "test_session_id")
+    private UUID id;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "level_code", nullable = false, length = 2)
+    private Level level;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "direction", nullable = false, length = 10)
+    private Direction direction;
+
+    @Column(name = "question_count", nullable = false)
+    private int questionCount;
+
+    @Column(name = "time_limit_sec", nullable = false)
+    private int timeLimitSec;
+
+    /** 시작한 기기 (쿠키). 기기당 진행 중 시험 1개 */
+    @Getter(AccessLevel.NONE)
+    @Column(name = "device_id", nullable = false, length = 36)
+    private String deviceId;
+
+    /** 시작한 IP. IP당 진행 중 시험 상한용 */
+    @Getter(AccessLevel.NONE)
+    @Column(name = "client_ip", nullable = false, length = 45)
+    private String clientIp;
+
+    @Column(name = "started_at", nullable = false)
+    private Instant startedAt;
+
     /** 이 시각이 지나면 시험 무효 = 시작 + allowedDuration (분 단위 올림) */
-    private final Instant deadline;
+    @Column(name = "deadline", nullable = false)
+    private Instant deadline;
 
     @Getter(AccessLevel.NONE)
-    private final int[] optionIds;
-    @Getter(AccessLevel.NONE)
-    private final byte[] correctOptionNo;
-    @Getter(AccessLevel.NONE)
-    private final byte[] selectedOptionNo;
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "option_ids", nullable = false)
+    private int[] optionIds;
 
-    private volatile TestStatus status;
+    @Getter(AccessLevel.NONE)
+    @Column(name = "correct_option_no", nullable = false)
+    private byte[] correctOptionNo;
+
+    @Getter(AccessLevel.NONE)
+    @Column(name = "selected_option_no", nullable = false)
+    private byte[] selectedOptionNo;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 12)
+    private TestStatus status;
+
     /** 시험 화면이 문제를 한 번이라도 받아 갔는지. 못 받아 간 시험(시작 직후 연결 끊김 등)을 일찍 정리하는 데 쓴다 */
-    private volatile boolean questionsDelivered;
-    private int correctCount;
+    @Column(name = "questions_delivered", nullable = false)
+    private boolean questionsDelivered;
+
+    @Column(name = "correct_count")
+    private Integer correctCount;
+
     /** 0~100 */
-    private int score;
+    @Column(name = "score")
+    private Integer score;
+
+    @Column(name = "submitted_at")
     private Instant submittedAt;
+
+    /** 낙관적 잠금. null 이면 새 행(INSERT) */
+    @Getter(AccessLevel.NONE)
+    @Version
+    @Column(name = "version", nullable = false)
+    private Integer version;
 
     private TestSession(Level level, Direction direction, int timeLimitSec, List<GeneratedQuestion> questions,
                         TestClient client, Instant now, Duration grace) {
@@ -78,7 +132,8 @@ public class TestSession {
         this.direction = direction;
         this.questionCount = count;
         this.timeLimitSec = timeLimitSec;
-        this.client = client;
+        this.deviceId = client.deviceId();
+        this.clientIp = client.ip();
         this.startedAt = now;
         this.deadline = now.plus(allowedDuration(count, timeLimitSec, grace));
 
@@ -118,20 +173,22 @@ public class TestSession {
      *
      * @param selectedByQuestionNo 문제 번호 → 고른 보기 번호(1~4). 시간 초과/미응답 문제는 없거나 null
      */
-    public synchronized void submit(Map<Integer, Integer> selectedByQuestionNo, Instant now) {
+    public void submit(Map<Integer, Integer> selectedByQuestionNo, Instant now) {
         requireInProgress();
         if (now.isAfter(deadline)) {
             status = TestStatus.EXPIRED;
             throw new CustomException(ErrorCode.TEST_TIME_OVER);
         }
-        int correct = 0;
-        for (int q = 0; q < questionCount; q++) {
-            int no = q + 1;
-            Integer selected = selectedByQuestionNo.get(no);
+        // 검사를 먼저 모두 마친 뒤 기록한다 (거절할 때 일부만 바뀐 채 남지 않게)
+        selectedByQuestionNo.forEach((no, selected) -> {
             if (selected != null && (selected < 1 || selected > OPTION_COUNT)) {
                 throw new CustomException(ErrorCode.TEST_INVALID_OPTION,
                         "문제 " + no + "의 보기 번호가 올바르지 않습니다: " + selected);
             }
+        });
+        int correct = 0;
+        for (int q = 0; q < questionCount; q++) {
+            Integer selected = selectedByQuestionNo.get(q + 1);
             selectedOptionNo[q] = selected == null ? 0 : selected.byteValue();
             if (selected != null && selected == correctOptionNo[q]) {
                 correct++;
@@ -140,7 +197,7 @@ public class TestSession {
         this.correctCount = correct;
         this.score = (int) Math.round(correct * 100.0 / questionCount);
         this.submittedAt = now;
-        this.status = TestStatus.COMPLETED;   // 마지막에 기록 (volatile)
+        this.status = TestStatus.COMPLETED;
     }
 
     /** 시험 화면이 문제를 받아 감 */
@@ -149,13 +206,18 @@ public class TestSession {
     }
 
     /** 중도 이탈 등으로 무효 처리. 진행 중이 아니면 무시 */
-    public synchronized void expire() {
+    public void expire() {
         if (status == TestStatus.IN_PROGRESS) {
             status = TestStatus.EXPIRED;
         }
     }
 
     // ---------- 상태 조회 ----------
+
+    /** 시작한 사용자 (기기·IP) */
+    public TestClient getClient() {
+        return new TestClient(deviceId, clientIp);
+    }
 
     /** 진행 중이고 마감 시각 전인지 */
     public boolean isInProgress(Instant now) {
@@ -167,7 +229,7 @@ public class TestSession {
     }
 
     /**
-     * 메모리에서 지워도 되는지.
+     * 지워도 되는지 (정리 작업의 삭제 조건과 같다. DbTestSessionRepository.deleteDisposable).
      * 진행 중 → 마감 시각 경과 또는 시작 후 문제를 받아 가지 않은 채 undeliveredTimeout 경과,
      * 완료 → 결과 보관 시간 경과, 무효 → 즉시
      *

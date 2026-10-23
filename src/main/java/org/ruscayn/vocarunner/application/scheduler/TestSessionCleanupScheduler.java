@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 
 /**
- * 메모리의 끝난 시험 정리.
+ * 끝난 시험 정리 (test_session 삭제).
  * 마감이 지난 진행 중 시험, 시작 후 문제를 받아 가지 않은 시험, 보관 시간이 지난 결과, 무효 처리된 시험을 지운다.
  */
 @Slf4j
@@ -24,11 +24,11 @@ public class TestSessionCleanupScheduler {
     @Scheduled(fixedDelayString = "${voca-runner.test.cleanup-interval:1m}")
     public void cleanup() {
         Instant now = Instant.now();
-        int removed = testSessionRepository.removeIf(
-                session -> session.isDisposable(now, testProperties.resultRetention(), testProperties.undeliveredTimeout()));
+        int removed = testSessionRepository.deleteDisposable(
+                now, testProperties.resultRetention(), testProperties.undeliveredTimeout());
         if (removed > 0) {
             log.info("시험 정리: {}개 삭제, 남은 {}개 (진행 중 {}개)",
-                    removed, testSessionRepository.size(), testSessionRepository.countInProgress(now));
+                    removed, testSessionRepository.count(), testSessionRepository.countInProgress(now));
         }
     }
 

@@ -20,6 +20,8 @@ import org.ruscayn.vocarunner.shared.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -33,7 +35,7 @@ import java.util.stream.IntStream;
 
 /**
  * 시험 시작·문제·제출·결과.
- * 시험(정답지)은 메모리 저장소에만 두고 DB 를 사용하지 않는다.
+ * 시험(정답지·고른 답·결과)은 DB(test_session)에 저장해 재시작·배포 때도 이어진다 (U21).
  */
 @Slf4j
 @Service
@@ -44,17 +46,16 @@ public class TestApplicationService {
     private final TestQuestionGenerator testQuestionGenerator;
     private final WordCatalog wordCatalog;
     private final TestProperties testProperties;
-    /** 시작 시 상한 확인과 저장을 묶는 잠금 (서버 1대, 메모리 저장소 전제) */
-    private final Object startLock = new Object();
+    private final TransactionTemplate transactionTemplate;
 
     /**
-     * 시험 시작 : 상한 확인 → 문제 생성 → (다시 상한 확인 → 같은 기기의 이전 시험 종료 → 메모리 저장). 1단계는 EN_KO 고정.
+     * 시험 시작 : 상한 확인 → 문제 생성 → (시작 잠금 → 다시 상한 확인 → 같은 기기의 이전 시험 종료 → 저장). 1단계는 EN_KO 고정.
      *
      * <p>기기 하나에는 진행 중 시험이 1개만 있다. 새로 시작하면 그 기기에서 진행 중이던 시험은 종료한다.
      * 브라우저가 강제 종료돼 만료 요청을 못 보낸 시험이 남아도 새 시작을 막지 않는다 (U32·U8)
      *
      * <p>확인과 저장 사이에 다른 시작 요청이 끼어들면 동시 요청으로 상한을 넘길 수 있으므로(B3)
-     * 마지막 확인과 저장은 한 번에 하나씩 한다. 문제 생성은 시간이 걸려 잠금 밖에서 하고,
+     * 마지막 확인과 저장은 DB 잠금(트랜잭션 단위)으로 한 번에 하나씩 한다. 문제 생성은 시간이 걸려 잠금 밖에서 하고,
      * 상한에 걸릴 요청이 생성부터 하지 않도록 잠금 없이 한 번 먼저 확인한다.
      *
      * @param client 시작한 사용자 (기기·IP)
@@ -67,15 +68,15 @@ public class TestApplicationService {
         List<GeneratedQuestion> questions = testQuestionGenerator.generate(level, testProperties.questionCount());
         TestSession session = TestSession.start(level, Direction.EN_KO, TestSession.DEFAULT_TIME_LIMIT_SEC,
                 questions, client, now, testProperties.grace());
-        synchronized (startLock) {
+        transactionTemplate.executeWithoutResult(tx -> {
+            testSessionRepository.lockForStart();
             List<TestSession> replaced = checkCapacity(client, Instant.now());
             replaced.forEach(old -> {
-                old.expire();
                 testSessionRepository.delete(old.getId());
                 log.info("시험 만료 (같은 기기에서 새 시험 시작) session={}", old.getId());
             });
             testSessionRepository.save(session);
-        }
+        });
 
         log.info("시험 시작 session={} level={} 문제={} 마감={} ({}ms)",
                 session.getId(), level, session.getQuestionCount(), session.getDeadline(),
@@ -106,6 +107,7 @@ public class TestApplicationService {
     }
 
     /** 시험 화면용 문제 (진행 중인 시험만, 정답 번호 제외) */
+    @Transactional
     public TestQuestionsResponse getQuestions(UUID sessionId) {
         TestSession session = find(sessionId);
         Instant now = Instant.now();
@@ -133,7 +135,11 @@ public class TestApplicationService {
                 questions);
     }
 
-    /** 제출 및 채점. 마감 시각이 지났으면 무효 */
+    /**
+     * 제출 및 채점. 마감 시각이 지났으면 무효(삭제).
+     * 거절(예외)해도 마감 초과 삭제는 반영해야 하므로 업무 예외로는 되돌리지 않는다 (채점 전 검사에서 거절하면 바뀐 내용 없음)
+     */
+    @Transactional(noRollbackFor = CustomException.class)
     public TestSubmitResponse submit(UUID sessionId, TestSubmitRequest request) {
         TestSession session = find(sessionId);
 
@@ -166,6 +172,7 @@ public class TestApplicationService {
     }
 
     /** 결과 (완료된 시험만). 없거나(보관 시간 경과 포함) 완료 전이면 empty */
+    @Transactional(readOnly = true)
     public Optional<TestResultResponse> findResult(UUID sessionId) {
         return testSessionRepository.findById(sessionId)
                 .filter(TestSession::isCompleted)
@@ -173,6 +180,7 @@ public class TestApplicationService {
     }
 
     /** 제출을 마쳐 결과를 보관 중인지 (보관 시간이 지나 정리됐으면 false) */
+    @Transactional(readOnly = true)
     public boolean hasResult(UUID sessionId) {
         return testSessionRepository.findById(sessionId)
                 .filter(TestSession::isCompleted)
@@ -180,6 +188,7 @@ public class TestApplicationService {
     }
 
     /** 결과 (API) */
+    @Transactional(readOnly = true)
     public TestResultResponse getResult(UUID sessionId) {
         TestSession session = find(sessionId);
         if (!session.isCompleted()) {
@@ -188,19 +197,20 @@ public class TestApplicationService {
         return toResult(session);
     }
 
-    /** 진행 중이면 무효 처리 후 메모리에서 삭제. 없거나 이미 끝난 시험은 무시 */
+    /** 진행 중이면 무효 처리(삭제). 없거나 이미 끝난 시험은 무시 */
+    @Transactional
     public void expireIfInProgress(UUID sessionId) {
         Instant now = Instant.now();
         testSessionRepository.findById(sessionId)
                 .filter(session -> session.isInProgress(now))
                 .ifPresent(session -> {
-                    session.expire();
                     testSessionRepository.delete(sessionId);
                     log.info("시험 만료 session={}", sessionId);
                 });
     }
 
     /** 진행 중(마감 전)인 시험인지 */
+    @Transactional(readOnly = true)
     public boolean isInProgress(UUID sessionId) {
         Instant now = Instant.now();
         return testSessionRepository.findById(sessionId)
