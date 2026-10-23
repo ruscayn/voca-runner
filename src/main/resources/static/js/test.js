@@ -9,6 +9,7 @@
  *   앱 전환·화면 꺼짐 동안 브라우저가 타이머를 늦추거나 멈춰도, 돌아오면 그동안 지나간 문제를
  *   모두 시간 초과로 처리하고 그 시점의 문제를 남은 초부터 이어서 보여준다
  * - 새로고침·뒤로가기·창 닫기는 답안이 사라지므로 시험을 만료한다
+ *   풀이 중 뒤로가기는 "그만둘까요?" 확인(그동안 문제 시간 멈춤), 새로고침·창 닫기는 브라우저 기본 확인창
  * - 마감(분 단위)까지 남은 전체 시간을 표시하고, 지나면 시험은 무효
  *   마감 시각은 메인에서 시험을 만든 순간부터 계산되므로 [시작] 대기 시간도 포함된다
  */
@@ -58,7 +59,8 @@
         index: -1,
         answers: [],          // { questionNo, selectedOptionNo | null }
         lockedUntil: 0,
-        status: 'LOADING',    // LOADING → READY → RUNNING → SUBMITTING → DONE | ABORTED
+        pausedRemainMs: 0,    // 그만둘지 묻는 동안 멈춘 현재 문제의 남은 시간
+        status: 'LOADING',    // LOADING → READY → RUNNING (⇄ PAUSED) → SUBMITTING → DONE | ABORTED
     };
 
     // ---------- TTS ----------
@@ -226,7 +228,7 @@
 
     /** 마감 시각 경과 : 시험 무효 (서버도 마감 후 제출은 거절) */
     function timeOver() {
-        if (state.status !== 'RUNNING' && state.status !== 'READY') return;
+        if (state.status !== 'RUNNING' && state.status !== 'READY' && state.status !== 'PAUSED') return;
         state.status = 'ABORTED';
         stopClock();
         tts.stop();
@@ -407,7 +409,7 @@
 
     // ---------- 페이지 이탈 (새로고침·창 닫기·뒤로가기) : 답안이 사라지므로 만료 ----------
     function abort() {
-        if (state.status !== 'RUNNING' && state.status !== 'READY') return;
+        if (state.status !== 'RUNNING' && state.status !== 'READY' && state.status !== 'PAUSED') return;
         state.status = 'ABORTED';
         stopClock();
         tts.stop();
@@ -417,11 +419,58 @@
 
     window.addEventListener('pagehide', abort);
 
-    // 뒤로가기 : 시작 전이면 조용히 취소, 진행 중이면 만료 처리 후 안내
+    // 새로고침·창 닫기 : 풀이 중이면 브라우저 기본 확인창 (문구는 브라우저가 정함, 모바일은 무시할 수 있음)
+    window.addEventListener('beforeunload', (e) => {
+        if (state.status !== 'RUNNING' && state.status !== 'PAUSED') return;
+        e.preventDefault();
+        e.returnValue = '';
+    });
+
+    /** 풀이 중 뒤로가기 : 문제 시간을 멈추고 그만둘지 묻는다 (전체 마감 시간은 계속 흐름) */
+    function confirmQuit() {
+        settleTimeouts();
+        if (state.status !== 'RUNNING') return;
+        state.status = 'PAUSED';
+        state.pausedRemainMs = Math.max(0, state.questionEndAt - performance.now());
+        tts.stop();
+        const bar = el.timerBar;                    // 막대를 지금 위치에 멈춤
+        bar.style.transition = 'none';
+        bar.style.transform = `scaleX(${state.pausedRemainMs / state.timeLimitMs})`;
+
+        showOverlay('시험을 그만둘까요?', '지금까지 푼 답은 사라집니다.', '계속 풀기', resume);
+        el.overlayBack.textContent = '그만두기';
+        el.overlayBack.onclick = quit;
+        el.overlayBack.hidden = false;
+    }
+
+    function resume() {
+        if (state.status !== 'PAUSED') return;
+        el.overlay.hidden = true;
+        el.overlayBack.textContent = '이전';
+        state.status = 'RUNNING';
+        state.questionEndAt = performance.now() + state.pausedRemainMs;
+        state.lockedUntil = performance.now() + INPUT_LOCK_MS;
+        startQuestionBar();
+        updateQuestionSec();
+    }
+
+    /** [그만두기] : 본인이 고른 것이므로 종료 안내 없이 만료하고 메인으로 */
+    function quit() {
+        if (state.status !== 'PAUSED') return;
+        state.status = 'ABORTED';
+        stopClock();
+        navigator.sendBeacon(api('/expire'));
+        goMain();
+    }
+
+    // 뒤로가기 : 시작 전이면 조용히 취소, 풀이 중이면 그만둘지 확인, 제출 실패 안내 등 그 밖에는 만료 후 안내
     history.pushState(null, '', location.href);
     window.addEventListener('popstate', () => {
         if (state.status === 'READY') {
             cancelReady();
+        } else if (state.status === 'PAUSED' || (state.status === 'RUNNING' && el.overlay.hidden)) {
+            history.pushState(null, '', location.href);   // 이 화면에 머문다 (확인창이 떠 있으면 그대로)
+            if (state.status === 'RUNNING') confirmQuit();
         } else if (state.status === 'RUNNING') {
             abort();          // 종료 안내 → 확인 시 메인
         } else {
