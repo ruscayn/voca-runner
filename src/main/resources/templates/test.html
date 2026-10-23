@@ -49,6 +49,11 @@
             <p class="sheet-eyebrow" id="sheet-eyebrow" hidden></p>
             <h2 class="sheet-title" id="overlay-title">문제 불러오는 중...</h2>
             <p class="sheet-text" id="overlay-text"></p>
+            <!-- 자바스크립트를 끈 브라우저 : "문제 불러오는 중..." 대신 켜 달라는 안내 (U36). 서버의 시험은 문제를 받아 가지 않아 몇 분 뒤 정리된다 -->
+            <noscript>
+                <style>#overlay-title { display: none; }</style>
+                <p class="sheet-text">자바스크립트가 꺼져 있어 시험을 볼 수 없습니다.<br>브라우저 설정에서 자바스크립트를 켠 뒤 다시 시작해 주세요.</p>
+            </noscript>
 
             <div class="ready-info" id="ready-info" hidden>
                 <div class="stat-strip ready-stats">
