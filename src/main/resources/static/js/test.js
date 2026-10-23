@@ -16,7 +16,7 @@
 (() => {
     'use strict';
 
-    const INPUT_LOCK_MS = 150;   // 직전 탭이 다음 문제로 넘어가 눌리는 것 방지
+    const INPUT_LOCK_MS = 350;   // 직전 탭(실수로 두 번 누름 150~300ms)이 다음 문제로 넘어가 눌리는 것 방지
     const CLOCK_TICK_MS = 100;   // 시간 확인 주기
     const URGENT_SEC = 60;       // 남은 전체 시간이 이 값 이하이면 빨간색
     const Q_URGENT_SEC = 2;      // 문제당 남은 초가 이 값 이하이면 빨간색
@@ -119,6 +119,20 @@
             el.overlayBtn.onclick = onClick;
         }
         el.overlay.hidden = false;
+        setBackgroundInert(true);
+        if (buttonText) el.overlayBtn.focus();     // 키보드: Tab 없이 바로 Enter
+    }
+
+    function hideOverlay() {
+        el.overlay.hidden = true;
+        setBackgroundInert(false);
+    }
+
+    /** 안내 시트가 떠 있는 동안 뒤의 화면(보기 버튼 등)은 Tab·클릭이 가지 않게 한다 */
+    function setBackgroundInert(inert) {
+        for (const child of app.children) {
+            if (child !== el.overlay) child.inert = inert;
+        }
     }
 
     /** 시작 전 안내 : 레벨, 500문항 / 5초 / 45분, 안내 2가지, [이전] [시작] */
@@ -252,6 +266,8 @@
             el.options[i].dataset.no = opt.no;
         });
         state.lockedUntil = performance.now() + INPUT_LOCK_MS;
+        // 키보드: 방금 누른 보기에 포커스가 남으면 Enter 한 번(길게 누르면 연속)에 다음 문제가 읽지도 않고 답 처리됨
+        document.activeElement?.blur();
 
         // 영어 단어가 문제일 때만 읽어준다 (KO_EN 은 추후). 화면이 가려져 있으면 읽지 않음
         if (state.direction === 'EN_KO' && !document.hidden) tts.speak(q.prompt);
@@ -296,7 +312,7 @@
     function begin() {
         if (state.status !== 'READY') return;
         tts.unlock();                 // 터치 이벤트 안에서 호출 (iOS)
-        el.overlay.hidden = true;
+        hideOverlay();
         state.status = 'RUNNING';
         state.questionEndAt = performance.now() + state.timeLimitMs;
         showQuestion(0);
@@ -445,7 +461,7 @@
 
     function resume() {
         if (state.status !== 'PAUSED') return;
-        el.overlay.hidden = true;
+        hideOverlay();
         el.overlayBack.textContent = '이전';
         state.status = 'RUNNING';
         state.questionEndAt = performance.now() + state.pausedRemainMs;
