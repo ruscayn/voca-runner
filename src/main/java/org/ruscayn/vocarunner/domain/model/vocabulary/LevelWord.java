@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * 레벨별 출제 단어 (level_word). 한 레벨에 같은 단어는 1번.
  * 시험 보기에는 meaning1, meaning2(없을 수 있음) 를 보여준다.
- * test_excluded 인 행은 정답 문제로 내지 않는다 (오답 보기로는 사용).
+ * test_excluded 인 행은 시험에 쓰지 않는다 (정답 문제·오답 보기 모두).
  */
 @Getter
 @Entity
@@ -46,7 +46,7 @@ public class LevelWord extends BaseEntity {
 
     /**
      * 이 레벨에서 시험 제외 (예: bus 전체, inch A2 만).
-     * true 면 정답 문제로 내지 않고 오답 보기로만 사용한다.
+     * true 면 정답 문제로도, 오답 보기로도 내지 않는다.
      */
     @Column(name = "test_excluded", nullable = false)
     private boolean testExcluded;

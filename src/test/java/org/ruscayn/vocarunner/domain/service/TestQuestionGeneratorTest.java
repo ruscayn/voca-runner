@@ -161,9 +161,9 @@ class TestQuestionGeneratorTest {
 
     @ParameterizedTest(name = "seed {0}")
     @ValueSource(longs = {1, 3, 42, 2026})
-    @DisplayName("시험 제외 단어는 정답으로 나오지 않고 오답 보기로는 쓰인다")
-    void excludedOnlyAsDistractor(long seed) {
-        // 출제 20개 + 시험 제외 40개 → 오답 보기 후보의 대부분이 제외 단어
+    @DisplayName("시험 제외 단어는 정답으로도, 오답 보기로도 나오지 않는다")
+    void excludedNeverUsed(long seed) {
+        // 출제 20개 + 시험 제외 40개 → 제외 단어가 더 많아도 보기는 출제 단어로만 채움
         List<CatalogWord> catalog = new ArrayList<>(words(Level.B1, 1, 20));
         Set<Long> excludedIds = new HashSet<>();
         for (long id = 101; id <= 140; id++) {
@@ -180,8 +180,8 @@ class TestQuestionGeneratorTest {
                 .doesNotContainAnyElementsOf(excludedIds);
         assertThat(questions).flatExtracting(GeneratedQuestion::options)
                 .extracting(CatalogWord::levelWordId)
-                .as("오답 보기에는 시험 제외 단어 사용")
-                .containsAnyElementsOf(excludedIds);
+                .as("오답 보기에도 시험 제외 단어 없음")
+                .doesNotContainAnyElementsOf(excludedIds);
     }
 
     @Test
@@ -324,21 +324,24 @@ class TestQuestionGeneratorTest {
     @DisplayName("헷갈리는 단어 묶음 : 묶음이 다르면 함께 나올 수 있다 (sir-teacher, sir-Mr. 이어도 teacher-Mr. 는 가능)")
     void confusableNotTransitive() {
         // 1=sir, 2=teacher, 3=Mr. / 묶음 {1,2}, {1,3}
-        // teacher 만 정답 후보, 나머지는 오답 전용 → teacher 문제의 오답은 sir 를 뺀 3,4,5 로 정해짐
-        List<CatalogWord> catalog = List.of(
-                excluded(1, 1, Level.A1), word(2, 2, Level.A1),
-                excluded(3, 3, Level.A1), excluded(4, 4, Level.A1), excluded(5, 5, Level.A1));
+        // 단어 6개 (sir 문제는 teacher·Mr. 를 빼고 4,5,6 으로 오답을 채울 수 있음)
+        // teacher 문제 : sir 는 절대 안 나오고, Mr. 는 teacher 와 묶음이 아니므로 나올 수 있음
+        List<CatalogWord> catalog = words(Level.A1, 1, 6);
         InMemoryWordCatalog wordCatalog = new InMemoryWordCatalog(catalog, List.of(List.of(1L, 2L), List.of(1L, 3L)));
 
-        for (long seed = 1; seed <= 20; seed++) {
+        boolean mrAppeared = false;
+        for (long seed = 1; seed <= 30; seed++) {
             long s = seed;
             List<GeneratedQuestion> questions =
-                    new TestQuestionGenerator(wordCatalog, () -> new Random(s)).generate(Level.A1, 1);
+                    new TestQuestionGenerator(wordCatalog, () -> new Random(s)).generate(Level.A1, 6);
 
-            assertThat(questions).hasSize(1);
-            assertThat(questions.getFirst().options()).extracting(CatalogWord::wordId)
-                    .containsExactlyInAnyOrder(2L, 3L, 4L, 5L);
+            GeneratedQuestion teacher = questions.stream()
+                    .filter(q -> q.answer().wordId() == 2L).findFirst().orElseThrow();
+            List<Long> optionIds = teacher.options().stream().map(CatalogWord::wordId).toList();
+            assertThat(optionIds).as("teacher 문제에 sir 없음").doesNotContain(1L);
+            mrAppeared |= optionIds.contains(3L);
         }
+        assertThat(mrAppeared).as("teacher 문제에 Mr. 가 나올 수 있음").isTrue();
     }
 
     @Test

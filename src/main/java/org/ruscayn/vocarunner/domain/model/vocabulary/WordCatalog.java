@@ -21,7 +21,7 @@ public interface WordCatalog {
      */
     List<CatalogWord> findAnswerPool(Level level);
 
-    /** 오답 보기 후보 (불변). 시험 제외 행 포함, 단어당 1행(낮은 레벨) */
+    /** 오답 보기 후보 (불변). 정답 문제 후보와 같은 규칙 : 시험 제외 행 제외, 단어당 1행(낮은 레벨) */
     List<CatalogWord> findOptionPool(Level level);
 
     /** level_word_id 로 조회 (시험 제외 행 포함). 없으면 예외 */

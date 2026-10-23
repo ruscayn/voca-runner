@@ -21,7 +21,7 @@ import java.util.random.RandomGenerator;
  * <ul>
  *   <li>한 세션에서 같은 단어는 한 번만 출제</li>
  *   <li>묶음 레벨(A 등)은 소속 세부 레벨 단어를 함께 사용. 두 레벨에 모두 있는 단어는 낮은 레벨(뜻) 사용</li>
- *   <li>시험 제외 단어는 정답 문제로 내지 않고, 오답 보기로만 사용</li>
+ *   <li>시험 제외 단어는 정답 문제로도, 오답 보기로도 내지 않음</li>
  *   <li>보기 4개는 정답과 같은 세부 레벨 단어에서 선택</li>
  *   <li>보기 간 표시 뜻(한국어)이 하나라도 겹치면 안 됨</li>
  *   <li>헷갈리는 단어 묶음(confusable_group)에 함께 속한 단어는 같은 문제의 보기로 내지 않음
@@ -66,7 +66,7 @@ public class TestQuestionGenerator {
             throw new CustomException(ErrorCode.TEST_NOT_ENOUGH_WORDS, "레벨 " + level + " 에 출제 가능한 단어가 없습니다.");
         }
 
-        // 오답 보기 후보 (시험 제외 단어 포함), 세부 레벨별
+        // 오답 보기 후보 (시험 제외 단어 제외), 세부 레벨별
         Map<Level, List<CatalogWord>> optionPoolByLevel = new EnumMap<>(Level.class);
         for (CatalogWord word : wordCatalog.findOptionPool(level)) {
             optionPoolByLevel.computeIfAbsent(word.level(), k -> new ArrayList<>()).add(word);

@@ -56,9 +56,12 @@ public class InMemoryWordCatalog implements WordCatalog {
             for (Level detailLevel : level.detailLevels()) {
                 all.addAll(detail.getOrDefault(detailLevel, List.of()));
             }
-            // 정답 후보 : 시험 제외를 먼저 빼고 중복 정리 (순서 중요)
-            answers.put(level, keepLowestLevelPerWord(all.stream().filter(CatalogWord::isAnswerable).toList()));
-            options.put(level, keepLowestLevelPerWord(all));
+            // 시험 제외를 먼저 빼고 중복 정리 (순서 중요)
+            // 정답 후보와 오답 보기 후보는 같은 목록 : 시험 제외 단어는 오답 보기로도 내지 않는다
+            // (너무 쉬운 오답이 되거나, supermarket·team 처럼 정답과 헷갈리는 오답이 되므로)
+            List<CatalogWord> answerable = keepLowestLevelPerWord(all.stream().filter(CatalogWord::isAnswerable).toList());
+            answers.put(level, answerable);
+            options.put(level, answerable);
         }
 
         this.answerPool = Collections.unmodifiableMap(answers);
