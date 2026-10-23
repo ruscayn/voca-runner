@@ -19,14 +19,20 @@ import java.util.UUID;
 
 /**
  * 시험 화면.
- * <p>시험 화면은 시작 직후 딱 한 번만 열 수 있다. 새로고침·재접속하면 시험은 만료되고 메인으로 이동한다.
- * (시작 시 HttpSession 에 1회용 토큰을 넣고, 화면을 열 때 꺼내서 지운다)
+ * <p>시험 화면은 시작 직후 딱 한 번만 열 수 있다.
+ * (시작 시 HttpSession 에 1회용 입장권을 넣고, 화면을 열 때 꺼내서 지운다)
+ * <ul>
+ *   <li>같은 브라우저가 다시 들어오면(새로고침·재접속) 시험을 만료하고 메인으로 이동</li>
+ *   <li>다른 브라우저·기기·링크 미리보기 봇이 주소를 열면 그쪽만 안내와 함께 메인으로 보내고, 시험은 그대로 둔다</li>
+ * </ul>
  */
 @Controller
 @RequiredArgsConstructor
 public class TestController {
 
     private static final String ENTRY_TOKEN = "TEST_ENTRY_TOKEN";
+    /** 이 브라우저(세션)가 마지막으로 연 시험 id. 같은 브라우저의 재입장과 다른 브라우저의 입장을 구분한다 */
+    private static final String OPENED_TEST = "TEST_OPENED";
 
     private final TestApplicationService testApplicationService;
 
@@ -50,22 +56,38 @@ public class TestController {
     }
 
     @GetMapping("/test/{sessionId}")
-    public String test(@PathVariable UUID sessionId, HttpSession httpSession,
+    public String test(@PathVariable UUID sessionId, HttpServletRequest request,
                        Model model, RedirectAttributes redirect) {
-        Object token = httpSession.getAttribute(ENTRY_TOKEN);
-        httpSession.removeAttribute(ENTRY_TOKEN);
+        // 세션을 새로 만들지 않는다. 쿠키 없는 요청(다른 기기·링크 미리보기 봇)에 세션을 만들면
+        // redirect 주소에 ;jsessionid 가 붙어 404 원시 JSON 이 보인다 (B9)
+        HttpSession httpSession = request.getSession(false);
+        Object token = httpSession == null ? null : httpSession.getAttribute(ENTRY_TOKEN);
+        Object opened = httpSession == null ? null : httpSession.getAttribute(OPENED_TEST);
+        boolean inProgress = testApplicationService.isInProgress(sessionId);
 
-        if (!sessionId.equals(token) || !testApplicationService.isInProgress(sessionId)) {
-            // 진행 중이던 시험에 다시 들어온 경우만 만료 + 안내. 이미 끝난 시험(결과 화면에서 뒤로가기 등)은 메인으로만 이동
-            if (testApplicationService.isInProgress(sessionId)) {
-                testApplicationService.expireIfInProgress(sessionId);
-                redirect.addFlashAttribute("message", "시험이 종료되었습니다. 처음부터 다시 시작해 주세요.");
-            }
+        // 1) 시작 직후 첫 입장 : 입장권을 쓰고, 이 브라우저가 연 시험으로 기록
+        if (inProgress && sessionId.equals(token)) {
+            httpSession.removeAttribute(ENTRY_TOKEN);
+            httpSession.setAttribute(OPENED_TEST, sessionId);
+            model.addAttribute("sessionId", sessionId);
+            return "test";
+        }
+
+        // 2) 이미 끝난 시험 (결과 화면에서 뒤로가기 등) : 메인으로만 이동
+        if (!inProgress) {
             return "redirect:/";
         }
 
-        model.addAttribute("sessionId", sessionId);
-        return "test";
+        // 3) 이 시험을 연 브라우저가 다시 들어옴 (새로고침·재접속·같은 브라우저 새 탭) : 다시 풀 수 없게 만료
+        if (sessionId.equals(opened)) {
+            testApplicationService.expireIfInProgress(sessionId);
+            redirect.addFlashAttribute("message", "시험이 종료되었습니다. 처음부터 다시 시작해 주세요.");
+            return "redirect:/";
+        }
+
+        // 4) 다른 브라우저·기기·링크 미리보기 봇 : 원래 사용자의 시험은 건드리지 않고 이쪽만 돌려보낸다 (B2)
+        //    세션이 없을 수 있어 flash 대신 주소 파라미터로 안내한다
+        return "redirect:/?notice=" + MainController.NOTICE_TEST_IN_USE;
     }
 
     /** 결과 화면 (완료된 시험만) */

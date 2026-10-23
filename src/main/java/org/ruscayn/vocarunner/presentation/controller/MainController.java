@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -16,10 +17,19 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MainController {
 
+    /** 진행 중인 시험 주소를 다른 브라우저·기기에서 연 경우 (TestController) */
+    public static final String NOTICE_TEST_IN_USE = "test-in-use";
+
     private final LevelApplicationService levelApplicationService;
 
+    /**
+     * @param notice 세션 없이 안내할 때 쓰는 코드. 정해진 코드만 문구로 바꾸고 그 밖의 값은 무시한다
+     */
     @GetMapping("/")
-    public String main(Model model) {
+    public String main(@RequestParam(required = false) String notice, Model model) {
+        if (NOTICE_TEST_IN_USE.equals(notice) && !model.containsAttribute("message")) {
+            model.addAttribute("message", "이미 시작된 시험입니다. 시험을 시작한 화면에서만 풀 수 있습니다.");
+        }
         List<LevelGroupSummary> levelGroups = levelApplicationService.getDetailLevelGroups();
         // 처음 선택된 레벨(첫 레벨)의 문항 수·제한 시간. 다른 레벨을 고르면 화면 스크립트가 바꾼다
         LevelSummary first = levelGroups.getFirst().levels().getFirst();
