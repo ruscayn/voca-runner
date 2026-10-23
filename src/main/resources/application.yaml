@@ -48,6 +48,9 @@ server:
     enabled: true             # 응답 gzip 압축 (브라우저가 Accept-Encoding 으로 지원을 알릴 때만). 결과 화면 HTML·문제 API 크기 감소
     mime-types: text/html,text/css,text/javascript,application/javascript,application/json   # 글꼴(woff2)은 이미 압축 형식이라 제외
     min-response-size: 2KB    # 이보다 작은 응답은 압축하지 않음
+  servlet:
+    session:
+      tracking-modes: cookie  # 세션은 쿠키로만. 첫 시작 때 주소에 ;jsessionid 가 붙지 않게 (U13)
 
 voca-runner:
   test:
