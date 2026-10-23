@@ -1,0 +1,14 @@
+# 개발 PC 전용 (local 프로필). application.yaml(운영 기준) 위에 개발용 값만 덮어쓴다.
+spring:
+  thymeleaf:
+    cache: false              # 템플릿 수정이 재시작 없이 바로 반영
+
+logging:
+  level:
+    org.ruscayn.vocarunner: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
+
+voca-runner:
+  test:
+    question-count: 0         # 레벨 단어 전체 출제 (베타 테스트용)

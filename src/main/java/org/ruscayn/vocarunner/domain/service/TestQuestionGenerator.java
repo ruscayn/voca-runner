@@ -31,6 +31,9 @@ import java.util.random.RandomGenerator;
 @Service
 public class TestQuestionGenerator {
 
+    /** 최대 문제 수에 이 값을 주면 레벨 단어 전체를 출제 (개발·베타 테스트용) */
+    public static final int ALL_WORDS = 0;
+
     private static final int DISTRACTOR_COUNT = GeneratedQuestion.OPTION_COUNT - 1;
     /** 무작위 뽑기 시도 횟수. 초과하면 전체를 섞어 순서대로 검사 */
     private static final int RANDOM_TRY_LIMIT = 200;
@@ -54,7 +57,7 @@ public class TestQuestionGenerator {
      * 문제를 생성한다. 출제 가능 단어가 maxCount 보다 적으면 그 레벨 단어 전체를 출제한다.
      *
      * @param level    사용자가 고른 레벨 (세부 또는 묶음)
-     * @param maxCount 최대 문제 수 (설정값)
+     * @param maxCount 최대 문제 수 (설정값). {@link #ALL_WORDS}(0)이면 레벨 단어 전체
      */
     public List<GeneratedQuestion> generate(Level level, int maxCount) {
         List<CatalogWord> answerPool = wordCatalog.findAnswerPool(level);
@@ -81,8 +84,14 @@ public class TestQuestionGenerator {
         return result;
     }
 
-    /** 실제 문제 수 = min(출제 가능 단어 수, 최대 문제 수). 메인 화면 안내도 같은 규칙을 쓴다 */
+    /**
+     * 실제 문제 수 = min(출제 가능 단어 수, 최대 문제 수). 메인 화면 안내도 같은 규칙을 쓴다.
+     * 최대 문제 수가 {@link #ALL_WORDS}(0)이면 레벨 단어 전체를 출제한다.
+     */
     public static int questionCount(int answerPoolSize, int maxCount) {
+        if (maxCount == ALL_WORDS) {
+            return answerPoolSize;
+        }
         return Math.min(answerPoolSize, maxCount);
     }
 

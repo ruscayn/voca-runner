@@ -82,6 +82,27 @@ class TestQuestionGeneratorTest {
         assertQuestionRules(questions);
     }
 
+    @Test
+    @DisplayName("최대 문제 수 0 : 레벨 단어 전체를 출제")
+    void zeroMeansAllWords() {
+        List<CatalogWord> catalog = new ArrayList<>(words(Level.A1, 1, 30));
+        catalog.addAll(words(Level.A2, 101, 30));    // 다른 레벨 단어는 섞이면 안 됨
+
+        List<GeneratedQuestion> questions = generator(catalog, 1).generate(Level.A1, TestQuestionGenerator.ALL_WORDS);
+
+        assertThat(questions).hasSize(30);
+        assertThat(questions).allMatch(q -> q.answer().level() == Level.A1);
+        assertQuestionRules(questions);
+    }
+
+    @Test
+    @DisplayName("문제 수 계산 : min(단어 수, 최대 문제 수), 0 이면 단어 수 전체")
+    void questionCountRule() {
+        assertThat(TestQuestionGenerator.questionCount(997, 500)).isEqualTo(500);
+        assertThat(TestQuestionGenerator.questionCount(300, 500)).isEqualTo(300);
+        assertThat(TestQuestionGenerator.questionCount(997, TestQuestionGenerator.ALL_WORDS)).isEqualTo(997);
+    }
+
     @ParameterizedTest(name = "seed {0}")
     @ValueSource(longs = {1, 5, 42, 777})
     @DisplayName("뜻이 일부 겹치는 단어가 많아도 보기 간 뜻은 겹치지 않는다")

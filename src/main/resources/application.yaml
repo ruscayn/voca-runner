@@ -1,3 +1,6 @@
+# 공통 설정 = 운영 기준 값.
+# 개발 PC 는 local 프로필(application-local.yaml)로 개발용 값만 덮어쓴다. (IntelliJ 실행 설정 Active profiles: local)
+# 프로필을 지정하지 않으면 운영 값으로 동작한다.
 spring:
   application:
     name: voca-runner
@@ -20,24 +23,33 @@ spring:
     driver-class-name: org.postgresql.Driver
 
   thymeleaf:
-    cache: false
+    cache: true               # 템플릿을 한 번만 읽음
+
+  web:
+    resources:
+      chain:
+        strategy:
+          content:
+            enabled: true     # 정적 파일 주소에 내용 해시를 붙임 (test.js → test-<해시>.js). 파일이 바뀌면 주소도 바뀌어 브라우저가 새 파일을 받음
+            paths: /**
+      cache:
+        cachecontrol:
+          max-age: 365d       # 해시 주소라 오래 캐시해도 안전
+          cache-public: true
 
 logging:
   level:
     root: INFO
-    org.ruscayn.vocarunner: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.orm.jdbc.bind: TRACE
+    org.ruscayn.vocarunner: INFO
 
 server:
   port: 8080
 
 voca-runner:
   test:
-    question-count: 10000              # 개발 테스트용. 실제 서비스는 500
+    question-count: 500            # 0 이면 레벨 단어 전체 출제 (local 프로필에서 사용)
     grace: 3m                      # 마감 = (문항 수 × 제한 시간 + 여유 시간)을 분 단위로 올림. 500문항 → 45분
     result-retention: 10m          # 제출 후 결과 화면용 메모리 보관 시간
     max-in-progress: 20000         # 전체 동시 진행 상한 (500문항 1개 약 10KB → 약 200MB 이하)
     max-in-progress-per-client: 3  # IP당 동시 진행 상한
     cleanup-interval: 1m           # 끝난 시험 정리 주기
-
