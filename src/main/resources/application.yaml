@@ -53,6 +53,7 @@ server:
       tracking-modes: cookie  # 세션은 쿠키로만. 첫 시작 때 주소에 ;jsessionid 가 붙지 않게 (U13)
 
 voca-runner:
+  site-url: https://vocarunner.com   # 사이트 전체 주소. 링크 미리보기 이미지(og:image)처럼 전체 주소가 필요한 곳에 씀 (U30)
   test:
     question-count: 500            # 0 이면 레벨 단어 전체 출제 (local 프로필에서 사용)
     grace: 3m                      # 마감 = (문항 수 × 제한 시간 + 여유 시간)을 분 단위로 올림. 500문항 → 45분

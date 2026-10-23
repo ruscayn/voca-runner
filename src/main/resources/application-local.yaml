@@ -10,5 +10,6 @@ logging:
     org.hibernate.orm.jdbc.bind: TRACE
 
 voca-runner:
+  site-url: http://localhost:8080
   test:
     question-count: 0         # 레벨 단어 전체 출제 (베타 테스트용)
