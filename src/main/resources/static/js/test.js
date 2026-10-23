@@ -63,6 +63,7 @@
         answers: [],          // { questionNo, selectedOptionNo | null }
         lockedUntil: 0,
         pausedRemainMs: 0,    // 그만둘지 묻는 동안 멈춘 현재 문제의 남은 시간
+        submitFailed: false,  // 제출이 네트워크·서버 오류로 실패해 [다시 제출]을 기다리는 중 (답안은 아직 서버에 없음)
         status: 'LOADING',    // LOADING → READY → RUNNING (⇄ PAUSED) → SUBMITTING → DONE | ABORTED
     };
 
@@ -397,6 +398,7 @@
 
     async function submit() {
         state.status = 'SUBMITTING';
+        state.submitFailed = false;
         showOverlay('채점 중...');
         try {
             const res = await fetch(api('/submit'), {
@@ -424,11 +426,35 @@
             }
             // 네트워크 오류·서버 오류 : 다시 시도 (답안은 그대로 유지, 마감 확인은 계속)
             state.status = 'RUNNING';
-            showOverlay('제출하지 못했습니다', isNetworkError(e) ? MSG_OFFLINE_SUBMIT : e.message, '다시 제출', () => {
-                if (state.status !== 'RUNNING') return;
-                submit();
-            });
+            state.submitFailed = true;
+            showOverlay('제출하지 못했습니다', isNetworkError(e) ? MSG_OFFLINE_SUBMIT : e.message, '다시 제출', retrySubmit);
         }
+    }
+
+    function retrySubmit() {
+        if (state.status !== 'RUNNING' || !state.submitFailed) return;
+        el.overlayBack.textContent = '이전';
+        submit();
+    }
+
+    /**
+     * 제출 실패 안내 중 뒤로가기 : 푼 답이 아직 서버에 없으므로 바로 끝내지 않고 묻는다 (U12).
+     * 실수로 [뒤로]를 눌러 다 푼 시험을 잃지 않게
+     */
+    function confirmDiscardAnswers() {
+        showOverlay('아직 제출되지 않았습니다', '그만두면 푼 답이 모두 사라집니다.', '다시 제출', retrySubmit);
+        el.overlayBack.textContent = '그만두기';
+        el.overlayBack.onclick = discardAnswers;
+        el.overlayBack.hidden = false;
+    }
+
+    /** 제출 실패 뒤 [그만두기] : 본인이 고른 것이므로 종료 안내 없이 만료하고 메인으로 */
+    function discardAnswers() {
+        if (state.status !== 'RUNNING' || !state.submitFailed) return;
+        state.status = 'ABORTED';
+        stopClock();
+        navigator.sendBeacon(api('/expire'));
+        goMain();
     }
 
     const MSG_SESSION_GONE = '서버 점검 등으로 시험 정보가 사라졌습니다.\n불편을 드려 죄송합니다. 처음부터 다시 시작해 주세요.';
@@ -527,11 +553,16 @@
         goMain();
     }
 
-    // 뒤로가기 : 시작 전이면 조용히 취소, 풀이 중이면 그만둘지 확인, 제출 실패 안내 등 그 밖에는 만료 후 안내
+    // 뒤로가기 : 시작 전이면 조용히 취소, 풀이 중·제출 실패면 그만둘지 확인, 채점 중이면 머묾, 그 밖에는 만료 후 안내
     history.pushState(null, '', location.href);
     window.addEventListener('popstate', () => {
         if (state.status === 'READY') {
             cancelReady();
+        } else if (state.status === 'SUBMITTING') {
+            history.pushState(null, '', location.href);   // 채점 중 : 결과가 올 때까지 이 화면에 머문다
+        } else if (state.status === 'RUNNING' && state.submitFailed) {
+            history.pushState(null, '', location.href);
+            confirmDiscardAnswers();
         } else if (state.status === 'PAUSED' || (state.status === 'RUNNING' && el.overlay.hidden)) {
             history.pushState(null, '', location.href);   // 이 화면에 머문다 (확인창이 떠 있으면 그대로)
             if (state.status === 'RUNNING') confirmQuit();
