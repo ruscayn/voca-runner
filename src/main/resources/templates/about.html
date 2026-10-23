@@ -9,7 +9,7 @@
 <div class="app">
 
     <header class="about-header">
-        <a class="back-btn" th:href="@{/}" aria-label="뒤로">
+        <a class="back-btn" id="back-btn" th:href="@{/}" aria-label="뒤로">
             <svg viewBox="0 0 22 22" fill="none" aria-hidden="true"><path d="M13.5 5 L7.5 11 L13.5 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
         <h1>정보 · 출처</h1>
@@ -61,5 +61,24 @@
     </main>
 
 </div>
+<script>
+    (() => {
+        // 메인에서 왔으면 실제 뒤로가기 : 고른 레벨이 그대로 남고 방문 기록이 쌓이지 않는다 (U4)
+        // 공유 링크로 바로 들어온 경우 등은 링크대로 메인으로 이동
+        document.getElementById('back-btn').addEventListener('click', e => {
+            let fromMain = false;
+            try {
+                const ref = new URL(document.referrer);
+                fromMain = ref.origin === location.origin && ref.pathname === '/';
+            } catch {
+                // referrer 없음
+            }
+            if (fromMain && history.length > 1) {
+                e.preventDefault();
+                history.back();
+            }
+        });
+    })();
+</script>
 </body>
 </html>
