@@ -67,7 +67,9 @@
     justify-content: center;
     gap: 12px;
 }
+/* 글자 크기는 test.js(fitPrompt)가 폭에 맞춰 52px → 28px 사이로 줄인다. 단어 중간 줄바꿈은 최소 크기에서도 넘칠 때만 */
 .prompt {
+    width: 100%;
     margin: 0;
     font-family: var(--font-en);
     font-weight: 600;
@@ -75,8 +77,9 @@
     letter-spacing: -1px;
     line-height: 1.1;
     text-align: center;
-    word-break: break-word;
+    overflow-wrap: normal;
 }
+.prompt.prompt-break { overflow-wrap: anywhere; }
 /* 함께 표시할 형태 (예: for the sake of / for one's sake) */
 .prompt-sub {
     margin: 0;

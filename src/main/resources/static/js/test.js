@@ -20,6 +20,9 @@
     const CLOCK_TICK_MS = 100;   // 시간 확인 주기
     const URGENT_SEC = 60;       // 남은 전체 시간이 이 값 이하이면 빨간색
     const Q_URGENT_SEC = 2;      // 문제당 남은 초가 이 값 이하이면 빨간색
+    const PROMPT_MAX_PX = 52;    // 문제 단어 글자 크기 (긴 단어는 폭에 맞춰 줄임)
+    const PROMPT_MIN_PX = 28;
+    const PROMPT_MAX_LINES = 2;  // 띄어쓰기 있는 구는 2줄까지 허용
 
     const app = document.getElementById('test-app');
     const sessionId = app.dataset.sessionId;
@@ -250,6 +253,27 @@
         showOverlay('시험이 무효 처리되었습니다', '제한 시간 안에 제출하지 않아\n시험이 무효 처리되었습니다.', '확인', goMain);
     }
 
+    // ---------- 문제 단어 크기 ----------
+    /**
+     * 단어가 폭에 들어가고(단어 중간 줄바꿈 없음) 구는 2줄 이하가 될 때까지 글자를 줄인다.
+     * 최소 크기에서도 넘치면(아주 좁은 화면) 그때만 단어 중간 줄바꿈을 허용한다
+     */
+    function fitPrompt() {
+        const p = el.prompt;
+        p.classList.remove('prompt-break');
+        for (let px = PROMPT_MAX_PX; px >= PROMPT_MIN_PX; px -= 2) {
+            p.style.fontSize = `${px}px`;
+            const fitsWidth = p.scrollWidth <= p.clientWidth;
+            const lines = Math.round(p.offsetHeight / (px * 1.1));   // line-height 1.1
+            if (fitsWidth && lines <= PROMPT_MAX_LINES) return;
+        }
+        p.classList.add('prompt-break');
+    }
+
+    // 화면 회전·글꼴 로드가 끝나면 폭이 달라지므로 다시 맞춘다
+    window.addEventListener('resize', () => { if (state.index >= 0) fitPrompt(); });
+    document.fonts?.ready.then(() => { if (state.index >= 0) fitPrompt(); });
+
     // ---------- 진행 ----------
     /** state.index 문제를 표시. 마감 시각(state.questionEndAt)은 호출 전에 정해 둔다 */
     function showQuestion(index) {
@@ -258,6 +282,7 @@
         el.currentNo.textContent = q.no;
         el.progressFill.style.width = `${(index / state.questionCount) * 100}%`;
         el.prompt.textContent = q.prompt;
+        fitPrompt();
         // 함께 표시할 형태 (예: for one's sake). 발음은 표제어(q.prompt)만 읽는다
         el.promptSub.textContent = q.promptSub || '';
         el.promptSub.hidden = !q.promptSub;
