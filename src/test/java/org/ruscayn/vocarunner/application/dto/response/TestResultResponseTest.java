@@ -42,4 +42,13 @@ class TestResultResponseTest {
         assertThat(result.timeoutCount()).isZero();
     }
 
+    @Test
+    @DisplayName("보관 시간 안내 : 60분 단위면 시간, 아니면 분")
+    void retentionText() {
+        assertThat(new TestResultResponse(UUID.randomUUID(), "A1", "Basic", 5, 5, 100, Instant.now(), 120, List.of())
+                .retentionText()).isEqualTo("2시간");
+        assertThat(new TestResultResponse(UUID.randomUUID(), "A1", "Basic", 5, 5, 100, Instant.now(), 90, List.of())
+                .retentionText()).isEqualTo("90분");
+    }
+
 }

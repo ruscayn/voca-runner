@@ -22,6 +22,11 @@ public record TestResultResponse(
         List<WrongItem> wrongItems
 ) {
 
+    /** 결과 화면 안내용 보관 시간 (예: 2시간, 90분) */
+    public String retentionText() {
+        return retentionMinutes % 60 == 0 ? (retentionMinutes / 60) + "시간" : retentionMinutes + "분";
+    }
+
     /** 시간 초과(답을 고르지 못한) 문제 수 */
     public long timeoutCount() {
         return wrongItems.stream().filter(item -> item.selectedText() == null).count();

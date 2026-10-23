@@ -37,7 +37,7 @@
             </div>
         </section>
 
-        <p class="retention-note">이 결과는 제출 후 <th:block th:text="${result.retentionMinutes()}">20</th:block>분 동안만 볼 수 있어요 (<strong th:text="${availableUntil}">14:20</strong>까지)</p>
+        <p class="retention-note">이 결과는 제출 후 <th:block th:text="${result.retentionText()}">2시간</th:block> 동안만 볼 수 있어요 (<strong th:text="${availableUntil}">14:20</strong>까지)</p>
 
         <!-- 틀린 단어 -->
         <section class="review-section" th:unless="${#lists.isEmpty(result.wrongItems())}">
