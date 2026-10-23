@@ -13,7 +13,8 @@ import java.time.Duration;
  * @param grace                마감 여유 시간. 마감 = (문항 수 × 제한 시간 + 여유)를 분 단위로 올림
  * @param resultRetention      제출 후 결과를 메모리에 보관하는 시간
  * @param maxInProgress        전체 동시 진행 상한. 넘으면 새 시작 거절
- * @param maxInProgressPerClient 사용자(IP)당 동시 진행 상한
+ * @param maxInProgressPerIp   IP당 동시 진행 상한. 학교·통신사처럼 여러 사람이 IP 하나를 함께 쓰므로 넉넉하게.
+ *                             쿠키를 지워 가며 시험을 계속 만드는 것만 막는다 (기기당은 1개, 새로 시작하면 이전 시험 종료)
  * @param cleanupInterval      만료 시험 정리 주기
  * @param undeliveredTimeout   시작 후 이 시간 안에 문제를 받아 가지 않은 시험은 정리 (시작 직후 연결 끊김 등)
  */
@@ -23,7 +24,7 @@ public record TestProperties(
         @DefaultValue("3m") Duration grace,
         @DefaultValue("20m") Duration resultRetention,
         @DefaultValue("20000") int maxInProgress,
-        @DefaultValue("3") int maxInProgressPerClient,
+        @DefaultValue("50") int maxInProgressPerIp,
         @DefaultValue("1m") Duration cleanupInterval,
         @DefaultValue("5m") Duration undeliveredTimeout
 ) {

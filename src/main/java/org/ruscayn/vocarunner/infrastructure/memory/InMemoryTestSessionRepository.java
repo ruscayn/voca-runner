@@ -5,6 +5,8 @@ import org.ruscayn.vocarunner.domain.repository.TestSessionRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -49,10 +51,21 @@ public class InMemoryTestSessionRepository implements TestSessionRepository {
     }
 
     @Override
-    public int countInProgress(String clientKey, Instant now) {
+    public List<TestSession> findInProgressByDevice(String deviceId, Instant now) {
+        List<TestSession> found = new ArrayList<>();
+        for (TestSession session : sessions.values()) {
+            if (session.isInProgress(now) && deviceId.equals(session.getClient().deviceId())) {
+                found.add(session);
+            }
+        }
+        return found;
+    }
+
+    @Override
+    public int countInProgressByIp(String ip, Instant now) {
         int count = 0;
         for (TestSession session : sessions.values()) {
-            if (session.isInProgress(now) && clientKey.equals(session.getClientKey())) {
+            if (session.isInProgress(now) && ip.equals(session.getClient().ip())) {
                 count++;
             }
         }

@@ -9,6 +9,7 @@ import org.ruscayn.vocarunner.application.dto.response.TestSubmitResponse;
 import org.ruscayn.vocarunner.domain.model.level.Level;
 import org.ruscayn.vocarunner.domain.model.test.Direction;
 import org.ruscayn.vocarunner.domain.model.test.GeneratedQuestion;
+import org.ruscayn.vocarunner.domain.model.test.TestClient;
 import org.ruscayn.vocarunner.domain.model.test.TestSession;
 import org.ruscayn.vocarunner.domain.model.vocabulary.CatalogWord;
 import org.ruscayn.vocarunner.domain.model.vocabulary.WordCatalog;
@@ -47,24 +48,32 @@ public class TestApplicationService {
     private final Object startLock = new Object();
 
     /**
-     * 시험 시작 : 상한 확인 → 문제 생성 → (다시 상한 확인 → 메모리 저장). 1단계는 EN_KO 고정.
+     * 시험 시작 : 상한 확인 → 문제 생성 → (다시 상한 확인 → 같은 기기의 이전 시험 종료 → 메모리 저장). 1단계는 EN_KO 고정.
+     *
+     * <p>기기 하나에는 진행 중 시험이 1개만 있다. 새로 시작하면 그 기기에서 진행 중이던 시험은 종료한다.
+     * 브라우저가 강제 종료돼 만료 요청을 못 보낸 시험이 남아도 새 시작을 막지 않는다 (U32·U8)
      *
      * <p>확인과 저장 사이에 다른 시작 요청이 끼어들면 동시 요청으로 상한을 넘길 수 있으므로(B3)
      * 마지막 확인과 저장은 한 번에 하나씩 한다. 문제 생성은 시간이 걸려 잠금 밖에서 하고,
      * 상한에 걸릴 요청이 생성부터 하지 않도록 잠금 없이 한 번 먼저 확인한다.
      *
-     * @param clientKey 사용자 구분 값 (현재는 IP)
+     * @param client 시작한 사용자 (기기·IP)
      */
-    public UUID start(Level level, String clientKey) {
+    public UUID start(Level level, TestClient client) {
         long begin = System.currentTimeMillis();
         Instant now = Instant.now();
-        checkCapacity(clientKey, now);
+        checkCapacity(client, now);
 
         List<GeneratedQuestion> questions = testQuestionGenerator.generate(level, testProperties.questionCount());
         TestSession session = TestSession.start(level, Direction.EN_KO, TestSession.DEFAULT_TIME_LIMIT_SEC,
-                questions, clientKey, now, testProperties.grace());
+                questions, client, now, testProperties.grace());
         synchronized (startLock) {
-            checkCapacity(clientKey, Instant.now());
+            List<TestSession> replaced = checkCapacity(client, Instant.now());
+            replaced.forEach(old -> {
+                old.expire();
+                testSessionRepository.delete(old.getId());
+                log.info("시험 만료 (같은 기기에서 새 시험 시작) session={}", old.getId());
+            });
             testSessionRepository.save(session);
         }
 
@@ -74,18 +83,26 @@ public class TestApplicationService {
         return session.getId();
     }
 
-    /** 전체·사용자별 동시 진행 상한 확인. 넘으면 예외 */
-    private void checkCapacity(String clientKey, Instant now) {
-        int inProgress = testSessionRepository.countInProgress(now);
+    /**
+     * 전체·IP별 동시 진행 상한 확인. 넘으면 예외.
+     * 같은 기기의 진행 중 시험은 새 시험으로 바뀌므로 세지 않는다
+     *
+     * @return 새 시험을 시작하면 종료할 같은 기기의 진행 중 시험
+     */
+    private List<TestSession> checkCapacity(TestClient client, Instant now) {
+        List<TestSession> byDevice = testSessionRepository.findInProgressByDevice(client.deviceId(), now);
+        int inProgress = testSessionRepository.countInProgress(now) - byDevice.size();
         if (inProgress >= testProperties.maxInProgress()) {
             log.warn("시험 시작 거절 (전체 상한) 진행 중={} 상한={}", inProgress, testProperties.maxInProgress());
             throw new CustomException(ErrorCode.TEST_SERVER_BUSY);
         }
-        int byClient = testSessionRepository.countInProgress(clientKey, now);
-        if (byClient >= testProperties.maxInProgressPerClient()) {
-            log.warn("시험 시작 거절 (사용자 상한) client={} 진행 중={}", clientKey, byClient);
-            throw new CustomException(ErrorCode.TEST_TOO_MANY_IN_PROGRESS);
+        long sameIp = byDevice.stream().filter(s -> client.ip().equals(s.getClient().ip())).count();
+        long byIp = testSessionRepository.countInProgressByIp(client.ip(), now) - sameIp;
+        if (byIp >= testProperties.maxInProgressPerIp()) {
+            log.warn("시험 시작 거절 (IP 상한) ip={} 진행 중={}", client.ip(), byIp);
+            throw new CustomException(ErrorCode.TEST_TOO_MANY_IN_PROGRESS_SAME_NETWORK);
         }
+        return byDevice;
     }
 
     /** 시험 화면용 문제 (진행 중인 시험만, 정답 번호 제외) */

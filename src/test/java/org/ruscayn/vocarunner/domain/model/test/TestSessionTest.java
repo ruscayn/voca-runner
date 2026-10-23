@@ -28,9 +28,10 @@ class TestSessionTest {
     private static final Duration GRACE = Duration.ofMinutes(3);
     private static final Duration RETENTION = Duration.ofMinutes(10);
     private static final Duration UNDELIVERED = Duration.ofMinutes(5);
+    private static final TestClient CLIENT = new TestClient("device-1", "127.0.0.1");
 
     private static TestSession start(int questionCount) {
-        return TestSession.start(Level.B1, Direction.EN_KO, 5, questions(questionCount), "127.0.0.1", NOW, GRACE);
+        return TestSession.start(Level.B1, Direction.EN_KO, 5, questions(questionCount), CLIENT, NOW, GRACE);
     }
 
     @Nested
@@ -68,7 +69,7 @@ class TestSessionTest {
         @DisplayName("진행 중 상태로 만들어지고 문항 수·정답이 기록된다")
         void createsInProgress() {
             List<GeneratedQuestion> questions = questions(4);
-            TestSession session = TestSession.start(Level.A1, Direction.EN_KO, 5, questions, "ip", NOW, GRACE);
+            TestSession session = TestSession.start(Level.A1, Direction.EN_KO, 5, questions, CLIENT, NOW, GRACE);
 
             assertThat(session.getStatus()).isEqualTo(TestStatus.IN_PROGRESS);
             assertThat(session.getQuestionCount()).isEqualTo(4);
@@ -84,7 +85,7 @@ class TestSessionTest {
         @Test
         @DisplayName("문제가 없으면 시작할 수 없다")
         void emptyQuestions() {
-            assertThatThrownBy(() -> TestSession.start(Level.A1, Direction.EN_KO, 5, List.of(), "ip", NOW, GRACE))
+            assertThatThrownBy(() -> TestSession.start(Level.A1, Direction.EN_KO, 5, List.of(), CLIENT, NOW, GRACE))
                     .isInstanceOf(CustomException.class)
                     .extracting(e -> ((CustomException) e).getErrorCode())
                     .isEqualTo(ErrorCode.INVALID_INPUT_VALUE);
@@ -94,7 +95,7 @@ class TestSessionTest {
         @CsvSource({"4", "11"})
         @DisplayName("문제당 제한 시간은 5~10초만 허용")
         void timeLimitRange(int sec) {
-            assertThatThrownBy(() -> TestSession.start(Level.A1, Direction.EN_KO, sec, questions(1), "ip", NOW, GRACE))
+            assertThatThrownBy(() -> TestSession.start(Level.A1, Direction.EN_KO, sec, questions(1), CLIENT, NOW, GRACE))
                     .isInstanceOf(CustomException.class)
                     .extracting(e -> ((CustomException) e).getErrorCode())
                     .isEqualTo(ErrorCode.INVALID_INPUT_VALUE);

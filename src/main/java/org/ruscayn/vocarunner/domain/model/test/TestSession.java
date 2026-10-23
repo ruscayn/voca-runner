@@ -42,8 +42,8 @@ public class TestSession {
     private final Direction direction;
     private final int questionCount;
     private final int timeLimitSec;
-    /** 시작한 사용자 구분 값 (현재는 IP). 동시 진행 개수 제한용 */
-    private final String clientKey;
+    /** 시작한 사용자 (기기·IP). 동시 진행 개수 제한용 */
+    private final TestClient client;
     private final Instant startedAt;
     /** 이 시각이 지나면 시험 무효 = 시작 + allowedDuration (분 단위 올림) */
     private final Instant deadline;
@@ -64,7 +64,7 @@ public class TestSession {
     private Instant submittedAt;
 
     private TestSession(Level level, Direction direction, int timeLimitSec, List<GeneratedQuestion> questions,
-                        String clientKey, Instant now, Duration grace) {
+                        TestClient client, Instant now, Duration grace) {
         if (questions.isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "문제 수는 1 이상이어야 합니다.");
         }
@@ -78,7 +78,7 @@ public class TestSession {
         this.direction = direction;
         this.questionCount = count;
         this.timeLimitSec = timeLimitSec;
-        this.clientKey = clientKey;
+        this.client = client;
         this.startedAt = now;
         this.deadline = now.plus(allowedDuration(count, timeLimitSec, grace));
 
@@ -96,9 +96,9 @@ public class TestSession {
     }
 
     public static TestSession start(Level level, Direction direction, int timeLimitSec,
-                                    List<GeneratedQuestion> questions, String clientKey,
+                                    List<GeneratedQuestion> questions, TestClient client,
                                     Instant now, Duration grace) {
-        return new TestSession(level, direction, timeLimitSec, questions, clientKey, now, grace);
+        return new TestSession(level, direction, timeLimitSec, questions, client, now, grace);
     }
 
     /**

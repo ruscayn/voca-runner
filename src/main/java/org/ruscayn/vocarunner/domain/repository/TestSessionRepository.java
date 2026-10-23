@@ -3,6 +3,7 @@ package org.ruscayn.vocarunner.domain.repository;
 import org.ruscayn.vocarunner.domain.model.test.TestSession;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
@@ -22,8 +23,11 @@ public interface TestSessionRepository {
     /** 진행 중인 시험 수 (전체) */
     int countInProgress(Instant now);
 
-    /** 진행 중인 시험 수 (사용자 구분 값 기준) */
-    int countInProgress(String clientKey, Instant now);
+    /** 진행 중인 시험 (기기 기준) */
+    List<TestSession> findInProgressByDevice(String deviceId, Instant now);
+
+    /** 진행 중인 시험 수 (IP 기준) */
+    int countInProgressByIp(String ip, Instant now);
 
     /** 조건에 맞는 시험 삭제. 삭제한 개수 반환 */
     int removeIf(Predicate<TestSession> condition);
