@@ -1,6 +1,6 @@
 /* =========================================================
    시험 화면
-   - 위 : 진행(128 / 500), 남은 전체 시간, 전체 진행 막대
+   - 위 : 진행(128 / 500), 남은 전체 시간, 진행 길(달리는 사람 → 결승선)
    - 가운데 : 단어
    - 아래 : 문제당 타이머(막대 + 남은 초), 보기 4개, 레벨
    ========================================================= */
@@ -11,6 +11,15 @@
     -webkit-user-select: none;
     -webkit-touch-callout: none;
 }
+
+/* ---------- 단계 색 (P5) ----------
+   100문제마다 한 단계 : 에메랄드 → 사파이어 → 인디고 → 자수정 → 금 (test.js 가 #test-app 에 data-stage 1~5).
+   진행 길·사람·깃발·진행 숫자·5초 막대·남은 초가 같은 색 */
+.test-page .app { --stage: #10A85F; --stage-bar: var(--stage); }
+.test-page .app[data-stage="2"] { --stage: #2563EB; }
+.test-page .app[data-stage="3"] { --stage: #4F46E5; }
+.test-page .app[data-stage="4"] { --stage: #9333EA; }
+.test-page .app[data-stage="5"] { --stage: #E9A916; --stage-bar: linear-gradient(to right, #F0B21E, #FFD54A); }
 
 /* ---------- 상단 ---------- */
 .test-status {
@@ -27,9 +36,11 @@
     font-family: var(--font-num);
     font-weight: 600;
     line-height: 1;
+    color: var(--stage);
+    transition: color .8s ease;
 }
 .progress-text strong { font-size: 32px; font-weight: 600; }
-.progress-total { font-size: 19px; color: var(--subtle); }
+.progress-total { font-size: 19px; }
 
 .remain-pill {
     display: flex;
@@ -52,18 +63,164 @@
 .remain-pill.urgent { color: var(--danger); background: var(--danger-soft); border-color: var(--danger-line); }
 .remain-pill.urgent svg { color: var(--danger); }
 
-.progress-track {
-    height: 4px;
-    background: var(--border);
-    border-radius: 99px;
-    overflow: hidden;
+/* 진행 길 : 회색 = 지나온 길, 색 막대 = 결승선까지 남은 길. --p = 푼 비율 0~1 (test.js).
+   사람(24px)과 남은 길 사이 6px, 깃발 자리 18px */
+.run-lane {
+    --p: 0;
+    position: relative;
+    height: 30px;
+    color: var(--stage);
+    transition: color .8s ease;
 }
-.progress-fill {
-    width: 0;
-    height: 100%;
-    background: #A6DDC1;
+.run-track,
+.run-rest {
+    position: absolute;
+    right: 18px;
+    top: 14px;
+    height: 6px;
     border-radius: 99px;
-    transition: width .2s ease-out;
+}
+.run-track { left: 0; background: var(--border); }
+.run-rest {
+    left: calc(30px + (100% - 48px) * var(--p));
+    background: var(--stage-bar);
+    transition: left .6s ease-out;
+}
+.runner {
+    position: absolute;
+    top: 0;
+    left: calc((100% - 48px) * var(--p));
+    width: 24px;
+    height: 30px;
+    transition: left .6s ease-out;
+}
+.runner-fig { display: block; width: 24px; height: 30px; overflow: visible; }
+.run-flag { position: absolute; right: 0; top: 3px; width: 14px; height: 18px; }
+
+/* 사람 : 멈춰 있을 때는 로고처럼 팔다리를 벌린 달리기 자세 = 달리기 한 바퀴의 첫 장면.
+   .is-running 이면 한 바퀴(1초)씩 뛰고, 한 바퀴가 끝날 때 멈추므로 자세가 끊기지 않는다 (test.js runStep) */
+.runner-fig g { transform-box: view-box; }
+.rn-thigh { transform-origin: 11px 16.5px; }
+.rn-shin { transform-origin: 11px 22px; }
+.rn-arm { transform-origin: 14px 9.4px; }
+.rn-near .rn-thigh { transform: rotate(-44deg); }
+.rn-near .rn-shin { transform: rotate(24deg); }
+.rn-arm-near { transform: rotate(50.6deg); }
+.rn-far .rn-thigh { transform: rotate(32deg); }
+.rn-far .rn-shin { transform: rotate(84deg); }
+.rn-arm-far { transform: rotate(-36.8deg); }
+.runner-fig.is-running .rn-body { animation: rn-bob .5s linear infinite; }
+.runner-fig.is-running .rn-thigh { animation: rn-thigh 1s linear infinite; }
+.runner-fig.is-running .rn-shin { animation: rn-shin 1s linear infinite; }
+.runner-fig.is-running .rn-arm { animation: rn-arm 1s linear infinite; }
+.runner-fig.is-running :is(.rn-far .rn-thigh, .rn-far .rn-shin, .rn-arm-far) { animation-delay: -.5s; }
+
+/* 달리기 한 바퀴 : 허벅지·종아리·팔 회전(뒤쪽 팔다리는 반 바퀴 늦게), 걸음마다 몸이 오르내림 */
+@keyframes rn-thigh {
+    0.0% { transform: rotate(-44.0deg) }
+    4.17% { transform: rotate(-36.9deg) }
+    8.33% { transform: rotate(-28.7deg) }
+    12.5% { transform: rotate(-20.0deg) }
+    16.67% { transform: rotate(-11.0deg) }
+    20.83% { transform: rotate(-1.5deg) }
+    25.0% { transform: rotate(8.0deg) }
+    29.17% { transform: rotate(18.5deg) }
+    33.33% { transform: rotate(29.0deg) }
+    37.5% { transform: rotate(36.0deg) }
+    41.67% { transform: rotate(38.2deg) }
+    45.83% { transform: rotate(36.9deg) }
+    50.0% { transform: rotate(32.0deg) }
+    54.17% { transform: rotate(22.6deg) }
+    58.33% { transform: rotate(9.6deg) }
+    62.5% { transform: rotate(-4.0deg) }
+    66.67% { transform: rotate(-18.7deg) }
+    70.83% { transform: rotate(-34.0deg) }
+    75.0% { transform: rotate(-46.0deg) }
+    79.17% { transform: rotate(-53.2deg) }
+    83.33% { transform: rotate(-57.0deg) }
+    87.5% { transform: rotate(-58.0deg) }
+    91.67% { transform: rotate(-55.6deg) }
+    95.83% { transform: rotate(-50.4deg) }
+    100% { transform: rotate(-44.0deg) }
+}
+@keyframes rn-shin {
+    0.0% { transform: rotate(24.0deg) }
+    4.17% { transform: rotate(27.6deg) }
+    8.33% { transform: rotate(36.2deg) }
+    12.5% { transform: rotate(42.0deg) }
+    16.67% { transform: rotate(41.1deg) }
+    20.83% { transform: rotate(37.3deg) }
+    25.0% { transform: rotate(34.0deg) }
+    29.17% { transform: rotate(30.2deg) }
+    33.33% { transform: rotate(26.9deg) }
+    37.5% { transform: rotate(30.0deg) }
+    41.67% { transform: rotate(44.1deg) }
+    45.83% { transform: rotate(64.6deg) }
+    50.0% { transform: rotate(84.0deg) }
+    54.17% { transform: rotate(101.9deg) }
+    58.33% { transform: rotate(118.7deg) }
+    62.5% { transform: rotate(128.0deg) }
+    66.67% { transform: rotate(126.1deg) }
+    70.83% { transform: rotate(116.6deg) }
+    75.0% { transform: rotate(104.0deg) }
+    79.17% { transform: rotate(87.9deg) }
+    83.33% { transform: rotate(68.6deg) }
+    87.5% { transform: rotate(52.0deg) }
+    91.67% { transform: rotate(39.2deg) }
+    95.83% { transform: rotate(29.0deg) }
+    100% { transform: rotate(24.0deg) }
+}
+@keyframes rn-arm {
+    0.0% { transform: rotate(50.6deg) }
+    4.17% { transform: rotate(42.4deg) }
+    8.33% { transform: rotate(33.0deg) }
+    12.5% { transform: rotate(23.0deg) }
+    16.67% { transform: rotate(12.6deg) }
+    20.83% { transform: rotate(1.7deg) }
+    25.0% { transform: rotate(-9.2deg) }
+    29.17% { transform: rotate(-21.3deg) }
+    33.33% { transform: rotate(-33.3deg) }
+    37.5% { transform: rotate(-41.4deg) }
+    41.67% { transform: rotate(-43.9deg) }
+    45.83% { transform: rotate(-42.4deg) }
+    50.0% { transform: rotate(-36.8deg) }
+    54.17% { transform: rotate(-26.0deg) }
+    58.33% { transform: rotate(-11.0deg) }
+    62.5% { transform: rotate(4.6deg) }
+    66.67% { transform: rotate(21.5deg) }
+    70.83% { transform: rotate(39.1deg) }
+    75.0% { transform: rotate(52.9deg) }
+    79.17% { transform: rotate(61.2deg) }
+    83.33% { transform: rotate(65.5deg) }
+    87.5% { transform: rotate(66.7deg) }
+    91.67% { transform: rotate(63.9deg) }
+    95.83% { transform: rotate(58.0deg) }
+    100% { transform: rotate(50.6deg) }
+}
+@keyframes rn-bob {
+    0.0% { transform: translateY(0.4px) }
+    8.33% { transform: translateY(1.1px) }
+    16.67% { transform: translateY(1.6px) }
+    25.0% { transform: translateY(1.3px) }
+    33.33% { transform: translateY(0.6px) }
+    41.67% { transform: translateY(-0.2px) }
+    50.0% { transform: translateY(-1.0px) }
+    58.33% { transform: translateY(-1.6px) }
+    66.67% { transform: translateY(-1.8px) }
+    75.0% { transform: translateY(-1.4px) }
+    83.33% { transform: translateY(-0.8px) }
+    91.67% { transform: translateY(-0.2px) }
+    100% { transform: translateY(0.4px) }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .runner-fig.is-running g { animation: none; }
+    .run-rest, .runner { transition: none; }
+}
+
+/* 윈도우 고대비 모드에서도 막대 색이 지워지지 않게 (U23) */
+@media (forced-colors: active) {
+    .run-track, .run-rest, .q-timer-track, .q-timer-bar { forced-color-adjust: none; }
 }
 
 /* ---------- 단어 ---------- */
@@ -117,12 +274,11 @@
 }
 .q-timer-bar {
     height: 100%;
-    background: var(--primary);
+    background: var(--stage-bar);
     border-radius: 99px;
     transform-origin: left center;
     transform: scaleX(1);
 }
-.q-timer-bar.urgent { background: var(--danger-bar); }
 
 .q-timer-sec {
     flex: none;
@@ -132,7 +288,8 @@
     align-items: baseline;
     justify-content: flex-end;
     gap: 1px;
-    color: var(--primary-text);
+    color: var(--stage);
+    transition: color .8s ease;
 }
 .q-timer-sec #timer-sec {
     font-family: var(--font-num);
@@ -141,7 +298,6 @@
     line-height: 1;
 }
 .q-timer-unit { font-size: 13px; font-weight: 600; }
-.q-timer-sec.urgent { color: var(--danger); }
 
 /* ---------- 보기 ---------- */
 .options { display: flex; flex-direction: column; gap: 10px; }

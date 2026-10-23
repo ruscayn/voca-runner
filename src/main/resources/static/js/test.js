@@ -19,7 +19,8 @@
     const INPUT_LOCK_MS = 350;   // 직전 탭(실수로 두 번 누름 150~300ms)이 다음 문제로 넘어가 눌리는 것 방지
     const CLOCK_TICK_MS = 100;   // 시간 확인 주기
     const URGENT_SEC = 60;       // 남은 전체 시간이 이 값 이하이면 빨간색
-    const Q_URGENT_SEC = 2;      // 문제당 남은 초가 이 값 이하이면 빨간색
+    const STAGE_SIZE = 100;      // 진행 색 한 단계 = 100문제 (test.css --stage, 5단계)
+    const RUN_MS = 1000;         // 사람이 한 번 뛰는 시간 = 달리기 한 바퀴 (test.css rn-thigh 등과 같게)
     const PROMPT_MAX_PX = 52;    // 문제 단어 글자 크기 (긴 단어는 폭에 맞춰 줄임)
     const PROMPT_MIN_PX = 28;
     const PROMPT_MAX_LINES = 2;  // 띄어쓰기 있는 구는 2줄까지 허용
@@ -32,13 +33,13 @@
     const el = {
         currentNo: $('current-no'),
         total: $('total-count'),
-        progressFill: $('progress-fill'),
+        runLane: $('run-lane'),
+        runnerFig: $('runner-fig'),
         remain: $('remain'),
         remainTime: $('remain-time'),
         prompt: $('prompt'),
         promptSub: $('prompt-sub'),
         timerBar: $('timer-bar'),
-        timerSecBox: $('timer-sec-box'),
         timerSec: $('timer-sec'),
         options: Array.from(document.querySelectorAll('.option-btn')),
         levelCaption: $('level-caption'),
@@ -64,6 +65,7 @@
         lockedUntil: 0,
         pausedRemainMs: 0,    // 그만둘지 묻는 동안 멈춘 현재 문제의 남은 시간
         submitFailed: false,  // 제출이 네트워크·서버 오류로 실패해 [다시 제출]을 기다리는 중 (답안은 아직 서버에 없음)
+        runUntil: 0,          // 사람이 이 시각까지 뛴다 (performance.now() 기준)
         status: 'LOADING',    // LOADING → READY → RUNNING (⇄ PAUSED) → SUBMITTING → DONE | ABORTED
     };
 
@@ -199,9 +201,6 @@
     function updateQuestionSec() {
         const sec = Math.max(0, Math.ceil((state.questionEndAt - performance.now()) / 1000));
         el.timerSec.textContent = sec;
-        const urgent = sec <= Q_URGENT_SEC;
-        el.timerSecBox.classList.toggle('urgent', urgent);
-        el.timerBar.classList.toggle('urgent', urgent);
     }
 
     /**
@@ -301,7 +300,8 @@
         state.index = index;
         const q = state.questions[index];
         el.currentNo.textContent = q.no;
-        el.progressFill.style.width = `${(index / state.questionCount) * 100}%`;
+        setProgress(index, q.no);
+        if (index > 0) runStep();
         el.prompt.textContent = q.prompt;
         fitPrompt();
         // 함께 표시할 형태 (예: for one's sake). 발음은 표제어(q.prompt)만 읽는다
@@ -341,9 +341,33 @@
         }
     }
 
+    /**
+     * 진행 길 : 사람 위치 = 푼 비율, 색 단계 = 지금 문제 번호 기준 100문제마다 (P5).
+     * 같은 번호는 문제 수와 상관없이 같은 색 (300문제 = 3색, 500문제 = 5색)
+     */
+    function setProgress(answeredCount, questionNo) {
+        el.runLane.style.setProperty('--p', answeredCount / state.questionCount);
+        app.dataset.stage = Math.min(5, Math.floor((questionNo - 1) / STAGE_SIZE) + 1);
+    }
+
+    /**
+     * 답을 고르면(다음 문제로 넘어가면) 사람이 한 바퀴 뛴다.
+     * 뛰는 중에 또 넘어가면 이어서 뛰고, 한 바퀴가 끝나는 순간에 멈춰 멈춘 자세와 끊기지 않게 한다
+     */
+    function runStep() {
+        state.runUntil = performance.now() + RUN_MS;
+        el.runnerFig.classList.add('is-running');
+    }
+
+    el.runnerFig.addEventListener('animationiteration', (e) => {
+        if (e.animationName !== 'rn-thigh' || !e.target.closest('.rn-near')) return;   // 앞다리 한 바퀴마다 한 번
+        if (performance.now() >= state.runUntil - 50) el.runnerFig.classList.remove('is-running');
+    });
+
     /** 마지막 문제까지 끝남 → 제출 */
     function finish() {
-        el.progressFill.style.width = '100%';
+        setProgress(state.questionCount, state.questionCount);
+        runStep();
         tts.stop();
         submit();
     }

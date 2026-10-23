@@ -20,7 +20,28 @@
                 <span class="remain-time" id="remain-time">--:--</span>
             </div>
         </div>
-        <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+        <!-- 진행 길 (P5) : 사람이 왼쪽에서 밀고 들어가며 결승선까지 남은 길(색 막대)이 줄어든다.
+             색은 100문제마다 한 단계 (test.css --stage). 사람은 답을 고르면 한 걸음 뛴다 (test.js runStep) -->
+        <div class="run-lane" id="run-lane" aria-hidden="true">
+            <div class="run-track"></div>
+            <div class="run-rest"></div>
+            <div class="runner">
+                <svg class="runner-fig" id="runner-fig" viewBox="0 0 24 30" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <g class="rn-body">
+                        <g opacity="0.45"><g class="rn-arm rn-arm-far"><path d="M14 9.4 L14 14.2 L17.6 12.2" stroke-width="2.2"/></g><g class="rn-far"><g class="rn-thigh"><path d="M11 16.5 L11 22" stroke-width="2.6"/><g class="rn-shin"><path d="M11 22 L11 27.2 L13.2 27.4" stroke-width="2.4"/></g></g></g></g>
+                        <path d="M11 16.5 L14 9.4" stroke-width="2.8"/>
+                        <circle cx="15.6" cy="5.8" r="2.6" fill="currentColor" stroke="none"/>
+                        <g class="rn-near"><g class="rn-thigh"><path d="M11 16.5 L11 22" stroke-width="2.6"/><g class="rn-shin"><path d="M11 22 L11 27.2 L13.2 27.4" stroke-width="2.4"/></g></g></g>
+                        <g class="rn-arm rn-arm-near"><path d="M14 9.4 L14 14.2 L17.6 12.2" stroke-width="2.2"/></g>
+                    </g>
+                </svg>
+            </div>
+            <svg class="run-flag" viewBox="0 0 16 20">
+                <path d="M2 19 V2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <rect x="2.6" y="2" width="10" height="7" fill="#FFFFFF" stroke="currentColor" stroke-width="1"/>
+                <path d="M2.6 2 h2.5 v2.33 h-2.5 Z M7.6 2 h2.5 v2.33 h-2.5 Z M5.1 4.33 h2.5 v2.33 h-2.5 Z M10.1 4.33 h2.5 v2.33 h-2.5 Z M2.6 6.66 h2.5 v2.33 h-2.5 Z M7.6 6.66 h2.5 v2.33 h-2.5 Z" fill="currentColor"/>
+            </svg>
+        </div>
     </header>
 
     <main class="app-content test-content" inert>
@@ -30,7 +51,7 @@
 
     <div class="q-timer" aria-label="이 문제의 남은 시간" inert>
         <div class="q-timer-track"><div class="q-timer-bar" id="timer-bar"></div></div>
-        <p class="q-timer-sec" id="timer-sec-box"><span id="timer-sec">5</span><span class="q-timer-unit">초</span></p>
+        <p class="q-timer-sec"><span id="timer-sec">5</span><span class="q-timer-unit">초</span></p>
     </div>
 
     <footer class="app-footer test-footer" inert>
