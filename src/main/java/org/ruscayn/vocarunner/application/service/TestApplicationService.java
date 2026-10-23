@@ -141,6 +141,13 @@ public class TestApplicationService {
                 .map(this::toResult);
     }
 
+    /** 제출을 마쳐 결과를 보관 중인지 (보관 시간이 지나 정리됐으면 false) */
+    public boolean hasResult(UUID sessionId) {
+        return testSessionRepository.findById(sessionId)
+                .filter(TestSession::isCompleted)
+                .isPresent();
+    }
+
     /** 결과 (API) */
     public TestResultResponse getResult(UUID sessionId) {
         TestSession session = find(sessionId);

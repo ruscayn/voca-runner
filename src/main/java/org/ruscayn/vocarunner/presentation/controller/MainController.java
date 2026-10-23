@@ -19,6 +19,8 @@ public class MainController {
 
     /** 진행 중인 시험 주소를 다른 브라우저·기기에서 연 경우 (TestController) */
     public static final String NOTICE_TEST_IN_USE = "test-in-use";
+    /** 이미 끝났고 결과 보관 시간도 지난 시험 주소로 들어온 경우 (TestController) */
+    public static final String NOTICE_TEST_FINISHED = "test-finished";
 
     private final LevelApplicationService levelApplicationService;
 
@@ -27,8 +29,12 @@ public class MainController {
      */
     @GetMapping("/")
     public String main(@RequestParam(required = false) String notice, Model model) {
-        if (NOTICE_TEST_IN_USE.equals(notice) && !model.containsAttribute("message")) {
-            model.addAttribute("message", "이미 시작된 시험입니다. 시험을 시작한 화면에서만 풀 수 있습니다.");
+        if (!model.containsAttribute("message")) {
+            if (NOTICE_TEST_IN_USE.equals(notice)) {
+                model.addAttribute("message", "이미 시작된 시험입니다. 시험을 시작한 화면에서만 풀 수 있습니다.");
+            } else if (NOTICE_TEST_FINISHED.equals(notice)) {
+                model.addAttribute("message", "이미 끝난 시험입니다. 새 시험을 시작해 주세요.");
+            }
         }
         List<LevelGroupSummary> levelGroups = levelApplicationService.getDetailLevelGroups();
         // 처음 선택된 레벨(첫 레벨)의 문항 수·제한 시간. 다른 레벨을 고르면 화면 스크립트가 바꾼다

@@ -73,9 +73,13 @@ public class TestController {
             return "test";
         }
 
-        // 2) 이미 끝난 시험 (결과 화면에서 뒤로가기 등) : 메인으로만 이동
+        // 2) 이미 끝난 시험 (결과 화면에서 뒤로가기 등) : 결과 보관 중이면 결과 화면, 아니면 안내와 함께 메인 (B8)
+        //    시험 화면은 no-store 라 뒤로가기도 반드시 여기로 온다 (WebConfig)
         if (!inProgress) {
-            return "redirect:/";
+            if (testApplicationService.hasResult(sessionId)) {
+                return "redirect:/test/" + sessionId + "/result";
+            }
+            return "redirect:/?notice=" + MainController.NOTICE_TEST_FINISHED;
         }
 
         // 3) 이 시험을 연 브라우저가 다시 들어옴 (새로고침·재접속·같은 브라우저 새 탭) : 다시 풀 수 없게 만료
