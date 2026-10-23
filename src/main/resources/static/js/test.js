@@ -343,6 +343,9 @@
                 showOverlay('시험이 종료되었습니다', MSG_SESSION_GONE, '확인', goMain);
                 return;
             }
+            // 서버에 남은 시험이 동시 진행 개수를 차지하지 않게 만료 요청.
+            // 연결이 끊겨 못 보내면 서버가 '문제를 받아 가지 않은 시험'으로 몇 분 뒤 정리한다
+            navigator.sendBeacon(api('/expire'));
             showOverlay('시험을 시작할 수 없습니다', isNetworkError(e) ? MSG_OFFLINE_LOAD : e.message, '확인', goMain);
         }
     }

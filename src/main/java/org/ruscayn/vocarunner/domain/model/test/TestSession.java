@@ -56,6 +56,8 @@ public class TestSession {
     private final byte[] selectedOptionNo;
 
     private volatile TestStatus status;
+    /** 시험 화면이 문제를 한 번이라도 받아 갔는지. 못 받아 간 시험(시작 직후 연결 끊김 등)을 일찍 정리하는 데 쓴다 */
+    private volatile boolean questionsDelivered;
     private int correctCount;
     /** 0~100 */
     private int score;
@@ -141,6 +143,11 @@ public class TestSession {
         this.status = TestStatus.COMPLETED;   // 마지막에 기록 (volatile)
     }
 
+    /** 시험 화면이 문제를 받아 감 */
+    public void markQuestionsDelivered() {
+        this.questionsDelivered = true;
+    }
+
     /** 중도 이탈 등으로 무효 처리. 진행 중이 아니면 무시 */
     public synchronized void expire() {
         if (status == TestStatus.IN_PROGRESS) {
@@ -161,11 +168,16 @@ public class TestSession {
 
     /**
      * 메모리에서 지워도 되는지.
-     * 진행 중 → 마감 시각 경과, 완료 → 결과 보관 시간 경과, 무효 → 즉시
+     * 진행 중 → 마감 시각 경과 또는 시작 후 문제를 받아 가지 않은 채 undeliveredTimeout 경과,
+     * 완료 → 결과 보관 시간 경과, 무효 → 즉시
+     *
+     * <p>문제를 못 받아 간 시험은 화면이 만료 요청도 못 보냈을 수 있어(연결 끊김) 마감까지 두면
+     * 사용자당 동시 진행 개수를 차지해 새 시험을 시작할 수 없다 (B1)
      */
-    public boolean isDisposable(Instant now, Duration resultRetention) {
+    public boolean isDisposable(Instant now, Duration resultRetention, Duration undeliveredTimeout) {
         return switch (status) {
-            case IN_PROGRESS -> now.isAfter(deadline);
+            case IN_PROGRESS -> now.isAfter(deadline)
+                    || (!questionsDelivered && now.isAfter(startedAt.plus(undeliveredTimeout)));
             case COMPLETED -> now.isAfter(submittedAt.plus(resultRetention));
             case EXPIRED -> true;
         };

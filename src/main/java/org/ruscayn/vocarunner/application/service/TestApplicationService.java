@@ -43,16 +43,39 @@ public class TestApplicationService {
     private final TestQuestionGenerator testQuestionGenerator;
     private final WordCatalog wordCatalog;
     private final TestProperties testProperties;
+    /** 시작 시 상한 확인과 저장을 묶는 잠금 (서버 1대, 메모리 저장소 전제) */
+    private final Object startLock = new Object();
 
     /**
-     * 시험 시작 : 상한 확인 → 문제 생성 → 메모리 저장. 1단계는 EN_KO 고정.
+     * 시험 시작 : 상한 확인 → 문제 생성 → (다시 상한 확인 → 메모리 저장). 1단계는 EN_KO 고정.
+     *
+     * <p>확인과 저장 사이에 다른 시작 요청이 끼어들면 동시 요청으로 상한을 넘길 수 있으므로(B3)
+     * 마지막 확인과 저장은 한 번에 하나씩 한다. 문제 생성은 시간이 걸려 잠금 밖에서 하고,
+     * 상한에 걸릴 요청이 생성부터 하지 않도록 잠금 없이 한 번 먼저 확인한다.
      *
      * @param clientKey 사용자 구분 값 (현재는 IP)
      */
     public UUID start(Level level, String clientKey) {
         long begin = System.currentTimeMillis();
         Instant now = Instant.now();
+        checkCapacity(clientKey, now);
 
+        List<GeneratedQuestion> questions = testQuestionGenerator.generate(level, testProperties.questionCount());
+        TestSession session = TestSession.start(level, Direction.EN_KO, TestSession.DEFAULT_TIME_LIMIT_SEC,
+                questions, clientKey, now, testProperties.grace());
+        synchronized (startLock) {
+            checkCapacity(clientKey, Instant.now());
+            testSessionRepository.save(session);
+        }
+
+        log.info("시험 시작 session={} level={} 문제={} 마감={} ({}ms)",
+                session.getId(), level, session.getQuestionCount(), session.getDeadline(),
+                System.currentTimeMillis() - begin);
+        return session.getId();
+    }
+
+    /** 전체·사용자별 동시 진행 상한 확인. 넘으면 예외 */
+    private void checkCapacity(String clientKey, Instant now) {
         int inProgress = testSessionRepository.countInProgress(now);
         if (inProgress >= testProperties.maxInProgress()) {
             log.warn("시험 시작 거절 (전체 상한) 진행 중={} 상한={}", inProgress, testProperties.maxInProgress());
@@ -63,16 +86,6 @@ public class TestApplicationService {
             log.warn("시험 시작 거절 (사용자 상한) client={} 진행 중={}", clientKey, byClient);
             throw new CustomException(ErrorCode.TEST_TOO_MANY_IN_PROGRESS);
         }
-
-        List<GeneratedQuestion> questions = testQuestionGenerator.generate(level, testProperties.questionCount());
-        TestSession session = TestSession.start(level, Direction.EN_KO, TestSession.DEFAULT_TIME_LIMIT_SEC,
-                questions, clientKey, now, testProperties.grace());
-        testSessionRepository.save(session);
-
-        log.info("시험 시작 session={} level={} 문제={} 마감={} ({}ms)",
-                session.getId(), level, session.getQuestionCount(), session.getDeadline(),
-                System.currentTimeMillis() - begin);
-        return session.getId();
     }
 
     /** 시험 화면용 문제 (진행 중인 시험만, 정답 번호 제외) */
@@ -83,6 +96,7 @@ public class TestApplicationService {
             throw new CustomException(ErrorCode.TEST_NOT_IN_PROGRESS);
         }
         long remainingSec = Math.max(0, Duration.between(now, session.getDeadline()).toSeconds());
+        session.markQuestionsDelivered();
 
         Direction direction = session.getDirection();
         List<TestQuestionView> questions = new ArrayList<>(session.getQuestionCount());

@@ -15,7 +15,7 @@ import java.util.function.Predicate;
  * 시험 메모리 저장소 (서버 1대 전제).
  *
  * <p>개수 조회는 전체를 훑는다. 상한(수만 개) 규모에서 1ms 내외라 별도 카운터를 두지 않는다.
- * 동시에 여러 요청이 들어오면 상한을 약간 넘을 수 있으나 허용한다.
+ * 동시 시작 요청의 상한 확인·저장은 TestApplicationService 가 잠금으로 묶는다.
  */
 @Repository
 public class InMemoryTestSessionRepository implements TestSessionRepository {

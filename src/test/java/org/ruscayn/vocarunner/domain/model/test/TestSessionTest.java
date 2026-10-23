@@ -27,6 +27,7 @@ class TestSessionTest {
     private static final Instant NOW = Instant.parse("2026-10-08T00:00:00Z");
     private static final Duration GRACE = Duration.ofMinutes(3);
     private static final Duration RETENTION = Duration.ofMinutes(10);
+    private static final Duration UNDELIVERED = Duration.ofMinutes(5);
 
     private static TestSession start(int questionCount) {
         return TestSession.start(Level.B1, Direction.EN_KO, 5, questions(questionCount), "127.0.0.1", NOW, GRACE);
@@ -265,9 +266,28 @@ class TestSessionTest {
         @DisplayName("진행 중 : 마감 시각이 지나야 정리")
         void inProgress() {
             TestSession session = start(5);
+            session.markQuestionsDelivered();
 
-            assertThat(session.isDisposable(session.getDeadline(), RETENTION)).isFalse();
-            assertThat(session.isDisposable(session.getDeadline().plusMillis(1), RETENTION)).isTrue();
+            assertThat(session.isDisposable(session.getDeadline(), RETENTION, UNDELIVERED)).isFalse();
+            assertThat(session.isDisposable(session.getDeadline().plusMillis(1), RETENTION, UNDELIVERED)).isTrue();
+        }
+
+        @Test
+        @DisplayName("진행 중 : 문제를 받아 가지 않았으면 시작 후 정해진 시간이 지나면 정리")
+        void undelivered() {
+            TestSession session = start(500);
+
+            assertThat(session.isDisposable(NOW.plus(UNDELIVERED), RETENTION, UNDELIVERED)).isFalse();
+            assertThat(session.isDisposable(NOW.plus(UNDELIVERED).plusMillis(1), RETENTION, UNDELIVERED)).isTrue();
+        }
+
+        @Test
+        @DisplayName("진행 중 : 문제를 받아 갔으면 시작 후 정해진 시간이 지나도 마감 전에는 정리하지 않음")
+        void delivered() {
+            TestSession session = start(500);
+            session.markQuestionsDelivered();
+
+            assertThat(session.isDisposable(NOW.plus(UNDELIVERED).plusMillis(1), RETENTION, UNDELIVERED)).isFalse();
         }
 
         @Test
@@ -277,8 +297,8 @@ class TestSessionTest {
             Instant submittedAt = NOW.plusSeconds(60);
             session.submit(Map.of(), submittedAt);
 
-            assertThat(session.isDisposable(submittedAt.plus(RETENTION), RETENTION)).isFalse();
-            assertThat(session.isDisposable(submittedAt.plus(RETENTION).plusMillis(1), RETENTION)).isTrue();
+            assertThat(session.isDisposable(submittedAt.plus(RETENTION), RETENTION, UNDELIVERED)).isFalse();
+            assertThat(session.isDisposable(submittedAt.plus(RETENTION).plusMillis(1), RETENTION, UNDELIVERED)).isTrue();
         }
 
         @Test
@@ -287,7 +307,7 @@ class TestSessionTest {
             TestSession session = start(5);
             session.expire();
 
-            assertThat(session.isDisposable(NOW, RETENTION)).isTrue();
+            assertThat(session.isDisposable(NOW, RETENTION, UNDELIVERED)).isTrue();
         }
     }
 

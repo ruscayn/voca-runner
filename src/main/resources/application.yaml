@@ -57,3 +57,4 @@ voca-runner:
     max-in-progress: 20000         # 전체 동시 진행 상한 (500문항 1개 약 10KB → 약 200MB 이하)
     max-in-progress-per-client: 3  # IP당 동시 진행 상한
     cleanup-interval: 1m           # 끝난 시험 정리 주기
+    undelivered-timeout: 5m        # 시작 후 이 시간 안에 문제를 받아 가지 않은 시험은 정리 (시작 직후 연결 끊김 등)

@@ -15,6 +15,7 @@ import java.time.Duration;
  * @param maxInProgress        전체 동시 진행 상한. 넘으면 새 시작 거절
  * @param maxInProgressPerClient 사용자(IP)당 동시 진행 상한
  * @param cleanupInterval      만료 시험 정리 주기
+ * @param undeliveredTimeout   시작 후 이 시간 안에 문제를 받아 가지 않은 시험은 정리 (시작 직후 연결 끊김 등)
  */
 @ConfigurationProperties(prefix = "voca-runner.test")
 public record TestProperties(
@@ -23,7 +24,8 @@ public record TestProperties(
         @DefaultValue("20m") Duration resultRetention,
         @DefaultValue("20000") int maxInProgress,
         @DefaultValue("3") int maxInProgressPerClient,
-        @DefaultValue("1m") Duration cleanupInterval
+        @DefaultValue("1m") Duration cleanupInterval,
+        @DefaultValue("5m") Duration undeliveredTimeout
 ) {
 
     public TestProperties {
