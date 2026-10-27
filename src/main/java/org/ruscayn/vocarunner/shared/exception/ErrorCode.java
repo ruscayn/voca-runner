@@ -12,6 +12,7 @@ public enum ErrorCode {
     INVALID_INPUT_VALUE("COMMON_002", "올바르지 않은 입력값입니다."),
     METHOD_NOT_ALLOWED("COMMON_003", "허용되지 않은 HTTP 메서드입니다."),
     RESOURCE_NOT_FOUND("COMMON_004", "요청한 리소스를 찾을 수 없습니다."),
+    UNSUPPORTED_MEDIA_TYPE("COMMON_005", "지원하지 않는 요청 형식입니다."),
 
     // Business Logic
     ENTITY_NOT_FOUND("BUSINESS_001", "요청한 엔티티를 찾을 수 없습니다."),

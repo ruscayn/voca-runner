@@ -4,7 +4,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -37,12 +39,25 @@ public class GlobalExceptionHandler {
         return respond(request, HttpStatus.BAD_REQUEST, errorResponse, null);
     }
 
-    /** 주소·파라미터 형식 오류 (UUID 아닌 시험 id, 없는 레벨, 레벨 누락, GET /test/start 등). 사용자 입력 문제라 스택 없이 남긴다 */
-    @ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class})
+    /**
+     * 주소·파라미터·본문 형식 오류 (UUID 아닌 시험 id, 없는 레벨, 레벨 누락, GET /test/start,
+     * JSON 이 아니거나 칸 타입이 틀린 제출 본문 등). 사용자 입력 문제라 스택 없이 남긴다 (U44)
+     */
+    @ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class,
+            HttpMessageNotReadableException.class})
     public Object handleBadRequestParameter(Exception e, HttpServletRequest request) {
         log.warn("Bad request parameter: {} {}", request.getRequestURI(), e.getMessage());
         ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, request.getRequestURI());
         return respond(request, HttpStatus.BAD_REQUEST, errorResponse, null);
+    }
+
+    /** 본문 형식(Content-Type)을 받지 않는 요청 (예: 제출에 text/plain). 사용자 입력 문제라 스택 없이 남긴다 (U44) */
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public Object handleMediaTypeNotSupportedException(
+            HttpMediaTypeNotSupportedException e, HttpServletRequest request) {
+        log.warn("Media type not supported: {} {}", request.getRequestURI(), e.getMessage());
+        ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.UNSUPPORTED_MEDIA_TYPE, request.getRequestURI());
+        return respond(request, HttpStatus.UNSUPPORTED_MEDIA_TYPE, errorResponse, null);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
