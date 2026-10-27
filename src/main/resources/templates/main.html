@@ -16,6 +16,8 @@
     </header>
 
     <div class="notice" th:if="${message}" th:text="${message}">시험이 종료되었습니다.</div>
+    <!-- 쿠키를 막은 브라우저 (U41). 아래 스크립트가 보인다 -->
+    <div class="notice" id="cookie-notice" hidden>쿠키가 꺼져 있어 시험을 볼 수 없습니다. 브라우저 설정에서 쿠키를 켠 뒤 다시 시작해 주세요.</div>
 
     <main class="app-content">
         <h1 class="hero">오늘은 어떤 코스를<br>달려볼까요?</h1>
@@ -89,8 +91,18 @@
         }
         form.addEventListener('change', syncLabel);
 
+        // 쿠키를 막은 브라우저는 시작해도 시험 화면에 들어갈 수 없다 (입장권·기기 구분이 쿠키).
+        // 들어가려다 "이미 시작된 시험입니다"로 돌아오면 이유를 알 수 없으므로 미리 알리고 시작하지 않는다 (U41)
+        const cookieNotice = document.getElementById('cookie-notice');
+        cookieNotice.hidden = navigator.cookieEnabled;
+
         // 문제 생성 중 중복 클릭 방지
-        form.addEventListener('submit', () => {
+        form.addEventListener('submit', (e) => {
+            if (!navigator.cookieEnabled) {
+                e.preventDefault();
+                cookieNotice.hidden = false;
+                return;
+            }
             btn.disabled = true;
             label.textContent = '문제 만드는 중...';
         });
