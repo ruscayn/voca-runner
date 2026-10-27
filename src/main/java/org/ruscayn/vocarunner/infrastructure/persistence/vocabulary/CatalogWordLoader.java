@@ -2,6 +2,9 @@ package org.ruscayn.vocarunner.infrastructure.persistence.vocabulary;
 
 import org.ruscayn.vocarunner.domain.model.vocabulary.CatalogWord;
 import org.ruscayn.vocarunner.domain.model.vocabulary.ConfusableGroupWord;
+import org.ruscayn.vocarunner.domain.model.vocabulary.LevelWord;
+import org.ruscayn.vocarunner.domain.model.vocabulary.WordExposure;
+import org.ruscayn.vocarunner.domain.model.vocabulary.WordExposureRules;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,20 +20,31 @@ public class CatalogWordLoader {
 
     private final JpaLevelWordRepository jpaLevelWordRepository;
     private final JpaConfusableGroupWordRepository jpaConfusableGroupWordRepository;
+    private final JpaWordExposureRepository jpaWordExposureRepository;
 
-    /** level_word 전체를 단어·표시 뜻과 함께 읽어 값 객체로 변환 */
+    /** level_word 전체를 단어·표시 뜻과 함께 읽고, 시험 노출 판정을 적용해 값 객체로 변환 */
     @Transactional(readOnly = true)
     public List<CatalogWord> loadAll() {
+        WordExposureRules rules = new WordExposureRules(
+                jpaWordExposureRepository.findAll().stream().map(WordExposure::toRule).toList());
         return jpaLevelWordRepository.findAllFetch().stream()
-                .map(lw -> new CatalogWord(
-                        lw.getId(),
-                        lw.getWord().getId(),
-                        lw.headword(),
-                        lw.getWord().getHeadwordSub(),
-                        lw.getLevel(),
-                        lw.displayMeaningTexts(),
-                        lw.isTestExcluded()))
+                .map(lw -> toCatalogWord(lw, rules))
                 .toList();
+    }
+
+    private static CatalogWord toCatalogWord(LevelWord lw, WordExposureRules rules) {
+        long wordId = lw.getWord().getId();
+        WordExposureRules.Applied applied = rules.apply(wordId, lw.getLevel(), lw.displayMeanings().stream()
+                .map(m -> new WordExposureRules.Meaning(m.getSeq(), m.getMeaningKo()))
+                .toList());
+        return new CatalogWord(
+                lw.getId(),
+                wordId,
+                lw.headword(),
+                lw.getWord().getHeadwordSub(),
+                lw.getLevel(),
+                applied.meanings(),
+                applied.excluded());
     }
 
     /** 헷갈리는 단어 묶음 전체. 묶음 하나 = 그 묶음에 속한 word_id 목록 */

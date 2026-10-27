@@ -15,8 +15,9 @@ import java.util.List;
  * @param headword     영어 표제어
  * @param headwordSub  표제어 아래 함께 표시할 형태 (예: for one's sake). 없으면 null
  * @param level        세부 레벨 A1~C2
- * @param meanings     보기에 보여줄 한국어 뜻 1~2개
- * @param testExcluded 이 레벨에서 시험 제외. 정답 문제로도, 오답 보기로도 내지 않음
+ * @param meanings     보기에 보여줄 한국어 뜻 1~2개 (일부 제외된 뜻은 빠짐)
+ * @param testExcluded 이 레벨에서 시험 제외 (시험 노출 판정 적용 결과, {@link WordExposureRules}).
+ *                     정답 문제로도, 오답 보기로도 내지 않음
  */
 public record CatalogWord(long levelWordId, long wordId, String headword, String headwordSub,
                           Level level, List<String> meanings, boolean testExcluded) {

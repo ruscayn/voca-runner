@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * 레벨별 출제 단어 (level_word). 한 레벨에 같은 단어는 1번.
  * 시험 보기에는 meaning1, meaning2(없을 수 있음) 를 보여준다.
- * test_excluded 인 행은 시험에 쓰지 않는다 (정답 문제·오답 보기 모두).
+ * 원본에 있는 레벨은 모두 칸이 있고, 시험에 낼지는 시험 노출 판정({@link WordExposure})으로 정한다.
  */
 @Getter
 @Entity
@@ -43,13 +43,6 @@ public class LevelWord extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "meaning2_id")
     private WordMeaning meaning2;
-
-    /**
-     * 이 레벨에서 시험 제외 (예: bus 전체, inch A2 만).
-     * true 면 정답 문제로도, 오답 보기로도 내지 않는다.
-     */
-    @Column(name = "test_excluded", nullable = false)
-    private boolean testExcluded;
 
     /** 보기에 보여줄 뜻 목록 (1~2개) */
     public List<WordMeaning> displayMeanings() {
