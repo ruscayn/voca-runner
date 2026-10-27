@@ -4,11 +4,15 @@ import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.ruscayn.vocarunner.application.service.TestApplicationService;
 import org.ruscayn.vocarunner.domain.model.level.Level;
+import org.ruscayn.vocarunner.domain.model.test.TestClient;
+import org.ruscayn.vocarunner.presentation.config.ClientIpProperties;
 import org.ruscayn.vocarunner.shared.exception.CustomException;
 import org.ruscayn.vocarunner.shared.exception.ErrorCode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -23,6 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -36,8 +41,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * 시험 주소로 들어왔을 때 어느 화면으로 보내는지 (B2·B8·B9·U17).
  * 서비스는 가짜로 바꿔 시험 상태(진행 중·결과 보관 중·없음)만 정해 준다 (DB 없음).
+ * IP 헤더 설정은 application.yaml(운영 값 CloudFront-Viewer-Address)을 그대로 쓴다.
  */
 @WebMvcTest(TestController.class)
+@EnableConfigurationProperties(ClientIpProperties.class)
 @DisplayName("TestController : 시험 화면 이동 규칙")
 class TestControllerTest {
 
@@ -96,6 +103,21 @@ class TestControllerTest {
                     .andExpect(redirectedUrl("/"))
                     .andExpect(flash().attribute("message",
                             ErrorCode.TEST_TOO_MANY_IN_PROGRESS_SAME_NETWORK.getMessage()));
+        }
+
+        @Test
+        @DisplayName("IP 는 CloudFront 헤더에서 포트를 빼고 읽고, 헤더가 없으면 연결 IP (U32)")
+        void clientIp() throws Exception {
+            given(testApplicationService.start(eq(Level.A1), any())).willReturn(SESSION_ID);
+
+            mockMvc.perform(post("/test/start").param("level", "A1")
+                    .header("CloudFront-Viewer-Address", "198.51.100.10:46532"));
+            mockMvc.perform(post("/test/start").param("level", "A1"));
+
+            ArgumentCaptor<TestClient> clients = ArgumentCaptor.forClass(TestClient.class);
+            verify(testApplicationService, times(2)).start(eq(Level.A1), clients.capture());
+            assertThat(clients.getAllValues()).extracting(TestClient::ip)
+                    .containsExactly("198.51.100.10", "127.0.0.1");
         }
     }
 

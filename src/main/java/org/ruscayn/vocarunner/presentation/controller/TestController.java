@@ -3,6 +3,7 @@ package org.ruscayn.vocarunner.presentation.controller;
 import org.ruscayn.vocarunner.application.service.TestApplicationService;
 import org.ruscayn.vocarunner.domain.model.level.Level;
 import org.ruscayn.vocarunner.domain.model.test.TestClient;
+import org.ruscayn.vocarunner.presentation.config.ClientIpProperties;
 import org.ruscayn.vocarunner.shared.exception.CustomException;
 import org.ruscayn.vocarunner.shared.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,14 +44,16 @@ public class TestController {
             DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of("Asia/Seoul"));
 
     private final TestApplicationService testApplicationService;
+    private final ClientIpProperties clientIpProperties;
 
     @PostMapping("/test/start")
     public String start(@RequestParam Level level, HttpSession httpSession,
                         HttpServletRequest request, HttpServletResponse response, RedirectAttributes redirect) {
         UUID sessionId;
         try {
-            // 사용자 구분 = 기기 쿠키 + IP. 프록시(Nginx 등) 뒤에 둘 때는 server.forward-headers-strategy 설정 필요 (실제 사용자 IP)
-            TestClient client = new TestClient(DeviceCookie.findOrCreate(request, response), request.getRemoteAddr());
+            // 사용자 구분 = 기기 쿠키 + IP. 운영은 CloudFront 뒤라 IP 를 CloudFront 헤더에서 읽는다 (ClientIp)
+            TestClient client = new TestClient(DeviceCookie.findOrCreate(request, response),
+                    ClientIp.find(request, clientIpProperties.header()));
             sessionId = testApplicationService.start(level, client);
         } catch (CustomException e) {
             if (e.getErrorCode() == ErrorCode.TEST_SERVER_BUSY
