@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <!-- 공통 head : 글꼴(직접 제공) + 공통 스타일 -->
-    <th:block th:fragment="head">
+    <!-- 공통 head : 글꼴(직접 제공) + 공통 스타일.
+         조각 이름을 head 로 하면 <head> 요소까지 같이 골라져 화면에 <head> 가 두 번 들어간다 (U47) -->
+    <th:block th:fragment="commonHead">
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="theme-color" content="#F7F8FA">
