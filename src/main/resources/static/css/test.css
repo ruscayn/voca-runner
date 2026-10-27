@@ -368,6 +368,10 @@
     gap: 14px;
     background: var(--card);
     border-radius: 28px 28px 0 0;
+    /* 가로 화면 + 큰 글자처럼 안내창이 화면보다 높으면 위가 잘리지 않게 안쪽에서 스크롤 (U46) */
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
 }
 .sheet-eyebrow { margin: 0; font-size: 13.5px; font-weight: 600; color: var(--primary-text); }
 .sheet-eyebrow[hidden] { display: none; }
