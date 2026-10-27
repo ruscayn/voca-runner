@@ -214,7 +214,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .runner-fig.is-running g { animation: none; }
+    /* 위의 움직임 규칙(.runner-fig.is-running .rn-thigh 등)과 같은 우선순위여야 덮인다 (U38) */
+    .runner-fig.is-running :is(.rn-body, .rn-thigh, .rn-shin, .rn-arm) { animation: none; }
     .run-rest, .runner { transition: none; }
 }
 
