@@ -303,7 +303,6 @@
         setProgress(index, q.no);
         if (index > 0) runStep();
         el.prompt.textContent = q.prompt;
-        fitPrompt();
         // 함께 표시할 형태 (예: for one's sake). 발음은 표제어(q.prompt)만 읽는다
         el.promptSub.textContent = q.promptSub || '';
         el.promptSub.hidden = !q.promptSub;
@@ -311,6 +310,9 @@
             el.options[i].querySelector('.option-text').textContent = opt.text;
             el.options[i].dataset.no = opt.no;
         });
+        // 단어 크기는 아래 줄·보기 글자를 모두 넣은 뒤 맞춘다.
+        // 아래 줄이 붙거나 보기가 2줄로 늘면 단어 영역이 줄어들기 때문 (U40·U43)
+        fitPrompt();
         state.lockedUntil = performance.now() + INPUT_LOCK_MS;
         // 키보드: 방금 누른 보기에 포커스가 남으면 Enter 한 번(길게 누르면 연속)에 다음 문제가 읽지도 않고 답 처리됨
         document.activeElement?.blur();
