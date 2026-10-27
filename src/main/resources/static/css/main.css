@@ -94,7 +94,9 @@ a { color: var(--primary-text); }
 /* ---------- 로고 ---------- */
 .brand { display: inline-flex; align-items: center; gap: 8px; }
 .brand-mark { width: 32px; height: 32px; flex: none; }
-.brand-mark-bg { fill: var(--primary); }
+.brand-mark-bg { fill: var(--primary); }            /* 표지·줄무늬 */
+.brand-mark-dark { fill: var(--primary-text); }     /* 책등·뒤 표지 */
+.brand-mark-line { fill: var(--primary-pressed); }  /* 책등 선 */
 .brand-name {
     font-family: var(--font-num);
     font-style: italic;

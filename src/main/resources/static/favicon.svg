@@ -1,24 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-    <!-- 로고 (fragments/common.html brand-mark) 와 같은 그림 : 크게 그린 달리는 사람 + 뒤쪽 절반만 가로 줄무늬(속도감). 배경색 = --primary -->
-    <defs><clipPath id="vr-icon"><rect width="32" height="32" rx="9"/></clipPath></defs>
-    <rect width="32" height="32" rx="9" fill="#10A85F"/>
-    <g transform="translate(16 16) scale(1.12) translate(-15.6 -15)">
+    <!-- 로고 (fragments/common.html brand-mark) 와 같은 그림 : 책(왼쪽 책등 + 오른쪽·아래 페이지 단면) 표지에 크게 그린 달리는 사람 + 뒤쪽 절반만 가로 줄무늬(속도감).
+         표지 = --primary, 책등·뒤 표지 = --primary-text, 책등 선 = --primary-pressed -->
+    <defs><clipPath id="vr-icon"><path d="M3 0H22.3A7 7 0 0 1 29.3 7V22.3A7 7 0 0 1 22.3 29.3H3A3 3 0 0 1 0 26.3V3A3 3 0 0 1 3 0Z"/></clipPath></defs>
+    <!-- 페이지 단면 = 표지와 같은 모양을 오른쪽 아래로 밀어 겹침 (뒤 표지, 종이) -->
+    <path transform="translate(2.7 2.7)" d="M3 0H22.3A7 7 0 0 1 29.3 7V22.3A7 7 0 0 1 22.3 29.3H3A3 3 0 0 1 0 26.3V3A3 3 0 0 1 3 0Z" fill="#0B7643"/>
+    <path transform="translate(1.4 1.4)" d="M3 0H22.3A7 7 0 0 1 29.3 7V22.3A7 7 0 0 1 22.3 29.3H3A3 3 0 0 1 0 26.3V3A3 3 0 0 1 3 0Z" fill="#FFFFFF"/>
+    <path d="M3 0H22.3A7 7 0 0 1 29.3 7V22.3A7 7 0 0 1 22.3 29.3H3A3 3 0 0 1 0 26.3V3A3 3 0 0 1 3 0Z" fill="#10A85F"/>
+    <!-- 책등 + 책등 선 -->
+    <path d="M3 0H4.6V29.3H3A3 3 0 0 1 0 26.3V3A3 3 0 0 1 3 0Z" fill="#0B7643"/>
+    <rect x="5.3" y="0" width="0.7" height="29.3" fill="#0D914F"/>
+    <g transform="translate(16 14.65) scale(1.12) translate(-15.6 -15)">
         <circle cx="19.6" cy="7.6" r="2.9" fill="#FFFFFF"/>
         <path d="M18.2 11.6 L14.6 17.4 L19.4 19.6 L19.8 24.8 M14.6 17.4 L12.2 21.6 L7.6 22.2" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M11.4 12.8 L14.6 11.6 L18.2 11.6 L21.4 14.4 L24.4 13" fill="none" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
     </g>
-    <!-- 줄무늬 = 배경색 선을 사람 위에 겹쳐 그림 -->
+    <!-- 줄무늬 = 표지색 선을 사람 위에 겹쳐 그림 (책등 선 오른쪽부터) -->
     <g clip-path="url(#vr-icon)" fill="#10A85F">
-        <rect x="0" y="3.6" width="17" height="1"/>
-        <rect x="0" y="6.1" width="17" height="1"/>
-        <rect x="0" y="8.6" width="17" height="1"/>
-        <rect x="0" y="11.1" width="17" height="1"/>
-        <rect x="0" y="13.6" width="17" height="1"/>
-        <rect x="0" y="16.1" width="17" height="1"/>
-        <rect x="0" y="18.6" width="17" height="1"/>
-        <rect x="0" y="21.1" width="17" height="1"/>
-        <rect x="0" y="23.6" width="17" height="1"/>
-        <rect x="0" y="26.1" width="17" height="1"/>
-        <rect x="0" y="28.6" width="17" height="1"/>
+        <rect x="6" y="2.25" width="11" height="1"/>
+        <rect x="6" y="4.75" width="11" height="1"/>
+        <rect x="6" y="7.25" width="11" height="1"/>
+        <rect x="6" y="9.75" width="11" height="1"/>
+        <rect x="6" y="12.25" width="11" height="1"/>
+        <rect x="6" y="14.75" width="11" height="1"/>
+        <rect x="6" y="17.25" width="11" height="1"/>
+        <rect x="6" y="19.75" width="11" height="1"/>
+        <rect x="6" y="22.25" width="11" height="1"/>
+        <rect x="6" y="24.75" width="11" height="1"/>
+        <rect x="6" y="27.25" width="11" height="1"/>
     </g>
 </svg>
