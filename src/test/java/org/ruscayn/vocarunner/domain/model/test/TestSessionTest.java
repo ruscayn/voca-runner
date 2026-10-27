@@ -156,13 +156,28 @@ class TestSessionTest {
         }
 
         @Test
-        @DisplayName("점수는 반올림 (3문항 중 2개 → 67점)")
-        void scoreRounding() {
+        @DisplayName("점수는 버림 (3문항 중 2개 → 66점)")
+        void scoreFloor() {
             TestSession session = start(3);
 
             session.submit(Map.of(1, correctOptionNo(1), 2, correctOptionNo(2)), NOW);
 
-            assertThat(session.getScore()).isEqualTo(67);
+            assertThat(session.getScore()).isEqualTo(66);
+        }
+
+        @Test
+        @DisplayName("하나라도 틀리면 100점이 아니다 (997문항 중 995개 → 99점, U1)")
+        void notPerfectIsNot100() {
+            TestSession session = start(997);
+            Map<Integer, Integer> answers = new HashMap<>();
+            for (int no = 1; no <= 995; no++) {
+                answers.put(no, correctOptionNo(no));
+            }
+
+            session.submit(answers, NOW);
+
+            assertThat(session.getCorrectCount()).isEqualTo(995);
+            assertThat(session.getScore()).isEqualTo(99);
         }
 
         @Test

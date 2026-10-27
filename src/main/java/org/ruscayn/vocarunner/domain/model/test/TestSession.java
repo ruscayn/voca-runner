@@ -104,7 +104,7 @@ public class TestSession extends BaseEntity {
     @Column(name = "correct_count")
     private Integer correctCount;
 
-    /** 0~100 */
+    /** 0~100 (버림) */
     @Column(name = "score")
     private Integer score;
 
@@ -195,7 +195,8 @@ public class TestSession extends BaseEntity {
             }
         }
         this.correctCount = correct;
-        this.score = (int) Math.round(correct * 100.0 / questionCount);
+        // 버림 : 틀린 문제가 있으면 100점이 되지 않게 (반올림이면 997문항 중 995개도 100점, U1)
+        this.score = correct * 100 / questionCount;
         this.submittedAt = now;
         this.status = TestStatus.COMPLETED;
     }
