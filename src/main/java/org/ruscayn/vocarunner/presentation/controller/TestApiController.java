@@ -32,8 +32,8 @@ public class TestApiController {
 
     /**
      * 제출 및 채점. 시작한 기기만.
-     * 같은 시험을 동시에 두 번 제출하면(같은 기기 두 탭) 먼저 저장한 쪽만 채점되고(@Version)
-     * 늦은 쪽은 저장할 때 충돌하므로, 이미 끝난 시험을 제출한 것과 같은 응답을 준다 (U39)
+     * 같은 시험을 동시에 두 번 제출하면(요청을 직접 보낸 경우. 화면은 한 번만 보내고, 같은 브라우저 새 탭으로 열면 시험이 끝난다)
+     * 먼저 저장한 쪽만 채점되고(@Version) 늦은 쪽은 저장할 때 충돌하므로, 이미 끝난 시험을 제출한 것과 같은 응답을 준다 (U39)
      */
     @PostMapping("/{sessionId}/submit")
     public TestSubmitResponse submit(@PathVariable UUID sessionId,
