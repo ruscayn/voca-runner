@@ -67,41 +67,44 @@
     <!-- 안내 시트 (시작 전 / 채점 중 / 종료·오류) -->
     <div class="sheet-backdrop" id="overlay">
         <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
-            <p class="sheet-eyebrow" id="sheet-eyebrow" hidden></p>
-            <h2 class="sheet-title" id="overlay-title">문제 불러오는 중...</h2>
-            <p class="sheet-text" id="overlay-text"></p>
-            <!-- 자바스크립트를 끈 브라우저 : "문제 불러오는 중..." 대신 켜 달라는 안내 (U36). 서버의 시험은 문제를 받아 가지 않아 몇 분 뒤 정리된다 -->
-            <noscript>
-                <style>#overlay-title { display: none; }</style>
-                <p class="sheet-text">자바스크립트가 꺼져 있어 시험을 볼 수 없습니다.<br>브라우저 설정에서 자바스크립트를 켠 뒤 다시 시작해 주세요.</p>
-            </noscript>
+            <!-- 안내 글. 안내창이 화면보다 높으면(가로 화면 + 큰 글자) 이 부분만 스크롤하고 아래 버튼 줄은 늘 보인다 (U46) -->
+            <div class="sheet-body">
+                <p class="sheet-eyebrow" id="sheet-eyebrow" hidden></p>
+                <h2 class="sheet-title" id="overlay-title">문제 불러오는 중...</h2>
+                <p class="sheet-text" id="overlay-text"></p>
+                <!-- 자바스크립트를 끈 브라우저 : "문제 불러오는 중..." 대신 켜 달라는 안내 (U36). 서버의 시험은 문제를 받아 가지 않아 몇 분 뒤 정리된다 -->
+                <noscript>
+                    <style>#overlay-title { display: none; }</style>
+                    <p class="sheet-text">자바스크립트가 꺼져 있어 시험을 볼 수 없습니다.<br>브라우저 설정에서 자바스크립트를 켠 뒤 다시 시작해 주세요.</p>
+                </noscript>
 
-            <div class="ready-info" id="ready-info" hidden>
-                <div class="stat-strip ready-stats">
-                    <div class="stat">
-                        <span class="stat-value" id="ready-count">500</span>
-                        <span class="stat-label">문항</span>
+                <div class="ready-info" id="ready-info" hidden>
+                    <div class="stat-strip ready-stats">
+                        <div class="stat">
+                            <span class="stat-value" id="ready-count">500</span>
+                            <span class="stat-label">문항</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value"><span id="ready-sec">5</span><span class="stat-unit">초</span></span>
+                            <span class="stat-label">문제당</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value"><span id="ready-min">45</span><span class="stat-unit">분</span></span>
+                            <span class="stat-label">제한 시간</span>
+                        </div>
                     </div>
-                    <div class="stat">
-                        <span class="stat-value"><span id="ready-sec">5</span><span class="stat-unit">초</span></span>
-                        <span class="stat-label">문제당</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-value"><span id="ready-min">45</span><span class="stat-unit">분</span></span>
-                        <span class="stat-label">제한 시간</span>
-                    </div>
+                    <ul class="rules">
+                        <li>
+                            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10.5" r="7.5" stroke="currentColor" stroke-width="1.6"/><path d="M10 6.5 V10.5 L12.5 12.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                            <span><strong><span id="ready-min-text">45</span>분</strong> 안에 제출하지 않으면 무효 처리됩니다.</span>
+                        </li>
+                        <!-- 발음이 되는 브라우저에서만 보임 (U22, test.js tts.available) -->
+                        <li id="ready-sound" hidden>
+                            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 8 H6 L10 4.5 V15.5 L6 12 H3 Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 7.5 C14.3 8.8 14.3 11.2 13 12.5 M15.5 5.5 C18 8 18 12 15.5 14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                            <span>단어마다 발음이 함께 나옵니다.</span>
+                        </li>
+                    </ul>
                 </div>
-                <ul class="rules">
-                    <li>
-                        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10.5" r="7.5" stroke="currentColor" stroke-width="1.6"/><path d="M10 6.5 V10.5 L12.5 12.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-                        <span><strong><span id="ready-min-text">45</span>분</strong> 안에 제출하지 않으면 무효 처리됩니다.</span>
-                    </li>
-                    <!-- 발음이 되는 브라우저에서만 보임 (U22, test.js tts.available) -->
-                    <li id="ready-sound" hidden>
-                        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 8 H6 L10 4.5 V15.5 L6 12 H3 Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 7.5 C14.3 8.8 14.3 11.2 13 12.5 M15.5 5.5 C18 8 18 12 15.5 14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-                        <span>단어마다 발음이 함께 나옵니다.</span>
-                    </li>
-                </ul>
             </div>
 
             <div class="sheet-actions">
