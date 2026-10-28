@@ -25,16 +25,21 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    /**
+     * 업무 오류 (없는·끝난 시험, 마감 초과, 다른 기기의 요청 등). 요청을 거절한 것이라 스택 없이 WARN 한 줄로 남긴다.
+     * 오류 코드와 문구로 원인을 찾을 수 있다
+     */
     @ExceptionHandler(CustomException.class)
     public Object handleCustomException(CustomException e, HttpServletRequest request) {
-        log.error("CustomException occurred: {}", e.getMessage(), e);
+        log.warn("Business exception: {} {} {}", request.getRequestURI(), e.getErrorCode().getCode(), e.getMessage());
         ErrorResponse errorResponse = ErrorResponse.of(e.getErrorCode().getCode(), e.getMessage(), request.getRequestURI());
         return respond(request, HttpStatus.BAD_REQUEST, errorResponse, e.getMessage());
     }
 
+    /** 입력값 검사 실패 (보기 번호 0·5, 답 목록 null 등). 사용자 입력 문제라 스택 없이 남긴다 */
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
     public Object handleValidationException(Exception e, HttpServletRequest request) {
-        log.error("Validation exception occurred: {}", e.getMessage(), e);
+        log.warn("Validation failed: {} {}", request.getRequestURI(), e.getMessage());
         ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, request.getRequestURI());
         return respond(request, HttpStatus.BAD_REQUEST, errorResponse, null);
     }
@@ -60,10 +65,11 @@ public class GlobalExceptionHandler {
         return respond(request, HttpStatus.UNSUPPORTED_MEDIA_TYPE, errorResponse, null);
     }
 
+    /** 허용하지 않는 메서드 (GET 으로 제출 등). 사용자 입력 문제라 스택 없이 남긴다 */
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public Object handleMethodNotSupportedException(
             HttpRequestMethodNotSupportedException e, HttpServletRequest request) {
-        log.error("Method not supported exception occurred: {}", e.getMessage(), e);
+        log.warn("Method not supported: {} {}", request.getRequestURI(), e.getMessage());
         ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.METHOD_NOT_ALLOWED, request.getRequestURI());
         return respond(request, HttpStatus.METHOD_NOT_ALLOWED, errorResponse, null);
     }

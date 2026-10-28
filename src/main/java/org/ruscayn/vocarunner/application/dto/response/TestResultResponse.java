@@ -7,7 +7,7 @@ import java.util.UUID;
 /**
  * 시험 결과 (틀린 문제 목록 포함)
  *
- * @param availableUntil   결과를 볼 수 있는 마지막 시각 (제출 시각 + 보관 시간). 지나면 메모리에서 정리된다
+ * @param availableUntil   결과를 볼 수 있는 마지막 시각 (제출 시각 + 보관 시간). 지나면 정리 작업이 지운다
  * @param retentionMinutes 결과 보관 시간 (분)
  */
 public record TestResultResponse(

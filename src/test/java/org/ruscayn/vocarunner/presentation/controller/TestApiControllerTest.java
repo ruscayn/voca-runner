@@ -4,9 +4,14 @@ import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.ruscayn.vocarunner.application.service.TestApplicationService;
 import org.ruscayn.vocarunner.domain.model.test.TestSession;
+import org.ruscayn.vocarunner.shared.exception.CustomException;
+import org.ruscayn.vocarunner.shared.exception.ErrorCode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -16,6 +21,7 @@ import org.springframework.test.web.servlet.ResultActions;
 
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -125,6 +131,28 @@ class TestApiControllerTest {
                     .andExpect(jsonPath("$.code").value("COMMON_005"));
 
             verify(testApplicationService, never()).submit(any(), any(), any());
+        }
+    }
+
+    @Nested
+    @ExtendWith(OutputCaptureExtension.class)
+    @DisplayName("오류 로그")
+    class ErrorLog {
+
+        @Test
+        @DisplayName("업무 오류(거절)는 스택 없이 WARN 한 줄로 남긴다")
+        void businessExceptionIsWarnWithoutStack(CapturedOutput output) throws Exception {
+            given(testApplicationService.submit(eq(SESSION_ID), eq(DEVICE_ID), any()))
+                    .willThrow(new CustomException(ErrorCode.TEST_TIME_OVER));
+
+            submit(MediaType.APPLICATION_JSON, """
+                    {"answers": []}
+                    """)
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("TEST_005"));
+
+            assertThat(output.getOut()).contains("WARN").contains("Business exception").contains("TEST_005")
+                    .doesNotContain("ERROR").doesNotContain("\tat ");
         }
     }
 

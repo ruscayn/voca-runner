@@ -16,7 +16,6 @@ public enum ErrorCode {
 
     // Business Logic
     ENTITY_NOT_FOUND("BUSINESS_001", "요청한 엔티티를 찾을 수 없습니다."),
-    DUPLICATE_RESOURCE("BUSINESS_002", "중복된 리소스입니다."),
 
     // Test
     TEST_NOT_ENOUGH_WORDS("TEST_001", "문제를 만들 단어가 부족합니다."),

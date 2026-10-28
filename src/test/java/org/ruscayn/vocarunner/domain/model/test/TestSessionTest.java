@@ -285,7 +285,7 @@ class TestSessionTest {
     }
 
     @Nested
-    @DisplayName("메모리 정리 판단 (isDisposable)")
+    @DisplayName("정리 대상 판단 (isDisposable)")
     class Disposable {
 
         @Test

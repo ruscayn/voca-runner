@@ -38,7 +38,6 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class TestSession extends BaseEntity {
 
-    public static final int DEFAULT_QUESTION_COUNT = 500;
     public static final int DEFAULT_TIME_LIMIT_SEC = 5;
     public static final int MIN_TIME_LIMIT_SEC = 5;
     public static final int MAX_TIME_LIMIT_SEC = 10;
