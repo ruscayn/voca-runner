@@ -21,6 +21,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
@@ -164,8 +166,10 @@ public class TestApplicationService {
             }
             throw e;
         }
-        log.info("시험 제출 session={} 맞힌 수={}/{} 점수={}",
-                session.getId(), session.getCorrectCount(), session.getQuestionCount(), session.getScore());
+        // 같은 시험을 동시에 두 번 제출하면 늦은 쪽은 커밋할 때 저장 충돌(@Version)로 되돌려지므로
+        // 저장이 끝난 뒤에 남긴다. 실제로 채점·저장된 제출만 로그에 한 줄 (U39)
+        afterCommit(() -> log.info("시험 제출 session={} 맞힌 수={}/{} 점수={}",
+                session.getId(), session.getCorrectCount(), session.getQuestionCount(), session.getScore()));
 
         return new TestSubmitResponse(
                 session.getId(), session.getQuestionCount(), session.getCorrectCount(), session.getScore());
@@ -289,6 +293,16 @@ public class TestApplicationService {
 
     private static CustomException notFound() {
         return new CustomException(ErrorCode.ENTITY_NOT_FOUND, "시험을 찾을 수 없습니다. (종료되었거나 만료됨)");
+    }
+
+    /** 지금 트랜잭션이 커밋된 뒤에 실행한다. 되돌려지면 실행하지 않는다 */
+    private static void afterCommit(Runnable action) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                action.run();
+            }
+        });
     }
 
 }
