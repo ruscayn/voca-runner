@@ -437,11 +437,14 @@
                 body: JSON.stringify({ answers: state.answers }),
             });
             if (!res.ok) throw await errorOf(res);
-
-            state.status = 'DONE';
-            stopClock();
-            location.replace(`/test/${sessionId}/result`);   // 결과 화면 (시험 화면은 기록에서 제거)
+            goResult();
         } catch (e) {
+            // 이미 채점된 시험 : 앞 제출이 서버에 저장된 뒤 응답만 끊겨(와이파이↔LTE 전환 등) [다시 제출]을 누른 경우.
+            // 거절 안내 대신 저장된 결과를 보여준다 (U48)
+            if (e.code === 'TEST_002' && await hasResult()) {
+                goResult();
+                return;
+            }
             if (isFinalError(e)) {
                 // 서버가 거절 (마감 초과·이미 종료·없는 시험 등) : 다시 제출해도 소용없으므로 메인으로
                 state.status = 'ABORTED';
@@ -458,6 +461,22 @@
             state.status = 'RUNNING';
             state.submitFailed = true;
             showOverlay('제출하지 못했습니다', isNetworkError(e) ? MSG_OFFLINE_SUBMIT : e.message, '다시 제출', retrySubmit);
+        }
+    }
+
+    /** 결과 화면 (시험 화면은 기록에서 제거) */
+    function goResult() {
+        state.status = 'DONE';
+        stopClock();
+        location.replace(`/test/${sessionId}/result`);
+    }
+
+    /** 채점이 끝나 결과가 저장돼 있는지 */
+    async function hasResult() {
+        try {
+            return (await fetch(api('/result'))).ok;
+        } catch {
+            return false;
         }
     }
 
