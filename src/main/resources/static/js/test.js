@@ -24,6 +24,8 @@
     const PROMPT_MAX_PX = 52;    // 문제 단어 글자 크기 (긴 단어는 폭에 맞춰 줄임)
     const PROMPT_MIN_PX = 28;
     const PROMPT_MAX_LINES = 2;  // 띄어쓰기 있는 구는 2줄까지 허용
+    const PROMPT_SUB_MAX_PX = 24;  // 아래 줄(함께 표시할 형태) 글자 크기 (test.css .prompt-sub)
+    const PROMPT_SUB_GAP_PX = 8;   // 아래 줄은 단어보다 이만큼 작게. 단어가 32px 아래로 줄면 아래 줄도 같이 줄어 28px일 때 20px
 
     const app = document.getElementById('test-app');
     const sessionId = app.dataset.sessionId;
@@ -274,7 +276,8 @@
     // ---------- 문제 단어 크기 ----------
     /**
      * 단어가 폭에 들어가고(단어 중간 줄바꿈 없음) 구는 2줄 이하, 단어 영역 높이 안에 들어갈 때까지 글자를 줄인다.
-     * 최소 크기에서도 넘치면(아주 좁은 화면) 그때만 단어 중간 줄바꿈을 허용한다
+     * 최소 크기에서도 넘치면(아주 좁은 화면) 그때만 단어 중간 줄바꿈을 허용한다.
+     * 아래 줄도 단어와 함께 줄인다. 아래 줄 24px 고정이면 320×568에서 단어를 최소로 줄여도 영역이 넘친다 (U43)
      */
     function fitPrompt() {
         const p = el.prompt;
@@ -282,6 +285,7 @@
         p.classList.remove('prompt-break');
         for (let px = PROMPT_MAX_PX; px >= PROMPT_MIN_PX; px -= 2) {
             p.style.fontSize = `${px}px`;
+            el.promptSub.style.fontSize = `${Math.min(PROMPT_SUB_MAX_PX, px - PROMPT_SUB_GAP_PX)}px`;
             const fitsWidth = p.scrollWidth <= p.clientWidth;
             const fitsHeight = area.scrollHeight <= area.clientHeight;
             const lines = Math.round(p.offsetHeight / (px * 1.1));   // line-height 1.1

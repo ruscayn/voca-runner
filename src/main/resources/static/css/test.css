@@ -245,7 +245,7 @@
     overflow-wrap: normal;
 }
 .prompt.prompt-break { overflow-wrap: anywhere; }
-/* 함께 표시할 형태 (예: for the sake of / for one's sake) */
+/* 함께 표시할 형태 (예: for the sake of / for one's sake). 단어가 32px 아래로 줄면 test.js(fitPrompt)가 같이 줄인다 */
 .prompt-sub {
     margin: 0;
     font-family: var(--font-en);
