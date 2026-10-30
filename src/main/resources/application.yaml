@@ -60,6 +60,8 @@ server:
 
 voca-runner:
   site-url: https://vocarunner.com   # 사이트 전체 주소. 링크 미리보기 이미지(og:image)처럼 전체 주소가 필요한 곳에 씀 (U30)
+  origin-verify:
+    header: X-Origin-Verify   # CloudFront 가 원본 요청마다 붙이는 비밀 헤더 (AWS 설계 7-1). 허용 값(secrets)은 prod 프로필에서 Parameter Store 로 채움. 값이 없으면 검사하지 않음 (local·자동 테스트)
   client-ip:
     header: CloudFront-Viewer-Address   # 사용자 IP 를 읽을 헤더 (값 "IP:포트"). CloudFront 뒤라 연결 IP 는 모두 CloudFront 주소 (U32, AWS 설계 8장). 8080 은 CloudFront 만 접속 가능해야 함 (직접 붙어 헤더 위조 방지)
   test:
