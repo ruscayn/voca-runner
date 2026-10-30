@@ -20,7 +20,8 @@
     <div class="notice" id="cookie-notice" hidden>쿠키가 꺼져 있어 시험을 볼 수 없습니다. 브라우저 설정에서 쿠키를 켠 뒤 다시 시작해 주세요.</div>
 
     <main class="app-content">
-        <h1 class="hero">오늘은 어떤 코스를<br>달려볼까요?</h1>
+        <!-- <br> 뒤 빈칸: 안내 띠가 보여 줄바꿈을 숨길 때(main.css U49) 띄어 쓰기 위함. 두 줄일 때는 줄 맨 앞이라 안 보임 -->
+        <h1 class="hero">오늘은 어떤 코스를<br> 달려볼까요?</h1>
 
         <div class="level-groups">
             <fieldset class="level-group" th:each="group, groupStat : ${levelGroups}">

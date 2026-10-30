@@ -192,6 +192,27 @@ a { color: var(--primary-text); }
 /* =========================================================
    메인 화면
    ========================================================= */
+/* 화면 높이에 맞춰 늘고 줄기 (U49): 보이는 높이 550px(iPhone SE Safari)에서 가장 작게, 790px 이상에서 원래 크기
+   --f = 0px(550 이하) ~ 1px(790 이상). 크기 = 최소 + (원래 - 최소) × --f
+   CSS는 길이끼리 나눌 수 없어 높이 차이(0~240px)를 240으로 나눈 길이를 쓴다. dvh를 모르는 브라우저는 원래 크기
+   보이는 높이에서 위아래 안전 영역(아이폰 노치·홈 막대 — 홈 화면에 추가해 열 때 등)을 뺀다. 그 영역만큼 위아래 여백이 늘기 때문 */
+.main-app { --f: 1px; }
+@supports (height: 100dvh) {
+    .main-app { --f: calc(clamp(0px, 100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 550px, 240px) / 240); }
+}
+/* 다른 화면과 함께 쓰는 틀·부품은 메인에서만 줄임 */
+.main-app .app-header { padding-top: calc(6px + 12 * var(--f)); }
+.main-app .app-content { padding-bottom: calc(8px + 12 * var(--f)); }
+.main-app .app-footer { padding: calc(8px + 4 * var(--f)) var(--side) calc(12px + 12 * var(--f) + env(safe-area-inset-bottom)); }
+.main-app .hero {
+    margin: calc(8px + 20 * var(--f)) 0 calc(10px + 10 * var(--f));
+    font-size: calc(20px + 7 * var(--f));
+}
+.main-app .stat-strip { padding: calc(7px + 7 * var(--f)) 4px; }
+.main-app .stat-value { font-size: calc(20px + 6 * var(--f)); }
+.main-app .stat-unit { font-size: calc(12px + 2 * var(--f)); }
+.main-app .primary-btn { min-height: calc(48px + 10 * var(--f)); }   /* 글자 19px 굵게는 그대로 (대비 3:1) */
+
 .main-header {
     display: flex;
     flex-wrap: wrap;                     /* 아주 좁은 화면(큰 글자)에서 링크가 화면 밖으로 넘치지 않게 */
@@ -219,13 +240,13 @@ a { color: var(--primary-text); }
     letter-spacing: -0.5px;
 }
 
-.level-groups { display: flex; flex-direction: column; gap: 14px; }
+.level-groups { display: flex; flex-direction: column; gap: calc(8px + 6 * var(--f)); }
 
 .level-group { margin: 0; padding: 0; border: 0; min-width: 0; }
 .level-group legend {
-    padding: 0 0 8px 2px;
+    padding: 0 0 calc(4px + 4 * var(--f)) 2px;
     font-family: var(--font-en);
-    font-size: 13.5px;
+    font-size: calc(12px + 1.5 * var(--f));
     font-weight: 600;
     letter-spacing: .3px;
     color: var(--muted);
@@ -242,8 +263,8 @@ a { color: var(--primary-text); }
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: 84px;
-    padding: 12px 14px 12px 16px;
+    height: calc(56px + 28 * var(--f));
+    padding: calc(6px + 6 * var(--f)) 14px calc(6px + 6 * var(--f)) 16px;
     background: var(--card);
     border: 2px solid var(--border);
     border-radius: var(--radius);
@@ -261,7 +282,7 @@ a { color: var(--primary-text); }
     font-family: var(--font-num);
     font-style: italic;
     font-weight: 700;
-    font-size: 36px;
+    font-size: calc(26px + 10 * var(--f));
     line-height: .9;
     color: #2A3242;
 }
@@ -284,10 +305,30 @@ a { color: var(--primary-text); }
 .level-card:has(input:checked) .level-check svg { visibility: visible; }
 .level-card:has(input:checked) .level-count { color: var(--text-2); }
 
-.main-footer { display: flex; flex-direction: column; gap: 12px; }
+.main-footer { display: flex; flex-direction: column; gap: calc(8px + 4 * var(--f)); }
 
-/* 낮은 화면(가로 화면, 큰 글자) : 레벨 목록 칸이 너무 낮아지므로 안쪽 스크롤 대신 페이지 전체를 스크롤 */
-@media (max-height: 540px) {
+/* 안내 띠(시험 종료·쿠키 안내 등)가 보일 때도 레벨 카드가 한 화면에 (U49, 10/30 사용자 결정)
+   띠는 촘촘하게(두 줄 약 60px), 그만큼 제목을 한 줄 20px로, 레벨 카드를 50px까지 더 줄임 */
+.main-app .notice { margin-top: 8px; padding: 8px 12px; font-size: 13px; line-height: 1.4; }
+.main-app:has(> .notice:not([hidden])) .hero {
+    margin: calc(6px + 8 * var(--f)) 0;
+    font-size: 20px;
+}
+.main-app:has(> .notice:not([hidden])) .hero br { display: none; }
+.main-app:has(> .notice:not([hidden])) .level-groups { gap: calc(6px + 8 * var(--f)); }
+.main-app:has(> .notice:not([hidden])) .level-card {
+    height: calc(50px + 34 * var(--f));
+    padding-top: calc(4px + 8 * var(--f));
+    padding-bottom: calc(4px + 8 * var(--f));
+}
+.main-app:has(> .notice:not([hidden])) .level-code { font-size: calc(24px + 12 * var(--f)); }
+/* 띠 두 개는 한 화면에 안 들어감 → 쿠키 안내가 보이면 다른 안내는 숨김
+   (쿠키가 꺼진 기기의 "이미 시작된 시험입니다" 등은 쿠키 때문에 생긴 안내라 쿠키 안내가 원인을 알려 줌, U41) */
+.main-app:has(> #cookie-notice:not([hidden])) > .notice:not(#cookie-notice) { display: none; }
+
+/* 낮은 화면(가로 화면, 큰 글자) : 보장선(보이는 높이 550px, U49) 아래는 가장 작은 크기로도 모자랄 수 있으므로
+   안쪽 스크롤 대신 페이지 전체를 스크롤 */
+@media (max-height: 549px) {
     .main-app { height: auto; min-height: 100dvh; }
     .main-app .app-content { flex: none; overflow-y: visible; }
 }
