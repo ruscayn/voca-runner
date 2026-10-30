@@ -1,0 +1,17 @@
+# 운영 서버 전용 (prod 프로필. 실행: java -jar voca-runner.jar --spring.profiles.active=prod).
+# application.yaml(운영 기준 값) 위에 비밀 값만 더한다. 비밀 값은 소스·서버 파일에 두지 않고
+# 시작할 때 SSM Parameter Store /voca-runner/prod/ 아래에서 읽는다 (EC2 IAM 역할 권한. infra/AWS 설계.md 1장·3장 2-1).
+#   /voca-runner/prod/spring.datasource.username   DB 계정 (secret.yml 값을 덮어씀)
+#   /voca-runner/prod/spring.datasource.password
+#   /voca-runner/prod/voca-runner.origin-verify.secrets   CloudFront 비밀 헤더 값 (바꾸는 동안은 쉼표로 옛 값·새 값)
+# 파라미터 이름에서 경로(/voca-runner/prod/)를 뗀 나머지가 그대로 설정 이름이 된다.
+# 읽지 못하면 앱이 시작하지 않는다 (optional: 을 붙이지 않음 — 비밀 값 없이 개발용 계정으로 뜨지 않게).
+spring:
+  config:
+    import: aws-parameterstore:/voca-runner/prod/
+  cloud:
+    aws:
+      parameterstore:
+        enabled: true            # application.yaml 의 false 를 켬
+      region:
+        static: ap-northeast-2   # 서울

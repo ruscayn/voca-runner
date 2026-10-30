@@ -1,12 +1,18 @@
 # 공통 설정 = 운영 기준 값.
 # 개발 PC 는 local 프로필(application-local.yaml)로 개발용 값만 덮어쓴다. (IntelliJ 실행 설정 Active profiles: local)
 # 프로필을 지정하지 않으면 운영 값으로 동작한다.
+# 운영 서버는 prod 프로필로 실행한다 — application-prod.yaml 이 Parameter Store 의 비밀 값(DB 계정·CloudFront 비밀 헤더)을 더한다.
 spring:
   application:
     name: voca-runner
 
   config:
     import: classpath:secret.yml   # DB 계정 (git 제외 파일)
+
+  cloud:
+    aws:
+      parameterstore:
+        enabled: false        # Parameter Store 는 운영(prod 프로필, application-prod.yaml)에서만 읽음. local·자동 테스트는 AWS 에 접속하지 않음
 
   jpa:
     hibernate:
