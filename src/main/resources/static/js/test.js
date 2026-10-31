@@ -2,6 +2,7 @@
  * 시험 화면
  * - 문제는 시작 시 한 번에 받아오고, 답은 모아 두었다가 마지막에 한 번에 제출
  * - [시작] 버튼을 누르면 1번 문제부터 진행 (iOS 는 터치가 있어야 소리가 나므로)
+ * - 시작 안내의 [소리 확인]은 영어를 30초 동안 읽어 그동안 휴대폰 볼륨을 맞추게 한다 (U51)
  * - 문제 단어가 뜨면 TTS 로 읽어준다 (브라우저 내장 Web Speech API)
  * - 보기를 누르거나 제한 시간이 지나면 바로 다음 문제 (시간 초과 = 답 없음)
  * - 문제당 남은 시간은 막대(흐름) + 숫자(정확한 초)로 표시. 2초 이하면 빨간색
@@ -95,13 +96,15 @@
         }
 
         return {
-            speak(text) {
+            /** onEnd : 다 읽었거나 멈췄을 때 (다음 speak·stop 이 끊어도 불림) */
+            speak(text, onEnd = null) {
                 if (!supported || !text) return;
                 synth.cancel();
                 const u = new SpeechSynthesisUtterance(text);
                 u.lang = 'en-US';
                 if (voice) u.voice = voice;
                 u.rate = 0.9;
+                if (onEnd) u.onend = u.onerror = onEnd;
                 synth.speak(u);
             },
             stop() {
@@ -124,13 +127,73 @@
     // ---------- 안내 시트 ----------
 
     /**
-     * 시작 안내의 "단어마다 발음이 함께 나옵니다"는 발음이 되는 브라우저에서만 보인다 (U22).
+     * 시작 안내의 "단어마다 발음이 함께 나옵니다"와 [소리 확인]은 발음이 되는 브라우저에서만 보인다 (U22).
      * 음성 기능이 없는 앱 안 브라우저 등에서 보이면 고장으로 오해할 수 있다. 기기 무음은 알 수 없어 따로 안내하지 않는다
      */
     function syncSoundNotice() {
         const notice = $('ready-sound');
         if (notice) notice.hidden = !tts.available();
     }
+
+    /**
+     * 시작 안내의 [소리 확인] (U51) : 영어를 30초 동안 읽어 그동안 휴대폰 볼륨을 맞추게 한다.
+     * 휴대폰 볼륨 버튼은 소리가 나는 동안에만 미디어 음량을 바꾸는데, 단어 발음은 1초 안팎이라 그 사이에 맞추기 어렵다.
+     * 손이 느려도 버튼을 찾아 누를 수 있게 30초. 긴 글 하나는 일부 브라우저(PC 크롬 등)가 15초쯤에서 끊으므로
+     * 짧은 문장을 차례로(끝나면 처음부터) 이어 읽는다. 누름(터치)이 iOS 소리 허락도 겸한다.
+     * 다시 누르면 처음부터 읽고, [시작]·[이전]을 누르면 멈춘다
+     */
+    const SOUND_CHECK_LINES = [
+        'This is a sound check.',
+        'Press the volume buttons on the side of your phone now.',
+        'Turn the sound up or down until this voice is easy to hear.',
+        'Every word in the test will be read aloud at this volume.',
+        'When the volume feels right, press the start button.',
+    ];
+    const SOUND_CHECK_MS = 30000;       // 이 시간이 지나면 읽던 문장까지만 읽고 멈춤
+    const SOUND_CHECK_GAP_MS = 600;     // 문장 사이 쉼
+    const SOUND_CHECK_LINE_MAX_MS = 10000;   // 끝 알림(onend)이 안 오는 브라우저도 이 시간이 지나면 다음 문장으로
+    const soundCheck = (() => {
+        const btn = $('sound-check');
+        const idleText = btn?.textContent;
+        let playId = 0;      // 누를 때·멈출 때마다 바뀜 → 앞 재생의 늦은 끝 알림·타이머는 무시
+        let timer = null;
+
+        function stop() {
+            if (!btn) return;
+            playId++;
+            clearTimeout(timer);
+            tts.stop();
+            btn.textContent = idleText;
+            btn.classList.remove('is-playing');
+        }
+
+        function playLine(id, n, endAt) {
+            if (id !== playId) return;
+            if (performance.now() >= endAt) {
+                stop();
+                return;
+            }
+            let done = false;
+            const next = () => {      // 다 읽었거나(onend) 끝 알림을 기다리다 시간이 지남 — 둘 중 먼저 온 것만
+                if (done || id !== playId) return;
+                done = true;
+                clearTimeout(timer);
+                timer = setTimeout(() => playLine(id, n + 1, endAt), SOUND_CHECK_GAP_MS);
+            };
+            clearTimeout(timer);
+            timer = setTimeout(next, SOUND_CHECK_LINE_MAX_MS);
+            tts.speak(SOUND_CHECK_LINES[n % SOUND_CHECK_LINES.length], next);
+        }
+
+        btn?.addEventListener('click', () => {
+            const id = ++playId;
+            btn.textContent = '소리가 나는 중… 지금 볼륨 버튼을 눌러 보세요';
+            btn.classList.add('is-playing');
+            playLine(id, 0, performance.now() + SOUND_CHECK_MS);   // 첫 문장은 누름 안에서 읽음 (iOS)
+        });
+
+        return { stop };
+    })();
 
     function showOverlay(title, text = '', buttonText = null, onClick = null) {
         el.sheetEyebrow.hidden = true;
@@ -180,6 +243,7 @@
         if (state.status !== 'READY') return;
         state.status = 'ABORTED';
         stopClock();
+        soundCheck.stop();
         navigator.sendBeacon(api('/expire'));
         goMain();
     }
@@ -387,6 +451,7 @@
 
     function begin() {
         if (state.status !== 'READY') return;
+        soundCheck.stop();            // [소리 확인]으로 읽던 소리가 첫 문제 발음과 겹치지 않게
         tts.unlock();                 // 터치 이벤트 안에서 호출 (iOS)
         hideOverlay();
         state.status = 'RUNNING';

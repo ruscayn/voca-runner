@@ -154,7 +154,7 @@ COMMENT ON COLUMN test_session.status              IS '상태: IN_PROGRESS 진�
 COMMENT ON COLUMN test_session.questions_delivered IS '시험 화면이 문제를 받아 갔는지. 시작 후 5분 안에 받아 가지 않으면 정리 (연결 끊김 대비)';
 COMMENT ON COLUMN test_session.started_at          IS '시작 시각';
 COMMENT ON COLUMN test_session.deadline            IS '마감 시각. 지나면 제출 불가 (시작 + 문항 수 × 제한 시간 + 여유, 분 단위 올림)';
-COMMENT ON COLUMN test_session.submitted_at        IS '제출 시각. 결과는 이 시각부터 2시간 보관. 제출 전이면 NULL';
+COMMENT ON COLUMN test_session.submitted_at        IS '제출 시각. 결과는 이 시각부터 1시간 보관. 제출 전이면 NULL';
 COMMENT ON COLUMN test_session.correct_count       IS '맞힌 문항 수. 제출 전이면 NULL';
 COMMENT ON COLUMN test_session.score               IS '점수 0~100. 제출 전이면 NULL';
 COMMENT ON COLUMN test_session.option_ids          IS '보기 level_word_id 목록 (문항 수 × 4). 문항 n의 보기 i = [(n-1)*4 + i]';

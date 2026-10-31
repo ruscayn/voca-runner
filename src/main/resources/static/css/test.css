@@ -414,6 +414,26 @@
 .rules svg { flex: none; width: 20px; height: 20px; margin-top: 1px; color: var(--muted); }
 .rules strong { color: var(--text); font-weight: 600; }
 
+/* 시작 안내의 [소리 확인] (U51) : 누르면 영어를 몇 초 읽고 그동안 글자가 바뀐다. 누르는 칸 44px 이상 */
+.sound-check { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.sound-check-btn {
+    min-height: 44px;
+    padding: 8px 16px;
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+    text-align: left;
+    text-wrap: balance;      /* 읽는 중 글자가 두 줄이 되면 줄 길이를 고르게 ('…눌러 / 보세요'처럼 끝 말만 내려가지 않게) */
+    color: var(--primary-text);
+    background: var(--primary-soft);
+    border: 1.5px solid var(--primary-line);
+    border-radius: 12px;
+    cursor: pointer;
+}
+.sound-check-btn:active { background: var(--primary-line); }
+.sound-check-btn.is-playing { border-color: var(--primary); }
+
 /* ---------- 낮은 화면 (가로 화면, 큰 글자) : 단어와 보기 4개가 스크롤 없이 보이게 ---------- */
 @media (max-height: 540px) {
     .test-header { padding-top: 8px; }

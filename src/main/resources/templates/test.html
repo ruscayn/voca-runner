@@ -98,10 +98,14 @@
                             <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10.5" r="7.5" stroke="currentColor" stroke-width="1.6"/><path d="M10 6.5 V10.5 L12.5 12.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
                             <span><strong><span id="ready-min-text">45</span>분</strong> 안에 제출하지 않으면 무효 처리됩니다.</span>
                         </li>
-                        <!-- 발음이 되는 브라우저에서만 보임 (U22, test.js tts.available) -->
+                        <!-- 발음이 되는 브라우저에서만 보임 (U22, test.js tts.available).
+                             [소리 확인] : 영어를 30초 동안 읽어 그동안 휴대폰 볼륨을 맞추게 한다 (U51, test.js soundCheck) -->
                         <li id="ready-sound" hidden>
                             <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 8 H6 L10 4.5 V15.5 L6 12 H3 Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 7.5 C14.3 8.8 14.3 11.2 13 12.5 M15.5 5.5 C18 8 18 12 15.5 14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-                            <span>단어마다 발음이 함께 나옵니다.</span>
+                            <div class="sound-check">
+                                <span>단어마다 발음이 함께 나옵니다.<br>[소리 확인]을 누르고, 소리가 나는 동안 휴대폰 볼륨을 맞춰 주세요.</span>
+                                <button type="button" class="sound-check-btn" id="sound-check">소리 확인</button>
+                            </div>
                         </li>
                     </ul>
                 </div>

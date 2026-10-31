@@ -57,7 +57,7 @@ class DbTestSessionRepositoryTest {
 
     private static final Instant NOW = Instant.parse("2026-10-08T00:00:00Z");
     private static final Duration GRACE = Duration.ofMinutes(3);
-    private static final Duration RETENTION = Duration.ofHours(2);
+    private static final Duration RETENTION = Duration.ofHours(1);
     private static final Duration UNDELIVERED = Duration.ofMinutes(5);
 
     @Autowired
@@ -232,7 +232,7 @@ class DbTestSessionRepositoryTest {
         pastDeadline.markQuestionsDelivered();
         TestSession undelivered = session("d5", "10.0.0.1", now.minus(Duration.ofMinutes(6)));      // 5분 넘게 문제를 안 받아 감
         TestSession oldResult = session("d6", "10.0.0.1", now.minus(Duration.ofHours(3)));
-        oldResult.submit(Map.of(), now.minus(Duration.ofHours(3)).plusSeconds(30));                 // 보관 2시간 지남
+        oldResult.submit(Map.of(), now.minus(Duration.ofHours(3)).plusSeconds(30));                 // 보관 1시간 지남
         TestSession expired = session("d7", "10.0.0.1", now.minus(Duration.ofMinutes(1)));
         expired.expire();
 
