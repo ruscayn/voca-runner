@@ -204,9 +204,13 @@ a { color: var(--primary-text); }
 .main-app .app-header { padding-top: calc(6px + 12 * var(--f)); }
 .main-app .app-content { padding-bottom: calc(8px + 12 * var(--f)); }
 .main-app .app-footer { padding: calc(8px + 4 * var(--f)) var(--side) calc(12px + 12 * var(--f) + env(safe-area-inset-bottom)); }
+/* 제목은 늘 한 줄 (U50): 높이 기준 크기와 폭 기준 크기 중 작은 쪽, 단 20px 아래로는 줄이지 않음
+   폭 기준 = 내용 칸(앱 폭 - 좌우 여백)에 한 줄이 들어가는 크기. Pretendard 실측 한 줄 폭 ≈ 12.47 × 글자 - 8.6px, 2% 여유(÷ 12.72)
+   → 휴대폰 폭(320 이상)에서는 늘 20px 이상이라 한 줄. 더 좁을 때(큰 글자 확대 등)와 웹 글꼴을 못 받아
+   대체 글꼴(Pretendard보다 넓음)일 때는 넘치는 대신 두 줄로 내려감 */
 .main-app .hero {
     margin: calc(8px + 20 * var(--f)) 0 calc(10px + 10 * var(--f));
-    font-size: calc(20px + 7 * var(--f));
+    font-size: clamp(20px, calc((min(100vw, var(--app-max-width)) - 2 * var(--side) + 8.6px) / 12.72), calc(20px + 7 * var(--f)));
 }
 .main-app .stat-strip { padding: calc(7px + 7 * var(--f)) 4px; }
 .main-app .stat-value { font-size: calc(20px + 6 * var(--f)); }
@@ -308,13 +312,12 @@ a { color: var(--primary-text); }
 .main-footer { display: flex; flex-direction: column; gap: calc(8px + 4 * var(--f)); }
 
 /* 안내 띠(시험 종료·쿠키 안내 등)가 보일 때도 레벨 카드가 한 화면에 (U49, 10/30 사용자 결정)
-   띠는 촘촘하게(두 줄 약 60px), 그만큼 제목을 한 줄 20px로, 레벨 카드를 50px까지 더 줄임 */
+   띠는 촘촘하게(두 줄 약 60px), 그만큼 제목을 20px로(웹 글꼴을 못 받아도 360폭에 한 줄), 레벨 카드를 50px까지 더 줄임 */
 .main-app .notice { margin-top: 8px; padding: 8px 12px; font-size: 13px; line-height: 1.4; }
 .main-app:has(> .notice:not([hidden])) .hero {
     margin: calc(6px + 8 * var(--f)) 0;
     font-size: 20px;
 }
-.main-app:has(> .notice:not([hidden])) .hero br { display: none; }
 .main-app:has(> .notice:not([hidden])) .level-groups { gap: calc(6px + 8 * var(--f)); }
 .main-app:has(> .notice:not([hidden])) .level-card {
     height: calc(50px + 34 * var(--f));
