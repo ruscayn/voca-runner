@@ -140,7 +140,7 @@
      * 휴대폰 볼륨 버튼은 소리가 나는 동안에만 미디어 음량을 바꾸는데, 단어 발음은 1초 안팎이라 그 사이에 맞추기 어렵다.
      * 손이 느려도 버튼을 찾아 누를 수 있게 30초. 긴 글 하나는 일부 브라우저(PC 크롬 등)가 15초쯤에서 끊으므로
      * 짧은 문장을 차례로(끝나면 처음부터) 이어 읽는다. 누름(터치)이 iOS 소리 허락도 겸한다.
-     * 다시 누르면 처음부터 읽고, [시작]·[이전]을 누르면 멈춘다
+     * 읽는 중에 다시 누르면 멈추고 원래 버튼으로 돌아간다. [시작]·[이전]을 눌러도 멈춘다
      */
     const SOUND_CHECK_LINES = [
         'This is a sound check.',
@@ -186,6 +186,10 @@
         }
 
         btn?.addEventListener('click', () => {
+            if (btn.classList.contains('is-playing')) {
+                stop();
+                return;
+            }
             const id = ++playId;
             btn.textContent = '소리가 나는 중… 지금 볼륨 버튼을 눌러 보세요';
             btn.classList.add('is-playing');
