@@ -19,9 +19,9 @@ import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
+import org.ruscayn.vocarunner.common.UseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -45,7 +45,7 @@ import java.util.stream.IntStream;
  * 시험(정답지·고른 보기·결과)은 DB(test_session)에 저장해 재시작·배포 때도 이어진다 (U21).
  */
 @Slf4j
-@Service
+@UseCase
 @RequiredArgsConstructor
 public class ExamService implements ExamUseCase {
 

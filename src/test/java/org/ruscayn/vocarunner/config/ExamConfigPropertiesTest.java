@@ -1,5 +1,6 @@
-package org.ruscayn.vocarunner.exam.application.service;
+package org.ruscayn.vocarunner.config;
 
+import org.ruscayn.vocarunner.exam.application.service.ExamProperties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.context.properties.bind.Binder;
@@ -14,13 +15,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 시험 설정 묶기. 자바 이름(maxQuestionCount)과 설정 이름(question-count)이 달라 @Name 으로 묶은 것을 확인한다.
  * 묶기가 풀리면 앱은 기본값(500)으로 조용히 돌아가므로 테스트로 고정한다.
  */
-@DisplayName("ExamProperties : 설정 이름 묶기")
-class ExamPropertiesTest {
+@DisplayName("ExamConfigProperties : 설정 이름 묶기")
+class ExamConfigPropertiesTest {
 
+    /** 설정 파일 값을 묶어 서비스가 받는 순수 값까지 만든다 */
     private static ExamProperties bind(Map<String, String> values) {
         return new Binder(new MapConfigurationPropertySource(values))
-                .bind("voca-runner.test", ExamProperties.class)
-                .get();
+                .bind("voca-runner.test", ExamConfigProperties.class)
+                .get()
+                .toExamProperties();
     }
 
     @Test

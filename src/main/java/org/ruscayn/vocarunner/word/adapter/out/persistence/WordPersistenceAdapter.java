@@ -3,8 +3,8 @@ package org.ruscayn.vocarunner.word.adapter.out.persistence;
 import org.ruscayn.vocarunner.word.application.port.out.WordPersistencePort;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
 import org.ruscayn.vocarunner.word.domain.WordExposureRules;
+import org.ruscayn.vocarunner.common.PersistenceAdapter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -16,7 +16,7 @@ import java.util.Map;
 /**
  * 단어 쪽 영속성 어댑터. 단어 출제 목록용 데이터를 DB 에서 읽는다. 서버 시작 시 1번만 호출.
  */
-@Component
+@PersistenceAdapter
 @RequiredArgsConstructor
 public class WordPersistenceAdapter implements WordPersistencePort {
 

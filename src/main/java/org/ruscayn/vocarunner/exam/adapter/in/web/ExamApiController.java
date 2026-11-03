@@ -7,6 +7,7 @@ import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamResult;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
+import org.ruscayn.vocarunner.common.WebAdapter;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 /** 시험 REST API (화면 / 추후 앱 공용). 결과 외에는 시험을 시작한 기기(VR_DEVICE 쿠키)만 쓸 수 있다 */
+@WebAdapter
 @RestController
 @RequestMapping("/api/tests")
 @RequiredArgsConstructor

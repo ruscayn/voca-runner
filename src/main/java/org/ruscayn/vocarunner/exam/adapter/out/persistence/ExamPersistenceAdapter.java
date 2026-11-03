@@ -3,9 +3,9 @@ package org.ruscayn.vocarunner.exam.adapter.out.persistence;
 import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.ExamStatus;
+import org.ruscayn.vocarunner.common.PersistenceAdapter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
-import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
@@ -18,7 +18,7 @@ import java.util.UUID;
  * 시험 저장소 (PostgreSQL test_session).
  * 진행 중 = 상태 IN_PROGRESS 이고 마감 전 (Exam.isInProgress 와 같은 조건)
  */
-@Repository
+@PersistenceAdapter
 @RequiredArgsConstructor
 public class ExamPersistenceAdapter implements ExamPersistencePort {
 

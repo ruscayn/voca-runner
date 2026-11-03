@@ -93,7 +93,7 @@ class ExamServicePersistenceTest {
         @Primary
         ExamProperties examProperties() {
             return new ExamProperties(QUESTION_COUNT, GRACE, Duration.ofHours(1), 20000, MAX_IN_PROGRESS_PER_IP,
-                    Duration.ofMinutes(1), Duration.ofMinutes(5));
+                    Duration.ofMinutes(5));
         }
     }
 
