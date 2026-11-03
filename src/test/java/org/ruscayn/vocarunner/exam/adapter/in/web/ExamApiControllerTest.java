@@ -23,7 +23,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -66,7 +66,8 @@ class ExamApiControllerTest {
                     """)
                     .andExpect(status().isOk());
 
-            verify(examApplicationService).submit(eq(EXAM_ID), eq(DEVICE_ID), any());
+            verify(examApplicationService).submit(argThat(command ->
+                    command.examId().equals(EXAM_ID) && DEVICE_ID.equals(command.deviceId())));
         }
 
         @Test
@@ -76,7 +77,7 @@ class ExamApiControllerTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("COMMON_002"));
 
-            verify(examApplicationService, never()).submit(any(), any(), any());
+            verify(examApplicationService, never()).submit(any());
         }
 
         @Test
@@ -93,7 +94,7 @@ class ExamApiControllerTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("COMMON_002"));
 
-            verify(examApplicationService, never()).submit(any(), any(), any());
+            verify(examApplicationService, never()).submit(any());
         }
 
         @Test
@@ -105,13 +106,13 @@ class ExamApiControllerTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("COMMON_002"));
 
-            verify(examApplicationService, never()).submit(any(), any(), any());
+            verify(examApplicationService, never()).submit(any());
         }
 
         @Test
         @DisplayName("동시에 두 번 제출해 늦은 쪽이 저장에서 충돌하면 500 이 아니라 400 진행 중인 시험이 아님 (U39)")
         void concurrentSubmit() throws Exception {
-            given(examApplicationService.submit(eq(EXAM_ID), eq(DEVICE_ID), any()))
+            given(examApplicationService.submit(any()))
                     .willThrow(new ObjectOptimisticLockingFailureException(Exam.class, EXAM_ID));
 
             submit(MediaType.APPLICATION_JSON, """
@@ -130,7 +131,7 @@ class ExamApiControllerTest {
                     .andExpect(status().isUnsupportedMediaType())
                     .andExpect(jsonPath("$.code").value("COMMON_005"));
 
-            verify(examApplicationService, never()).submit(any(), any(), any());
+            verify(examApplicationService, never()).submit(any());
         }
     }
 
@@ -142,7 +143,7 @@ class ExamApiControllerTest {
         @Test
         @DisplayName("업무 오류(거절)는 스택 없이 WARN 한 줄로 남긴다")
         void businessExceptionIsWarnWithoutStack(CapturedOutput output) throws Exception {
-            given(examApplicationService.submit(eq(EXAM_ID), eq(DEVICE_ID), any()))
+            given(examApplicationService.submit(any()))
                     .willThrow(new CustomException(ErrorCode.EXAM_EXPIRED));
 
             submit(MediaType.APPLICATION_JSON, """

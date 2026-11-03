@@ -8,7 +8,7 @@ import org.mockito.ArgumentCaptor;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.exam.application.service.ExamApplicationService;
-import org.ruscayn.vocarunner.exam.domain.Examinee;
+import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -23,7 +23,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -59,7 +59,7 @@ class ExamControllerTest {
 
     /** [시작]을 누른 브라우저 (시험 화면 입장 토큰을 받은 세션) */
     private MockHttpSession startTest() throws Exception {
-        given(examApplicationService.start(eq(Level.A1), any())).willReturn(EXAM_ID);
+        given(examApplicationService.start(argThat(command -> command.level() == Level.A1))).willReturn(EXAM_ID);
         MockHttpSession httpSession = new MockHttpSession();
         mockMvc.perform(post("/test/start").param("level", "A1").session(httpSession).cookie(DEVICE_COOKIE))
                 .andExpect(redirectedUrl("/test/" + EXAM_ID));
@@ -73,7 +73,7 @@ class ExamControllerTest {
         @Test
         @DisplayName("시작하면 시험 화면으로 보내고, 기기 쿠키가 없으면 새로 준다")
         void redirectsToTest() throws Exception {
-            given(examApplicationService.start(eq(Level.A1), any())).willReturn(EXAM_ID);
+            given(examApplicationService.start(argThat(command -> command.level() == Level.A1))).willReturn(EXAM_ID);
 
             mockMvc.perform(post("/test/start").param("level", "A1"))
                     .andExpect(status().is3xxRedirection())
@@ -84,7 +84,7 @@ class ExamControllerTest {
         @Test
         @DisplayName("응시자가 많아 거절되면 안내와 함께 메인으로")
         void serverBusy() throws Exception {
-            given(examApplicationService.start(eq(Level.A1), any()))
+            given(examApplicationService.start(argThat(command -> command.level() == Level.A1)))
                     .willThrow(new CustomException(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS));
 
             mockMvc.perform(post("/test/start").param("level", "A1"))
@@ -95,7 +95,7 @@ class ExamControllerTest {
         @Test
         @DisplayName("같은 인터넷에서 진행 중 시험이 너무 많으면 안내와 함께 메인으로")
         void tooManySameNetwork() throws Exception {
-            given(examApplicationService.start(eq(Level.A1), any()))
+            given(examApplicationService.start(argThat(command -> command.level() == Level.A1)))
                     .willThrow(new CustomException(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS_PER_IP));
 
             mockMvc.perform(post("/test/start").param("level", "A1"))
@@ -107,15 +107,15 @@ class ExamControllerTest {
         @Test
         @DisplayName("IP 는 CloudFront 헤더에서 포트를 빼고 읽고, 헤더가 없으면 연결 IP (U32)")
         void clientIp() throws Exception {
-            given(examApplicationService.start(eq(Level.A1), any())).willReturn(EXAM_ID);
+            given(examApplicationService.start(argThat(command -> command.level() == Level.A1))).willReturn(EXAM_ID);
 
             mockMvc.perform(post("/test/start").param("level", "A1")
                     .header("CloudFront-Viewer-Address", "198.51.100.10:46532"));
             mockMvc.perform(post("/test/start").param("level", "A1"));
 
-            ArgumentCaptor<Examinee> examinees = ArgumentCaptor.forClass(Examinee.class);
-            verify(examApplicationService, times(2)).start(eq(Level.A1), examinees.capture());
-            assertThat(examinees.getAllValues()).extracting(Examinee::clientIp)
+            ArgumentCaptor<StartExamCommand> commands = ArgumentCaptor.forClass(StartExamCommand.class);
+            verify(examApplicationService, times(2)).start(commands.capture());
+            assertThat(commands.getAllValues()).extracting(command -> command.examinee().clientIp())
                     .containsExactly("198.51.100.10", "127.0.0.1");
         }
     }

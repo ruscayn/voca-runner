@@ -2,11 +2,11 @@ package org.ruscayn.vocarunner.exam.application.service;
 
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionView;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResponse;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamResultResponse;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamSubmitRequest;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamSubmitResponse;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResult;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
+import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
+import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
+import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamResult;
 import org.ruscayn.vocarunner.exam.application.port.out.ExamRepository;
 import org.ruscayn.vocarunner.exam.domain.Direction;
 import org.ruscayn.vocarunner.exam.domain.Question;
@@ -60,9 +60,11 @@ public class ExamApplicationService {
      * 마지막 확인과 저장은 DB 잠금(트랜잭션 단위)으로 한 번에 하나씩 한다. 문항 생성은 시간이 걸려 잠금 밖에서 하고,
      * 최대에 걸릴 요청이 생성부터 하지 않도록 잠금 없이 한 번 먼저 확인한다.
      *
-     * @param examinee 시작한 응시자 (기기·IP)
+     * @param command 시험 레벨과 시작한 응시자 (기기·IP)
      */
-    public UUID start(Level level, Examinee examinee) {
+    public UUID start(StartExamCommand command) {
+        Level level = command.level();
+        Examinee examinee = command.examinee();
         long begin = System.currentTimeMillis();
         Instant now = Instant.now();
         checkCapacity(examinee, now);
@@ -110,7 +112,7 @@ public class ExamApplicationService {
 
     /** 시험 화면용 문제 (진행 중인 시험만, 정답 번호 제외). 시작한 기기만 */
     @Transactional
-    public ExamQuestionsResponse getQuestions(UUID examId, String deviceId) {
+    public ExamQuestionsResult getQuestions(UUID examId, String deviceId) {
         Exam exam = findStartedBy(examId, deviceId);
         Instant now = Instant.now();
         if (!exam.isInProgress(now)) {
@@ -120,12 +122,12 @@ public class ExamApplicationService {
         exam.markQuestionsDelivered();
 
         Direction direction = exam.getDirection();
-        List<ExamQuestionView> questions = new ArrayList<>(exam.getQuestionCount());
+        List<ExamQuestionsResult.QuestionItem> questions = new ArrayList<>(exam.getQuestionCount());
         for (int no = 1; no <= exam.getQuestionCount(); no++) {
-            questions.add(toView(exam, no, direction));
+            questions.add(toQuestionItem(exam, no, direction));
         }
 
-        return new ExamQuestionsResponse(
+        return new ExamQuestionsResult(
                 exam.getId(),
                 exam.getLevel().name(),
                 exam.getLevel().groupName(),
@@ -142,11 +144,12 @@ public class ExamApplicationService {
      * 거절(예외)해도 마감 초과 삭제는 반영해야 하므로 업무 예외로는 되돌리지 않는다 (채점 전 검사에서 거절하면 바뀐 내용 없음)
      */
     @Transactional(noRollbackFor = CustomException.class)
-    public ExamSubmitResponse submit(UUID examId, String deviceId, ExamSubmitRequest request) {
-        Exam exam = findStartedBy(examId, deviceId);
+    public SubmitExamResult submit(SubmitExamCommand command) {
+        UUID examId = command.examId();
+        Exam exam = findStartedBy(examId, command.deviceId());
 
         Map<Integer, Integer> selectedByNo = new HashMap<>();  // null 값 허용 (시간 초과)
-        for (ExamSubmitRequest.Answer answer : request.answers()) {
+        for (SubmitExamCommand.Answer answer : command.answers()) {
             int no = answer.questionNo();
             if (no > exam.getQuestionCount()) {
                 throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "없는 문제 번호입니다: " + no);
@@ -171,13 +174,13 @@ public class ExamApplicationService {
         afterCommit(() -> log.info("시험 제출 exam={} 맞힌 수={}/{} 점수={}",
                 exam.getId(), exam.getCorrectCount(), exam.getQuestionCount(), exam.getScore()));
 
-        return new ExamSubmitResponse(
+        return new SubmitExamResult(
                 exam.getId(), exam.getQuestionCount(), exam.getCorrectCount(), exam.getScore());
     }
 
     /** 결과 (완료된 시험만). 없거나(보관 시간 경과 포함) 완료 전이면 empty */
     @Transactional(readOnly = true)
-    public Optional<ExamResultResponse> findResult(UUID examId) {
+    public Optional<ExamResult> findResult(UUID examId) {
         return examRepository.findById(examId)
                 .filter(Exam::isCompleted)
                 .map(this::toResult);
@@ -193,7 +196,7 @@ public class ExamApplicationService {
 
     /** 결과 (API) */
     @Transactional(readOnly = true)
-    public ExamResultResponse getResult(UUID examId) {
+    public ExamResult getResult(UUID examId) {
         Exam exam = find(examId);
         if (!exam.isCompleted()) {
             throw new CustomException(ErrorCode.EXAM_NOT_COMPLETED);
@@ -222,16 +225,16 @@ public class ExamApplicationService {
                 .orElse(false);
     }
 
-    private ExamResultResponse toResult(Exam exam) {
+    private ExamResult toResult(Exam exam) {
         Direction direction = exam.getDirection();
-        List<ExamResultResponse.WrongItem> wrongItems = new ArrayList<>();
+        List<ExamResult.WrongItem> wrongItems = new ArrayList<>();
         for (int no = 1; no <= exam.getQuestionCount(); no++) {
             if (exam.isCorrect(no)) {
                 continue;
             }
             CatalogWord answer = wordCatalog.get(exam.answerLevelWordId(no));
             Long selectedId = exam.selectedLevelWordId(no);
-            wrongItems.add(new ExamResultResponse.WrongItem(
+            wrongItems.add(new ExamResult.WrongItem(
                     no,
                     promptText(answer, direction),
                     promptSubText(answer, direction),
@@ -239,7 +242,7 @@ public class ExamApplicationService {
                     optionText(answer, direction),
                     answer.headword()));
         }
-        return new ExamResultResponse(
+        return new ExamResult(
                 exam.getId(),
                 exam.getLevel().name(),
                 exam.getLevel().groupName(),
@@ -251,13 +254,15 @@ public class ExamApplicationService {
                 wrongItems);
     }
 
-    private ExamQuestionView toView(Exam exam, int no, Direction direction) {
+    private ExamQuestionsResult.QuestionItem toQuestionItem(Exam exam, int no, Direction direction) {
         List<Long> optionIds = exam.optionLevelWordIds(no);
-        List<ExamQuestionView.Option> optionViews = IntStream.range(0, optionIds.size())
-                .mapToObj(i -> new ExamQuestionView.Option(i + 1, optionText(wordCatalog.get(optionIds.get(i)), direction)))
+        List<ExamQuestionsResult.Option> options = IntStream.range(0, optionIds.size())
+                .mapToObj(i -> new ExamQuestionsResult.Option(i + 1,
+                        optionText(wordCatalog.get(optionIds.get(i)), direction)))
                 .toList();
         CatalogWord answer = wordCatalog.get(exam.answerLevelWordId(no));
-        return new ExamQuestionView(no, promptText(answer, direction), promptSubText(answer, direction), optionViews);
+        return new ExamQuestionsResult.QuestionItem(no, promptText(answer, direction),
+                promptSubText(answer, direction), options);
     }
 
     private String promptText(CatalogWord answer, Direction direction) {

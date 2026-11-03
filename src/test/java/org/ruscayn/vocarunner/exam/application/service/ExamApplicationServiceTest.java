@@ -3,7 +3,7 @@ package org.ruscayn.vocarunner.exam.application.service;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamSubmitRequest;
+import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.out.ExamRepository;
 import org.ruscayn.vocarunner.exam.domain.Direction;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
@@ -66,9 +66,10 @@ class ExamApplicationServiceTest {
 
     private void submitIn(PlatformTransactionManager transactionManager) {
         given(repository.findById(exam.getId())).willReturn(Optional.of(exam));
-        ExamSubmitRequest request = new ExamSubmitRequest(List.of(new ExamSubmitRequest.Answer(1, answerOptionNo(1))));
+        SubmitExamCommand command = new SubmitExamCommand(exam.getId(), DEVICE_ID,
+                List.of(new SubmitExamCommand.Answer(1, answerOptionNo(1))));
         new TransactionTemplate(transactionManager)
-                .executeWithoutResult(tx -> service.submit(exam.getId(), DEVICE_ID, request));
+                .executeWithoutResult(tx -> service.submit(command));
     }
 
     /** DB 없이 커밋만 흉내 내는 트랜잭션 관리자. conflict 이면 커밋할 때 저장 충돌(@Version)을 낸다 */

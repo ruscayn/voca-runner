@@ -2,13 +2,12 @@ package org.ruscayn.vocarunner.exam.adapter.in.web;
 
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResponse;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamResultResponse;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamSubmitRequest;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamSubmitResponse;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResult;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
+import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
+import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamResult;
 import org.ruscayn.vocarunner.exam.application.service.ExamApplicationService;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +25,7 @@ public class ExamApiController {
 
     /** 문제 전체 (정답 제외). 시작한 기기만 */
     @GetMapping("/{examId}/questions")
-    public ExamQuestionsResponse questions(@PathVariable UUID examId, HttpServletRequest httpRequest) {
+    public ExamQuestionsResult questions(@PathVariable UUID examId, HttpServletRequest httpRequest) {
         return examApplicationService.getQuestions(examId, DeviceCookie.find(httpRequest));
     }
 
@@ -36,10 +35,11 @@ public class ExamApiController {
      * 먼저 저장한 쪽만 채점되고(@Version) 늦은 쪽은 저장할 때 충돌하므로, 이미 끝난 시험을 제출한 것과 같은 응답을 준다 (U39)
      */
     @PostMapping("/{examId}/submit")
-    public ExamSubmitResponse submit(@PathVariable UUID examId,
-                                     @Valid @RequestBody ExamSubmitRequest request, HttpServletRequest httpRequest) {
+    public SubmitExamResult submit(@PathVariable UUID examId, @RequestBody SubmitExamRequest request,
+                                   HttpServletRequest httpRequest) {
+        SubmitExamCommand command = new SubmitExamCommand(examId, DeviceCookie.find(httpRequest), request.answers());
         try {
-            return examApplicationService.submit(examId, DeviceCookie.find(httpRequest), request);
+            return examApplicationService.submit(command);
         } catch (OptimisticLockingFailureException e) {
             throw new CustomException(ErrorCode.EXAM_NOT_IN_PROGRESS);
         }
@@ -47,7 +47,7 @@ public class ExamApiController {
 
     /** 결과 (완료된 시험만) */
     @GetMapping("/{examId}/result")
-    public ExamResultResponse result(@PathVariable UUID examId) {
+    public ExamResult result(@PathVariable UUID examId) {
         return examApplicationService.getResult(examId);
     }
 

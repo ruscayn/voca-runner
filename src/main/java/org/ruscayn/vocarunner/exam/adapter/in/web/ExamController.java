@@ -2,6 +2,7 @@ package org.ruscayn.vocarunner.exam.adapter.in.web;
 
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
+import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
 import org.ruscayn.vocarunner.exam.application.service.ExamApplicationService;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.word.domain.Level;
@@ -53,7 +54,7 @@ public class ExamController {
             // 사용자 구분 = 기기 쿠키 + IP. 운영은 CloudFront 뒤라 IP 를 CloudFront 헤더에서 읽는다 (ClientIp)
             Examinee examinee = new Examinee(DeviceCookie.findOrCreate(request, response),
                     ClientIp.find(request, clientIpProperties.header()));
-            examId = examApplicationService.start(level, examinee);
+            examId = examApplicationService.start(new StartExamCommand(level, examinee));
         } catch (CustomException e) {
             if (e.getErrorCode() == ErrorCode.EXAM_TOO_MANY_IN_PROGRESS
                     || e.getErrorCode() == ErrorCode.EXAM_TOO_MANY_IN_PROGRESS_PER_IP) {

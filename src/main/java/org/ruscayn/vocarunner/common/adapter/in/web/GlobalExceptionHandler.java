@@ -4,6 +4,7 @@ import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,8 +40,11 @@ public class GlobalExceptionHandler {
         return respond(request, HttpStatus.BAD_REQUEST, errorResponse, e.getMessage());
     }
 
-    /** 입력값 검사 실패 (보기 번호 0·5, 고른 보기 목록(answers) null 등). 사용자 입력 문제라 스택 없이 남긴다 */
-    @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
+    /**
+     * 입력값 검사 실패 (보기 번호 0·5, 고른 보기 목록(answers) null 등 — Command 가 스스로 검증한 것 포함).
+     * 사용자 입력 문제라 스택 없이 남긴다
+     */
+    @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class, ConstraintViolationException.class})
     public Object handleValidationException(Exception e, HttpServletRequest request) {
         log.warn("Validation failed: {} {}", request.getRequestURI(), e.getMessage());
         ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, request.getRequestURI());

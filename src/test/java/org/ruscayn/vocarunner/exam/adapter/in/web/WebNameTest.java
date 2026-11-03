@@ -12,11 +12,10 @@ import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.exam.application.port.in.LevelGroupSummary;
 import org.ruscayn.vocarunner.exam.application.port.in.LevelSummary;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionView;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResponse;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamResultResponse;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamSubmitRequest;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamSubmitResponse;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResult;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
+import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
+import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamResult;
 import org.ruscayn.vocarunner.exam.application.service.LevelApplicationService;
 import org.ruscayn.vocarunner.exam.application.service.ExamApplicationService;
 import org.ruscayn.vocarunner.word.domain.Level;
@@ -38,7 +37,6 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -83,10 +81,10 @@ class WebNameTest {
         return JsonPath.read(json, path);
     }
 
-    private static ExamResultResponse resultWithOneIncorrectAndOneTimeout() {
-        return new ExamResultResponse(EXAM_ID, "C2", "Proficient", 10, 8, 80, RETENTION_DEADLINE, 60,
-                List.of(new ExamResultResponse.WrongItem(3, "abroad", "go abroad", "국내에", "해외로", "abroad"),
-                        new ExamResultResponse.WrongItem(7, "sail", "sail away", null, "항해하다", "sail")));
+    private static ExamResult resultWithOneIncorrectAndOneTimeout() {
+        return new ExamResult(EXAM_ID, "C2", "Proficient", 10, 8, 80, RETENTION_DEADLINE, 60,
+                List.of(new ExamResult.WrongItem(3, "abroad", "go abroad", "국내에", "해외로", "abroad"),
+                        new ExamResult.WrongItem(7, "sail", "sail away", null, "항해하다", "sail")));
     }
 
     @Nested
@@ -96,10 +94,10 @@ class WebNameTest {
         @Test
         @DisplayName("문제 받기 응답 : 시험 · 문항 · 보기 칸")
         void questions() throws Exception {
-            ExamQuestionView question = new ExamQuestionView(1, "abroad", "go abroad",
-                    List.of(new ExamQuestionView.Option(1, "해외로"), new ExamQuestionView.Option(2, "국내에")));
+            ExamQuestionsResult.QuestionItem question = new ExamQuestionsResult.QuestionItem(1, "abroad", "go abroad",
+                    List.of(new ExamQuestionsResult.Option(1, "해외로"), new ExamQuestionsResult.Option(2, "국내에")));
             given(examApplicationService.getQuestions(EXAM_ID, DEVICE_ID)).willReturn(
-                    new ExamQuestionsResponse(EXAM_ID, "B1", "Independent", "EN_KO", 1, 5, 3, 170,
+                    new ExamQuestionsResult(EXAM_ID, "B1", "Independent", "EN_KO", 1, 5, 3, 170,
                             List.of(question)));
 
             String json = mockMvc.perform(get("/api/tests/" + EXAM_ID + "/questions").cookie(DEVICE_COOKIE))
@@ -118,8 +116,8 @@ class WebNameTest {
         @Test
         @DisplayName("제출 본문 : answers[].questionNo · selectedOptionNo 를 읽는다")
         void submitBody() throws Exception {
-            given(examApplicationService.submit(eq(EXAM_ID), eq(DEVICE_ID), any()))
-                    .willReturn(new ExamSubmitResponse(EXAM_ID, 2, 1, 50));
+            given(examApplicationService.submit(any()))
+                    .willReturn(new SubmitExamResult(EXAM_ID, 2, 1, 50));
 
             mockMvc.perform(post("/api/tests/" + EXAM_ID + "/submit").cookie(DEVICE_COOKIE)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -128,9 +126,11 @@ class WebNameTest {
                                     """))
                     .andExpect(status().isOk());
 
-            ArgumentCaptor<ExamSubmitRequest> captor = ArgumentCaptor.forClass(ExamSubmitRequest.class);
-            verify(examApplicationService).submit(eq(EXAM_ID), eq(DEVICE_ID), captor.capture());
-            List<ExamSubmitRequest.Answer> answers = captor.getValue().answers();
+            ArgumentCaptor<SubmitExamCommand> captor = ArgumentCaptor.forClass(SubmitExamCommand.class);
+            verify(examApplicationService).submit(captor.capture());
+            assertThat(captor.getValue().examId()).isEqualTo(EXAM_ID);
+            assertThat(captor.getValue().deviceId()).isEqualTo(DEVICE_ID);
+            List<SubmitExamCommand.Answer> answers = captor.getValue().answers();
             assertThat(answers.get(0).questionNo()).isEqualTo(1);
             assertThat(answers.get(0).selectedOptionNo()).isEqualTo(2);
             assertThat(answers.get(1).questionNo()).isEqualTo(2);
@@ -140,8 +140,8 @@ class WebNameTest {
         @Test
         @DisplayName("제출 응답 칸")
         void submitResponse() throws Exception {
-            given(examApplicationService.submit(eq(EXAM_ID), eq(DEVICE_ID), any()))
-                    .willReturn(new ExamSubmitResponse(EXAM_ID, 2, 1, 50));
+            given(examApplicationService.submit(any()))
+                    .willReturn(new SubmitExamResult(EXAM_ID, 2, 1, 50));
 
             String json = mockMvc.perform(post("/api/tests/" + EXAM_ID + "/submit").cookie(DEVICE_COOKIE)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -222,7 +222,7 @@ class WebNameTest {
         @Test
         @DisplayName("시험 화면 : examId 를 data-exam-id 로 그린다")
         void exam() throws Exception {
-            given(examApplicationService.start(eq(Level.A1), any())).willReturn(EXAM_ID);
+            given(examApplicationService.start(any())).willReturn(EXAM_ID);
             given(examApplicationService.isInProgress(EXAM_ID)).willReturn(true);
             MockHttpSession httpSession = new MockHttpSession();
             mockMvc.perform(post("/test/start").param("level", "A1").session(httpSession).cookie(DEVICE_COOKIE))
