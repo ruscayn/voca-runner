@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ExamResultResponseTest {
 
     @Test
-    @DisplayName("틀린 문제를 오답(답을 고름)과 시간 초과(답 없음)로 나눠 센다")
+    @DisplayName("틀린 항목을 오답(보기를 고름)과 시간 초과(고른 보기 없음)로 나눠 센다")
     void wrongAndTimeoutCount() {
         List<ExamResultResponse.WrongItem> wrongItems = List.of(
                 new ExamResultResponse.WrongItem(1, "abandon", null, "채택하다", "버리다", "abandon"),

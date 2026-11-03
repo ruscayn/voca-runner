@@ -14,15 +14,15 @@ import java.util.function.Supplier;
 import java.util.random.RandomGenerator;
 
 /**
- * 시험 문제 생성 도메인 서비스. 단어는 WordCatalog(메모리)에서만 가져온다.
+ * 문항 생성기 : 시험 문항을 만드는 도메인 서비스. 단어는 WordCatalog(메모리)에서만 가져온다.
  *
  * <p>규칙
  * <ul>
- *   <li>한 세션에서 같은 단어는 한 번만 출제</li>
+ *   <li>한 시험에서 같은 단어는 한 번만 출제</li>
  *   <li>묶음 레벨(A 등)은 소속 세부 레벨 단어를 함께 사용. 두 레벨에 모두 있는 단어는 낮은 레벨(뜻) 사용</li>
  *   <li>시험 제외 단어는 정답 문제로도, 오답 보기로도 내지 않음</li>
  *   <li>보기 4개는 정답과 같은 세부 레벨 단어에서 선택</li>
- *   <li>보기 간 표시 뜻(한국어)이 하나라도 겹치면 안 됨</li>
+ *   <li>보기 사이에 보기 뜻(글이 똑같은 것)이 하나라도 겹치면 안 됨</li>
  *   <li>헷갈리는 단어 묶음(confusable_group)에 함께 속한 단어는 같은 문제의 보기로 내지 않음
  *       (예: sir 문제에 teacher 를 오답으로 내지 않음. 오답끼리도 마찬가지)</li>
  * </ul>
@@ -53,7 +53,7 @@ public class QuestionGenerator {
     }
 
     /**
-     * 문제를 생성한다. 출제 가능 단어가 maxCount 보다 적으면 그 레벨 단어 전체를 출제한다.
+     * 문제를 생성한다. 정답 후보가 maxCount 보다 적으면 그 레벨 단어 전체를 출제한다.
      *
      * @param level    사용자가 고른 레벨 (세부 또는 묶음)
      * @param maxCount 최대 문제 수 (설정값). {@link #ALL_WORDS}(0)이면 레벨 단어 전체
@@ -84,7 +84,7 @@ public class QuestionGenerator {
     }
 
     /**
-     * 실제 문제 수 = min(출제 가능 단어 수, 최대 문제 수). 메인 화면 안내도 같은 규칙을 쓴다.
+     * 실제 문제 수 = min(정답 후보 수, 최대 문항 수). 메인 화면 안내도 같은 규칙을 쓴다.
      * 최대 문제 수가 {@link #ALL_WORDS}(0)이면 레벨 단어 전체를 출제한다.
      */
     public static int questionCount(int answerPoolSize, int maxCount) {
@@ -130,7 +130,7 @@ public class QuestionGenerator {
 
     /**
      * 조건을 통과하면 보기에 추가한다.
-     * 탈락: 이미 고른 단어 / 고른 단어와 헷갈리는 단어(묶음) / 고른 보기와 표시 뜻이 하나라도 같은 단어
+     * 탈락: 이미 고른 단어 / 고른 단어와 헷갈리는 단어(묶음) / 고른 보기와 보기 뜻이 하나라도 같은 단어
      */
     private void tryAdd(CatalogWord candidate, List<CatalogWord> options,
                         Set<Long> blockedWordIds, Set<String> usedMeanings) {

@@ -3,7 +3,7 @@ package org.ruscayn.vocarunner.exam.adapter.in.web;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
- * 사용자 IP (IP당 동시 진행 상한용, U32).
+ * 사용자 IP (IP당 최대 진행 중 확인용, U32).
  *
  * <p>운영은 CloudFront 뒤라 연결 IP({@code getRemoteAddr()})가 모두 CloudFront 주소다.
  * 그래서 CloudFront 가 사용자 연결 IP로 직접 넣는 헤더({@code CloudFront-Viewer-Address}, 값 "IP:포트")에서 읽는다.

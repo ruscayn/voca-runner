@@ -41,7 +41,7 @@ public class MainController {
             }
         }
         List<LevelGroupSummary> levelGroups = levelApplicationService.getDetailLevelGroups();
-        // 처음 선택된 레벨(첫 레벨)의 문항 수·제한 시간. 다른 레벨을 고르면 화면 스크립트가 바꾼다
+        // 처음 선택된 레벨(첫 레벨)의 문항 수·허용 시간. 다른 레벨을 고르면 화면 스크립트가 바꾼다
         LevelSummary first = levelGroups.getFirst().levels().getFirst();
         model.addAttribute("levelGroups", levelGroups);
         model.addAttribute("questionCount", first.questionCount());

@@ -12,9 +12,9 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 레벨별 출제 단어 (level_word). 한 레벨에 같은 단어는 1번.
+ * 레벨 단어 (level_word) = 한 단어의 한 세부 레벨. 한 레벨에 같은 단어는 1번.
  * 시험 보기에는 meaning1, meaning2(없을 수 있음) 를 보여준다.
- * 원본에 있는 레벨은 모두 칸이 있고, 시험에 낼지는 시험 노출 판정({@link WordExposure})으로 정한다.
+ * 원본에 있는 레벨마다 레벨 단어가 있고, 시험에 낼지는 단어 노출({@link WordExposure})로 정한다.
  */
 @Getter
 @Entity

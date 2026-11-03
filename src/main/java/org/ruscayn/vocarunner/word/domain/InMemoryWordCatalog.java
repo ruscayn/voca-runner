@@ -6,7 +6,7 @@ import org.ruscayn.vocarunner.common.ErrorCode;
 import java.util.*;
 
 /**
- * 메모리 단어 캐시.
+ * 메모리에 둔 단어 출제 목록.
  *
  * <p>생성 시 받은 단어로 레벨별 후보 목록과 id 맵을 만들어 두고 이후 변경하지 않는다.
  * 모두 불변이라 여러 스레드가 동시에 읽어도 안전하다.

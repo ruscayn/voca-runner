@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 /**
- * 단어 캐시 등록. 서버 시작 시 DB 에서 1번 읽어 메모리에 올린다.
+ * 단어 출제 목록 등록. 서버 시작 시 DB 에서 1번 읽어 메모리에 올린다.
  * 단어 데이터를 수정하면 서버 재시작으로 반영.
  */
 @Slf4j
@@ -28,7 +28,8 @@ public class WordCatalogConfig {
                 .filter(level -> !level.isGroup())
                 .map(level -> level + "=" + catalog.countByLevel(level))
                 .collect(Collectors.joining(", "));
-        log.info("단어 캐시 로딩 완료: 전체 {}행, 시험 제외 {}행, 레벨별 출제 가능 ({}), 헷갈리는 단어 묶음 {}개(단어 {}개) {}ms",
+        log.info("단어 출제 목록 로딩 완료: 전체 {}행, 시험 제외 {}행, 레벨별 정답 가능 ({}), "
+                + "헷갈리는 단어 묶음 {}개(단어 {}개) {}ms",
                 catalog.size(), catalog.excludedCount(), perLevel,
                 catalog.confusableGroupCount(), catalog.confusableWordCount(), System.currentTimeMillis() - begin);
         return catalog;

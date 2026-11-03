@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface JpaLevelWordRepository extends JpaRepository<LevelWord, Long> {
 
-    /** 단어 캐시 로딩용: level_word 전체 (단어, 표시 뜻 함께 조회) */
+    /** 단어 출제 목록 로딩용: level_word 전체 (단어, 보기 뜻 함께 조회) */
     @Query("""
             select lw from LevelWord lw
               join fetch lw.word

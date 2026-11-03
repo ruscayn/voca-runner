@@ -7,7 +7,7 @@ import java.util.List;
  *
  * @param no      문제 번호 1~N
  * @param prompt    문제 (EN_KO: 영어 단어, KO_EN: 한국어 뜻). 발음(TTS)은 이 값만 읽는다
- * @param promptSub 문제 아래 줄에 함께 표시할 형태 (EN_KO 의 headword_sub). 없으면 null
+ * @param promptSub 제시어 보조 = 제시어 아래 줄에 함께 보여 줄 형태 (EN_KO 의 headword_sub). 없으면 null
  * @param options   보기 1~4
  */
 public record ExamQuestionView(int no, String prompt, String promptSub, List<Option> options) {

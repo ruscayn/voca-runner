@@ -22,7 +22,7 @@ import static org.ruscayn.vocarunner.support.TestWords.excluded;
 import static org.ruscayn.vocarunner.support.TestWords.word;
 import static org.ruscayn.vocarunner.support.TestWords.words;
 
-@DisplayName("QuestionGenerator : 문제 생성 규칙")
+@DisplayName("QuestionGenerator : 문항 생성 규칙")
 class QuestionGeneratorTest {
 
     private static QuestionGenerator generator(List<CatalogWord> catalogWords, long seed) {
@@ -45,7 +45,7 @@ class QuestionGeneratorTest {
             // 보기는 정답과 같은 세부 레벨
             assertThat(q.options()).allMatch(o -> o.level() == q.answer().level());
 
-            // 보기 간 표시 뜻이 하나도 겹치지 않음
+            // 보기 사이에 보기 뜻이 하나도 겹치지 않음
             Set<String> optionMeanings = new HashSet<>();
             for (CatalogWord option : q.options()) {
                 for (String meaning : option.optionMeanings()) {
@@ -162,7 +162,7 @@ class QuestionGeneratorTest {
     @ValueSource(longs = {1, 3, 42, 2026})
     @DisplayName("시험 제외 단어는 정답으로도, 오답 보기로도 나오지 않는다")
     void excludedNeverUsed(long seed) {
-        // 출제 20개 + 시험 제외 40개 → 제외 단어가 더 많아도 보기는 출제 단어로만 채움
+        // 출제 20개 + 시험 제외 40개 → 제외 단어가 더 많아도 보기는 정답 가능 단어로만 채움
         List<CatalogWord> catalog = new ArrayList<>(words(Level.B1, 1, 20));
         Set<Long> excludedIds = new HashSet<>();
         for (long id = 101; id <= 140; id++) {
@@ -184,7 +184,7 @@ class QuestionGeneratorTest {
     }
 
     @Test
-    @DisplayName("출제 단어 수는 시험 제외 단어를 빼고 센다 (문항 수가 더 많으면 출제 가능 단어만 출제)")
+    @DisplayName("정답 후보 수는 제외 단어를 빼고 센다 (문항 수가 더 많으면 정답 후보만 출제)")
     void excludedNotCountedAsAnswerPool() {
         List<CatalogWord> catalog = new ArrayList<>(words(Level.A1, 1, 10));
         for (long id = 101; id <= 130; id++) {
@@ -200,7 +200,7 @@ class QuestionGeneratorTest {
     }
 
     @Test
-    @DisplayName("레벨에 출제 가능 단어가 하나도 없으면 EXAM_NOT_ENOUGH_WORDS")
+    @DisplayName("레벨에 정답 후보가 하나도 없으면 EXAM_NOT_ENOUGH_WORDS")
     void noAnswerableWords() {
         List<CatalogWord> catalog = new ArrayList<>(words(Level.A1, 1, 10));
         for (long id = 101; id <= 110; id++) {
@@ -223,7 +223,7 @@ class QuestionGeneratorTest {
         catalog.add(excluded(900, 900, Level.A1, "A1뜻900"));
         catalog.add(word(901, 900, Level.A2, "A2뜻900"));
 
-        // 출제 가능 = A1 30 + A2 30 + word 900(A2) = 61
+        // 정답 후보 = A1 30 + A2 30 + word 900(A2) = 61
         assertThat(new InMemoryWordCatalog(catalog).countByLevel(Level.A)).isEqualTo(61);
 
         List<Question> questions = generator(catalog, seed).generate(Level.A, 61);
@@ -236,7 +236,7 @@ class QuestionGeneratorTest {
     }
 
     @Test
-    @DisplayName("묶음 레벨 출제 단어 수는 같은 단어를 한 번만 센다")
+    @DisplayName("묶음 레벨 정답 후보 수는 같은 단어를 한 번만 센다")
     void groupLevelCountDedupe() {
         List<CatalogWord> catalog = new ArrayList<>(words(Level.B1, 1, 10));
         catalog.addAll(words(Level.B2, 101, 5));
@@ -382,7 +382,7 @@ class QuestionGeneratorTest {
         questions.forEach(q -> counts[q.answerOptionNo()]++);
         // 400문항 → 번호당 평균 100. 무작위 편차를 고려해 넉넉하게 60~140
         for (int no = 1; no <= Question.OPTION_COUNT; no++) {
-            assertThat(counts[no]).as("정답 %d번 개수", no).isBetween(60, 140);
+            assertThat(counts[no]).as("정답 %d번 수", no).isBetween(60, 140);
         }
     }
 

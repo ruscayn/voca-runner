@@ -22,7 +22,7 @@ public class LevelApplicationService {
     private final WordCatalog wordCatalog;
     private final ExamProperties examProperties;
 
-    /** 세부 레벨(A1~C2) 목록과 레벨별 단어 수·문항 수·제한 시간 (메모리 캐시 사용) */
+    /** 세부 레벨(A1~C2) 목록과 레벨별 단어 수·문항 수·허용 시간 (단어 출제 목록 사용) */
     public List<LevelSummary> getDetailLevels() {
         return Arrays.stream(Level.values())
                 .filter(level -> !level.isGroup())

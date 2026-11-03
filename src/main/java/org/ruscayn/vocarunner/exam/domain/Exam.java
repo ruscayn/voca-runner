@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 시험 1회 (정답지·고른 답·채점 결과). test_session 1행.
+ * 시험 1회 (정답지·고른 보기·채점 결과). test_session 1행.
  * 재시작·배포 때 진행 중 시험이 사라지지 않도록 DB 에 저장한다 (U21).
  *
  * <p>문항을 행으로 나누지 않고 배열로 1행에 보관한다.
@@ -67,7 +67,7 @@ public class Exam extends BaseEntity {
     @Column(name = "device_id", nullable = false, length = 36)
     private String deviceId;
 
-    /** 시작한 IP. IP당 진행 중 시험 상한용 */
+    /** 시작한 IP. IP당 최대 진행 중 확인용 */
     @Getter(AccessLevel.NONE)
     @Column(name = "client_ip", nullable = false, length = 45)
     private String clientIp;
@@ -75,7 +75,7 @@ public class Exam extends BaseEntity {
     @Column(name = "started_at", nullable = false)
     private Instant startedAt;
 
-    /** 이 시각이 지나면 시험 무효 = 시작 + allowedTime (분 단위 올림) */
+    /** 마감 = 시작 + allowedTime (분 단위 올림). 이 시각이 지나면 만료 */
     @Column(name = "deadline", nullable = false)
     private Instant deadline;
 
@@ -123,7 +123,7 @@ public class Exam extends BaseEntity {
         }
         if (timePerQuestionSec < MIN_TIME_PER_QUESTION_SEC || timePerQuestionSec > MAX_TIME_PER_QUESTION_SEC) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE,
-                    "제한 시간은 " + MIN_TIME_PER_QUESTION_SEC + "~" + MAX_TIME_PER_QUESTION_SEC + "초여야 합니다.");
+                    "문항당 시간은 " + MIN_TIME_PER_QUESTION_SEC + "~" + MAX_TIME_PER_QUESTION_SEC + "초여야 합니다.");
         }
         int count = questions.size();
         this.id = UUID.randomUUID();
@@ -156,7 +156,7 @@ public class Exam extends BaseEntity {
     }
 
     /**
-     * 시험을 마쳐야 하는 전체 시간 = (문항 수 × 제한 시간 + 여유 시간)을 분 단위로 올림.
+     * 시험을 마쳐야 하는 전체 시간 = (문항 수 × 문항당 시간 + 여유 시간)을 분 단위로 올림.
      * 안내 문구를 "45분"처럼 분 단위로 보여주므로 실제 마감도 같은 값으로 맞춘다.
      * 예: 500문항 × 5초 + 3분 = 44분 40초 → 45분
      */
@@ -168,7 +168,7 @@ public class Exam extends BaseEntity {
     // ---------- 상태 변경 ----------
 
     /**
-     * 제출 및 채점. 마감 시각이 지났으면 무효(EXPIRED) 처리 후 예외.
+     * 제출 및 채점. 마감 시각이 지났으면 만료(EXPIRED) 처리 후 예외.
      *
      * @param selectedByQuestionNo 문제 번호 → 고른 보기 번호(1~4). 시간 초과/미응답 문제는 없거나 null
      */
@@ -205,7 +205,7 @@ public class Exam extends BaseEntity {
         this.questionsDelivered = true;
     }
 
-    /** 중도 이탈 등으로 무효 처리. 진행 중이 아니면 무시 */
+    /** 만료 처리 (진행 중이면 EXPIRED). 진행 중이 아니면 무시 */
     public void expire() {
         if (status == ExamStatus.IN_PROGRESS) {
             status = ExamStatus.EXPIRED;
@@ -219,7 +219,7 @@ public class Exam extends BaseEntity {
         return new Examinee(deviceId, clientIp);
     }
 
-    /** 이 기기에서 시작한 시험인지. 문제 받기·제출·만료는 시작한 기기만 할 수 있다 (U9) */
+    /** 이 기기에서 시작한 시험인지. 문제 받기·제출·중단은 시작한 기기만 할 수 있다 (U9) */
     public boolean isStartedBy(String deviceId) {
         return this.deviceId.equals(deviceId);
     }
@@ -236,10 +236,10 @@ public class Exam extends BaseEntity {
     /**
      * 지워도 되는지 (정리 작업의 삭제 조건과 같다. DbExamRepository.deleteDisposable).
      * 진행 중 → 마감 시각 경과 또는 시작 후 문제를 받아 가지 않은 채 undeliveredTimeout 경과,
-     * 완료 → 결과 보관 시간 경과, 무효 → 즉시
+     * 완료 → 결과 보관 시간 경과, 만료 → 즉시
      *
-     * <p>문제를 못 받아 간 시험은 화면이 만료 요청도 못 보냈을 수 있어(연결 끊김) 마감까지 두면
-     * 사용자당 동시 진행 개수를 차지해 새 시험을 시작할 수 없다 (B1)
+     * <p>문제를 못 받아 간 시험은 화면이 중단 요청도 못 보냈을 수 있어(연결 끊김) 마감까지 두면
+     * 동시 진행 수를 차지해 새 시험을 시작할 수 없다 (B1)
      */
     public boolean isDisposable(Instant now, Duration resultRetention, Duration undeliveredTimeout) {
         return switch (status) {
@@ -252,7 +252,7 @@ public class Exam extends BaseEntity {
 
     // ---------- 문항 조회 (no: 1부터) ----------
 
-    /** 출제 단어 level_word_id */
+    /** 정답의 레벨 단어 아이디 (level_word_id) */
     public long answerLevelWordId(int no) {
         int q = index(no);
         return optionIds[q * OPTION_COUNT + answerOptionNo[q] - 1];

@@ -24,9 +24,9 @@ import java.util.UUID;
 /**
  * 시험 화면.
  * <p>시험 화면은 시작 직후 딱 한 번만 열 수 있다.
- * (시작 시 HttpSession 에 1회용 입장권을 넣고, 화면을 열 때 꺼내서 지운다)
+ * (시작 시 HttpSession 에 1회용 입장 토큰을 넣고, 화면을 열 때 꺼내서 지운다)
  * <ul>
- *   <li>같은 브라우저가 다시 들어오면(새로고침·재접속) 시험을 만료하고 메인으로 이동</li>
+ *   <li>같은 브라우저가 다시 들어오면(새로고침·재접속) 시험을 중단하고 메인으로 이동</li>
  *   <li>다른 브라우저·기기·링크 미리보기 봇이 주소를 열면 그쪽만 안내와 함께 메인으로 보내고, 시험은 그대로 둔다</li>
  * </ul>
  */
@@ -76,7 +76,7 @@ public class ExamController {
         Object opened = httpSession == null ? null : httpSession.getAttribute(OPENED_EXAM);
         boolean inProgress = examApplicationService.isInProgress(examId);
 
-        // 1) 시작 직후 첫 입장 : 입장권을 쓰고, 이 브라우저가 연 시험으로 기록
+        // 1) 시작 직후 첫 입장 : 입장 토큰을 쓰고, 이 브라우저가 연 시험으로 기록
         if (inProgress && examId.equals(token)) {
             httpSession.removeAttribute(ENTRY_TOKEN);
             httpSession.setAttribute(OPENED_EXAM, examId);
@@ -93,7 +93,7 @@ public class ExamController {
             return "redirect:/?notice=" + MainController.NOTICE_EXAM_ENDED;
         }
 
-        // 3) 이 시험을 연 브라우저가 다시 들어옴 (새로고침·재접속·같은 브라우저 새 탭) : 다시 풀 수 없게 만료
+        // 3) 이 시험을 연 브라우저가 다시 들어옴 (새로고침·재접속·같은 브라우저 새 탭) : 다시 풀 수 없게 중단
         if (examId.equals(opened)) {
             examApplicationService.abortExam(examId, DeviceCookie.find(request));
             redirect.addFlashAttribute("message", "시험이 종료되었습니다. 처음부터 다시 시작해 주세요.");

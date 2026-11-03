@@ -117,7 +117,7 @@ class DbExamRepositoryTest {
         }
 
         @Test
-        @DisplayName("제출한 시험을 다시 불러오면 고른 답·점수가 그대로다 (시간 초과 = 고른 답 없음)")
+        @DisplayName("제출한 시험을 다시 불러오면 고른 보기·점수가 그대로다 (시간 초과 = 고른 보기 없음)")
         void completed() {
             Exam exam = saved(exam("device-1", "10.0.0.1", NOW));
             Exam inProgress = load(exam.getId());
@@ -168,7 +168,7 @@ class DbExamRepositoryTest {
     class InProgress {
 
         @Test
-        @DisplayName("진행 중이고 마감 전인 시험만 센다 (제출·무효·마감 지남 제외)")
+        @DisplayName("진행 중이고 마감 전인 시험만 센다 (제출·만료·마감 지남 제외)")
         void count() {
             saved(exam("device-1", "10.0.0.1", NOW));
             Exam completed = exam("device-2", "10.0.0.1", NOW);
@@ -218,7 +218,7 @@ class DbExamRepositoryTest {
     }
 
     @Test
-    @DisplayName("정리 작업은 지울 시험만 지운다 (Exam.isDisposable 과 같은 조건)")
+    @DisplayName("정리 작업은 폐기 대상 시험만 지운다 (Exam.isDisposable 과 같은 조건)")
     void deleteDisposable() {
         Instant now = NOW.plus(Duration.ofHours(3));
         // 남아야 하는 시험

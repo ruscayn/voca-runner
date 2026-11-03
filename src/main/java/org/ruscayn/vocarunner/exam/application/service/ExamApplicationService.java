@@ -36,7 +36,7 @@ import java.util.stream.IntStream;
 
 /**
  * 시험 시작·문제·제출·결과.
- * 시험(정답지·고른 답·결과)은 DB(test_session)에 저장해 재시작·배포 때도 이어진다 (U21).
+ * 시험(정답지·고른 보기·결과)은 DB(test_session)에 저장해 재시작·배포 때도 이어진다 (U21).
  */
 @Slf4j
 @Service
@@ -50,14 +50,15 @@ public class ExamApplicationService {
     private final TransactionTemplate transactionTemplate;
 
     /**
-     * 시험 시작 : 상한 확인 → 문제 생성 → (시작 잠금 → 다시 상한 확인 → 같은 기기의 이전 시험 종료 → 저장). 1단계는 EN_KO 고정.
+     * 시험 시작 : 수용량 확인 → 문항 생성 → (시험 시작 잠금 → 다시 수용량 확인 → 같은 기기의 이전 시험 중단 → 저장).
+     * 1단계는 EN_KO 고정.
      *
-     * <p>기기 하나에는 진행 중 시험이 1개만 있다. 새로 시작하면 그 기기에서 진행 중이던 시험은 종료한다.
-     * 브라우저가 강제 종료돼 만료 요청을 못 보낸 시험이 남아도 새 시작을 막지 않는다 (U32·U8)
+     * <p>기기 하나에는 진행 중 시험이 1개만 있다. 새로 시작하면 그 기기에서 진행 중이던 시험은 중단한다.
+     * 브라우저가 강제 종료돼 중단 요청을 못 보낸 시험이 남아도 새 시작을 막지 않는다 (U32·U8)
      *
-     * <p>확인과 저장 사이에 다른 시작 요청이 끼어들면 동시 요청으로 상한을 넘길 수 있으므로(B3)
-     * 마지막 확인과 저장은 DB 잠금(트랜잭션 단위)으로 한 번에 하나씩 한다. 문제 생성은 시간이 걸려 잠금 밖에서 하고,
-     * 상한에 걸릴 요청이 생성부터 하지 않도록 잠금 없이 한 번 먼저 확인한다.
+     * <p>확인과 저장 사이에 다른 시작 요청이 끼어들면 동시 요청으로 최대를 넘길 수 있으므로(B3)
+     * 마지막 확인과 저장은 DB 잠금(트랜잭션 단위)으로 한 번에 하나씩 한다. 문항 생성은 시간이 걸려 잠금 밖에서 하고,
+     * 최대에 걸릴 요청이 생성부터 하지 않도록 잠금 없이 한 번 먼저 확인한다.
      *
      * @param examinee 시작한 응시자 (기기·IP)
      */
@@ -74,7 +75,7 @@ public class ExamApplicationService {
             List<Exam> replaced = checkCapacity(examinee, Instant.now());
             replaced.forEach(old -> {
                 examRepository.delete(old.getId());
-                log.info("시험 만료 (같은 기기에서 새 시험 시작) exam={}", old.getId());
+                log.info("시험 중단 (같은 기기에서 새 시험 시작) exam={}", old.getId());
             });
             examRepository.save(exam);
         });
@@ -86,22 +87,22 @@ public class ExamApplicationService {
     }
 
     /**
-     * 전체·IP별 동시 진행 상한 확인. 넘으면 예외.
+     * 수용량 확인 (최대 진행 중 · IP당 최대 진행 중). 넘으면 예외.
      * 같은 기기의 진행 중 시험은 새 시험으로 바뀌므로 세지 않는다
      *
-     * @return 새 시험을 시작하면 종료할 같은 기기의 진행 중 시험
+     * @return 새 시험을 시작하면 중단할 같은 기기의 진행 중 시험
      */
     private List<Exam> checkCapacity(Examinee examinee, Instant now) {
         List<Exam> byDevice = examRepository.findInProgressByDevice(examinee.deviceId(), now);
         int inProgress = examRepository.countInProgress(now) - byDevice.size();
         if (inProgress >= examProperties.maxInProgress()) {
-            log.warn("시험 시작 거절 (전체 상한) 진행 중={} 상한={}", inProgress, examProperties.maxInProgress());
+            log.warn("시험 시작 거절 (최대 진행 중) 진행 중={} 최대={}", inProgress, examProperties.maxInProgress());
             throw new CustomException(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS);
         }
         long sameIp = byDevice.stream().filter(s -> examinee.clientIp().equals(s.getExaminee().clientIp())).count();
         long byIp = examRepository.countInProgressByIp(examinee.clientIp(), now) - sameIp;
         if (byIp >= examProperties.maxInProgressPerIp()) {
-            log.warn("시험 시작 거절 (IP 상한) ip={} 진행 중={}", examinee.clientIp(), byIp);
+            log.warn("시험 시작 거절 (IP당 최대 진행 중) ip={} 진행 중={}", examinee.clientIp(), byIp);
             throw new CustomException(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS_PER_IP);
         }
         return byDevice;
@@ -137,7 +138,7 @@ public class ExamApplicationService {
     }
 
     /**
-     * 제출 및 채점. 마감 시각이 지났으면 무효(삭제). 시작한 기기만.
+     * 제출 및 채점. 마감 시각이 지났으면 만료로 바꾼 뒤 지움. 시작한 기기만.
      * 거절(예외)해도 마감 초과 삭제는 반영해야 하므로 업무 예외로는 되돌리지 않는다 (채점 전 검사에서 거절하면 바뀐 내용 없음)
      */
     @Transactional(noRollbackFor = CustomException.class)
@@ -200,7 +201,7 @@ public class ExamApplicationService {
         return toResult(exam);
     }
 
-    /** 진행 중이면 무효 처리(삭제). 없거나 이미 끝났거나 다른 기기에서 시작한 시험은 무시 */
+    /** 진행 중이면 중단(바로 지움). 없거나 이미 끝났거나 다른 기기에서 시작한 시험은 무시 */
     @Transactional
     public void abortExam(UUID examId, String deviceId) {
         Instant now = Instant.now();
@@ -208,7 +209,7 @@ public class ExamApplicationService {
                 .filter(exam -> exam.isStartedBy(deviceId) && exam.isInProgress(now))
                 .ifPresent(exam -> {
                     examRepository.delete(examId);
-                    log.info("시험 만료 exam={}", examId);
+                    log.info("시험 중단 exam={}", examId);
                 });
     }
 
@@ -263,7 +264,7 @@ public class ExamApplicationService {
         return direction == Direction.EN_KO ? answer.headword() : answer.optionText();
     }
 
-    /** 영어 단어가 문제일 때만 함께 표시할 형태를 붙인다 */
+    /** 영어 단어가 제시어일 때만 제시어 보조(표제어 보조)를 붙인다 */
     private String promptSubText(CatalogWord answer, Direction direction) {
         return direction == Direction.EN_KO ? answer.headwordSub() : null;
     }

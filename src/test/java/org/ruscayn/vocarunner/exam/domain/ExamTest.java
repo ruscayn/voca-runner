@@ -53,7 +53,7 @@ class ExamTest {
         }
 
         @Test
-        @DisplayName("마감 시각 = 시작 시각 + 분 단위 제한 시간")
+        @DisplayName("마감 시각 = 시작 시각 + 분 단위 허용 시간")
         void deadline() {
             Exam exam = start(500);
 
@@ -101,9 +101,9 @@ class ExamTest {
                     .isEqualTo(ErrorCode.INVALID_INPUT_VALUE);
         }
 
-        @ParameterizedTest(name = "제한 시간 {0}초")
+        @ParameterizedTest(name = "문항당 시간 {0}초")
         @CsvSource({"4", "11"})
-        @DisplayName("문제당 제한 시간은 5~10초만 허용")
+        @DisplayName("문항당 시간은 5~10초만 허용")
         void timeLimitRange(int sec) {
             assertThatThrownBy(() -> Exam.start(Level.A1, Direction.EN_KO, sec, questions(1), EXAMINEE, NOW, GRACE))
                     .isInstanceOf(CustomException.class)
@@ -206,7 +206,7 @@ class ExamTest {
         }
 
         @Test
-        @DisplayName("마감 시각이 지나면 무효(EXPIRED) 처리되고 EXAM_EXPIRED")
+        @DisplayName("마감 시각이 지나면 만료(EXPIRED) 처리되고 EXAM_EXPIRED")
         void afterDeadline() {
             Exam exam = start(5);
             Instant late = exam.getDeadline().plusMillis(1);
@@ -328,7 +328,7 @@ class ExamTest {
         }
 
         @Test
-        @DisplayName("무효 : 바로 정리")
+        @DisplayName("만료 : 바로 정리")
         void expired() {
             Exam exam = start(5);
             exam.expire();

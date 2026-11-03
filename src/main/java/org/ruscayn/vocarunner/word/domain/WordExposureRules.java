@@ -4,14 +4,15 @@ package org.ruscayn.vocarunner.word.domain;
 import java.util.*;
 
 /**
- * 시험 노출 판정(word_exposure) 적용 규칙. 단어 캐시를 만들 때 level_word 칸마다 적용한다 (단어 정책 4부 6장).
+ * 단어 노출 규칙 : 단어 노출(word_exposure)을 적용하는 규칙.
+ * 단어 출제 목록을 만들 때 레벨 단어마다 적용한다 (단어 정책 4부 6장).
  * <ul>
- *   <li>완전 제외: 그 단어의 모든 칸을 뺀다</li>
- *   <li>레벨 제외: 그 칸만 뺀다</li>
- *   <li>일부 제외: 그 뜻을 보기에서 뺀다. 칸에 보일 뜻이 남지 않으면 그 칸을 뺀다</li>
+ *   <li>단어 제외: 그 단어의 모든 레벨 단어를 뺀다</li>
+ *   <li>레벨 제외: 그 레벨 단어만 뺀다</li>
+ *   <li>뜻 제외: 그 뜻을 보기에서 뺀다. 보일 뜻이 남지 않는 레벨 단어는 뺀다</li>
  *   <li>유지: 아무것도 하지 않는다 (검토 기록)</li>
  * </ul>
- * 뺀 칸은 정답 문제로도, 오답 보기로도 내지 않는다 ({@link CatalogWord#excluded()}).
+ * 뺀 레벨 단어는 정답으로도, 오답 보기로도 내지 않는다 ({@link CatalogWord#excluded()}).
  * 규칙이 앱 한 곳에만 있도록 판정 데이터는 표로만 두고 적용은 여기서 한다.
  */
 public final class WordExposureRules {
@@ -35,13 +36,13 @@ public final class WordExposureRules {
     }
 
     /**
-     * 한 칸에 판정을 적용한다.
+     * 레벨 단어 하나에 판정을 적용한다.
      *
      * @param wordId         word_id
-     * @param level          칸의 세부 레벨
-     * @param optionMeanings 칸의 보기 뜻 (level_word 의 meaning1, meaning2 순서)
+     * @param level          세부 레벨
+     * @param optionMeanings 레벨 단어의 보기 뜻 (level_word 의 meaning1, meaning2 순서)
      * @return 보여줄 뜻과 제외 여부. 보일 뜻이 하나도 남지 않으면 제외하고 원래 뜻을 그대로 둔다
-     *         (제외된 칸은 시험에 쓰지 않으므로 뜻은 표시에 쓰이지 않는다)
+     *         (제외된 레벨 단어는 시험에 쓰지 않으므로 뜻은 표시에 쓰이지 않는다)
      */
     public Applied apply(long wordId, Level level, List<Meaning> optionMeanings) {
         List<String> visible = optionMeanings.stream()
@@ -57,8 +58,8 @@ public final class WordExposureRules {
     /**
      * 판정 한 줄. 처리마다 대상이 맞아야 한다 (DB 의 ck_word_exposure_target 과 같은 규칙).
      *
-     * @param meaningSeq 일부 제외·유지의 대상 뜻 순번. 그 밖에는 null
-     * @param level      레벨 제외·유지의 대상 레벨 칸. 그 밖에는 null
+     * @param meaningSeq 뜻 제외·유지의 대상 뜻 순번. 그 밖에는 null
+     * @param level      레벨 제외·유지의 대상 레벨. 그 밖에는 null
      */
     public record Rule(long wordId, Integer meaningSeq, Level level, ExposureAction action) {
 
@@ -80,7 +81,7 @@ public final class WordExposureRules {
         }
     }
 
-    /** 칸의 보기 뜻 하나 (단어 안 뜻 순번, 한국어 뜻) */
+    /** 레벨 단어의 보기 뜻 하나 (단어 안 뜻 순번, 한국어 뜻) */
     public record Meaning(int seq, String text) {
     }
 

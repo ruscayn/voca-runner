@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * 시험 제출.
  *
- * @param answers 문제별 답. 시간 초과 문제는 selectedOptionNo 가 null 이거나 항목이 없어도 된다.
+ * @param answers 문항별 고른 보기 번호. 시간 초과 문제는 selectedOptionNo 가 null 이거나 항목이 없어도 된다.
  *                항목 자체가 null 이면 형식 오류 (U44)
  */
 public record ExamSubmitRequest(@NotNull List<@NotNull @Valid Answer> answers) {

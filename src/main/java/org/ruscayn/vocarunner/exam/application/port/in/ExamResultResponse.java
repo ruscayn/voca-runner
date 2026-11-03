@@ -27,12 +27,12 @@ public record ExamResultResponse(
         return retentionMinutes % 60 == 0 ? (retentionMinutes / 60) + "시간" : retentionMinutes + "분";
     }
 
-    /** 시간 초과(답을 고르지 못한) 문제 수 */
+    /** 시간 초과(보기를 고르지 못한) 문항 수 */
     public long timeoutCount() {
         return wrongItems.stream().filter(item -> item.selectedText() == null).count();
     }
 
-    /** 답을 골랐지만 틀린 문제 수 */
+    /** 오답 수 = 보기를 골랐지만 정답이 아닌 문항 수 */
     public long incorrectCount() {
         return wrongItems.size() - timeoutCount();
     }
@@ -42,8 +42,8 @@ public record ExamResultResponse(
      *
      * @param no           문제 번호
      * @param prompt       문제 (EN_KO: 영어 단어)
-     * @param promptSub    문제 아래 줄에 함께 표시할 형태. 없으면 null
-     * @param selectedText 내가 고른 답. 미입력(시간 초과)이면 null
+     * @param promptSub    제시어 보조 (제시어 아래 줄에 함께 보여 줄 형태). 없으면 null
+     * @param selectedText 고른 보기의 글. 고르지 못했으면(시간 초과) null
      * @param answerText   정답
      * @param headword     영어 단어 (TTS 용)
      */

@@ -27,14 +27,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * 단어 캐시 로딩에 시험 노출 판정(word_exposure)이 적용되는지 실제 PostgreSQL 로 확인한다.
+ * 단어 출제 목록 로딩에 단어 노출(word_exposure)이 적용되는지 실제 PostgreSQL 로 확인한다.
  * 테스트 동안만 Docker 로 임시 PostgreSQL 을 띄워 표를 만든다 (db/schema.sql. 개발 DB 는 건드리지 않음).
  * 테스트마다 트랜잭션을 되돌리므로 넣은 단어는 남지 않는다.
  */
 @DataJpaTest
 @Testcontainers
 @Import({CatalogWordLoader.class, JpaConfig.class})
-@DisplayName("CatalogWordLoader : 단어 캐시 로딩과 시험 노출 판정 (PostgreSQL)")
+@DisplayName("CatalogWordLoader : 단어 출제 목록 로딩과 단어 노출 (PostgreSQL)")
 class CatalogWordLoaderTest {
 
     @Container
@@ -49,11 +49,11 @@ class CatalogWordLoaderTest {
     private JdbcTemplate jdbcTemplate;
 
     /**
-     * 단어 4개, 칸 6개
+     * 단어 4개, 레벨 단어 6개
      * <pre>
      * 1 lark : B2 종달새·장난 / C2 종달새·장난 (C2 레벨 제외 — 같은 뜻 다른 레벨)
-     * 2 sex  : B1 성별·성관계 (뜻 2 일부 제외)
-     * 3 gook : B2 끈적한 것 / C1 끈적한 것 (완전 제외)
+     * 2 sex  : B1 성별·성관계 (뜻 2 뜻 제외)
+     * 3 gook : B2 끈적한 것 / C1 끈적한 것 (단어 제외)
      * 4 bus  : A1 버스 (유지)
      * </pre>
      */
@@ -92,7 +92,7 @@ class CatalogWordLoaderTest {
     }
 
     @Test
-    @DisplayName("판정대로 칸을 빼고 뜻을 숨긴다")
+    @DisplayName("판정대로 레벨 단어를 빼고 뜻을 뺀다")
     void appliesExposure() {
         Map<Long, CatalogWord> words = loadById();
 
@@ -101,10 +101,10 @@ class CatalogWordLoaderTest {
         assertThat(words.get(101L).excluded()).isFalse();
         assertThat(words.get(102L).excluded()).isTrue();
         assertThat(words.get(102L).level()).isEqualTo(Level.C2);
-        // 일부 제외: sex 뜻 2 를 보기에서 빼고 출제
+        // 뜻 제외: sex 뜻 2 를 보기에서 빼고 출제
         assertThat(words.get(201L).optionMeanings()).containsExactly("성별");
         assertThat(words.get(201L).excluded()).isFalse();
-        // 완전 제외: gook 모든 칸
+        // 단어 제외: gook 모든 레벨 단어
         assertThat(List.of(words.get(301L), words.get(302L))).allMatch(CatalogWord::excluded);
         // 유지: 그대로
         assertThat(words.get(401L).excluded()).isFalse();
@@ -112,7 +112,7 @@ class CatalogWordLoaderTest {
     }
 
     @Test
-    @DisplayName("판정이 없으면 모든 칸을 그대로 낸다")
+    @DisplayName("판정이 없으면 모든 레벨 단어를 그대로 낸다")
     void noExposure() {
         jdbcTemplate.update("DELETE FROM word_exposure");
 
@@ -122,11 +122,11 @@ class CatalogWordLoaderTest {
     /** 오류가 나면 PostgreSQL 트랜잭션이 깨지므로 한 테스트에 잘못된 줄 하나씩 */
     @ParameterizedTest(name = "{0}")
     @ValueSource(strings = {
-            "(4, NULL, 'C2', 'EXCLUDE_LEVEL', 'LOANWORD')",    // 없는 레벨 칸
+            "(4, NULL, 'C2', 'EXCLUDE_LEVEL', 'LOANWORD')",    // 없는 레벨 단어
             "(4, 3, NULL, 'EXCLUDE_MEANING', 'LOANWORD')",     // 없는 뜻
-            "(4, 1, NULL, 'EXCLUDE_WORD', 'LOANWORD')",        // 완전 제외인데 뜻 순번
+            "(4, 1, NULL, 'EXCLUDE_WORD', 'LOANWORD')",        // 단어 제외인데 뜻 순번
             "(4, NULL, NULL, 'EXCLUDE_LEVEL', 'LOANWORD')",    // 레벨 제외인데 레벨 없음
-            "(3, NULL, NULL, 'KEEP', 'SLUR')",                 // 같은 대상 두 줄 (gook 완전 제외)
+            "(3, NULL, NULL, 'KEEP', 'SLUR')",                 // 같은 대상 두 줄 (gook 단어 제외)
             "(4, NULL, NULL, 'HIDE', 'LOANWORD')",             // 없는 처리
             "(4, NULL, NULL, 'EXCLUDE_WORD', 'NO_SUCH_TYPE')"  // 없는 유형
     })

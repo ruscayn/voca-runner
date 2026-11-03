@@ -31,7 +31,10 @@ public class Word extends BaseEntity {
     @Column(name = "loanword", length = 50)
     private String loanword;
 
-    /** 시험 화면에 표제어 아래 줄바꿈으로 함께 표시할 형태 (예: for the sake of → for one's sake). 없으면 null */
+    /**
+     * 표제어 보조 = 시험 화면에서 표제어 아래 줄에 함께 보여 줄 형태 (예: for the sake of → for one's sake).
+     * 없으면 null
+     */
     @Column(name = "headword_sub", length = 100)
     private String headwordSub;
 

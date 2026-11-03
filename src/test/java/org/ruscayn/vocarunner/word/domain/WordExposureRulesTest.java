@@ -11,7 +11,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("WordExposureRules : 시험 노출 판정 적용")
+@DisplayName("WordExposureRules : 단어 노출 적용")
 class WordExposureRulesTest {
 
     private static final long LARK = 1;
@@ -35,7 +35,7 @@ class WordExposureRulesTest {
     }
 
     @Test
-    @DisplayName("레벨 제외는 그 칸만 뺀다 (lark C2 제외, B2 출제)")
+    @DisplayName("레벨 제외는 그 레벨 단어만 뺀다 (lark C2 제외, B2 출제)")
     void excludeLevel() {
         WordExposureRules rules = rules(new Rule(LARK, null, Level.C2, ExposureAction.EXCLUDE_LEVEL));
 
@@ -44,7 +44,7 @@ class WordExposureRulesTest {
     }
 
     @Test
-    @DisplayName("완전 제외는 그 단어의 모든 칸을 뺀다")
+    @DisplayName("단어 제외는 그 단어의 모든 레벨 단어를 뺀다")
     void excludeWord() {
         WordExposureRules rules = rules(new Rule(GOOK, null, null, ExposureAction.EXCLUDE_WORD));
 
@@ -55,7 +55,7 @@ class WordExposureRulesTest {
     }
 
     @Test
-    @DisplayName("일부 제외는 그 뜻만 보기에서 빼고 칸은 출제")
+    @DisplayName("뜻 제외는 그 뜻만 보기에서 빼고 레벨 단어는 출제")
     void excludeMeaning() {
         WordExposureRules rules = rules(new Rule(SEX, 2, null, ExposureAction.EXCLUDE_MEANING));
 
@@ -66,7 +66,7 @@ class WordExposureRulesTest {
     }
 
     @Test
-    @DisplayName("일부 제외로 칸에 보일 뜻이 없으면 그 칸을 뺀다 (뜻은 원래대로 둠)")
+    @DisplayName("뜻 제외로 보일 뜻이 남지 않으면 그 레벨 단어를 뺀다 (뜻은 원래대로 둠)")
     void excludeAllMeanings() {
         WordExposureRules rules = rules(
                 new Rule(SEX, 1, null, ExposureAction.EXCLUDE_MEANING),
@@ -79,7 +79,7 @@ class WordExposureRulesTest {
     }
 
     @Test
-    @DisplayName("일부 제외 뜻이 칸 보기에 없으면 그 칸은 그대로")
+    @DisplayName("뜻 제외한 뜻이 그 레벨 단어의 보기 뜻에 없으면 그대로")
     void excludeMeaningNotShown() {
         WordExposureRules rules = rules(new Rule(SEX, 3, null, ExposureAction.EXCLUDE_MEANING));
 

@@ -21,7 +21,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * 공통 오류 응답.
- * <p>API(/api/**)는 JSON, 화면 요청은 한국어 안내 화면(error.html)으로 답한다.
+ * <p>API(/api/**)는 JSON, 화면 요청은 한국어 안내 화면(error.html)으로 응답한다.
  * 화면에서 주소를 잘못 입력해도 JSON 글자나 500 이 보이지 않게 한다 (B4·U3)
  */
 @Slf4j
@@ -39,7 +39,7 @@ public class GlobalExceptionHandler {
         return respond(request, HttpStatus.BAD_REQUEST, errorResponse, e.getMessage());
     }
 
-    /** 입력값 검사 실패 (보기 번호 0·5, 답 목록 null 등). 사용자 입력 문제라 스택 없이 남긴다 */
+    /** 입력값 검사 실패 (보기 번호 0·5, 고른 보기 목록(answers) null 등). 사용자 입력 문제라 스택 없이 남긴다 */
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
     public Object handleValidationException(Exception e, HttpServletRequest request) {
         log.warn("Validation failed: {} {}", request.getRequestURI(), e.getMessage());

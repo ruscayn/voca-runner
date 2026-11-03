@@ -51,7 +51,7 @@ public class ExamApiController {
         return examApplicationService.getResult(examId);
     }
 
-    /** 중도 이탈 시 만료 (navigator.sendBeacon 용, 본문 없음). 시작한 기기만 (다른 기기면 무시) */
+    /** 중도 이탈 시 중단 (navigator.sendBeacon 용, 본문 없음). 시작한 기기만 (다른 기기면 무시) */
     @PostMapping("/{examId}/expire")
     public ResponseEntity<Void> abort(@PathVariable UUID examId, HttpServletRequest httpRequest) {
         examApplicationService.abortExam(examId, DeviceCookie.find(httpRequest));

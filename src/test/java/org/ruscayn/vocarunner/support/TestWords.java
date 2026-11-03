@@ -7,7 +7,7 @@ import org.ruscayn.vocarunner.word.domain.Level;
 import java.util.ArrayList;
 import java.util.List;
 
-/** 테스트용 단어·문제 생성 도구 */
+/** 테스트용 단어·문항 만들기 도구 */
 public final class TestWords {
 
     private TestWords() {

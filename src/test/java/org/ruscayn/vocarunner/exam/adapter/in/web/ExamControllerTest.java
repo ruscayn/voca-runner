@@ -57,7 +57,7 @@ class ExamControllerTest {
     @MockitoBean
     private ExamApplicationService examApplicationService;
 
-    /** [시작]을 누른 브라우저 (시험 화면 입장권을 받은 세션) */
+    /** [시작]을 누른 브라우저 (시험 화면 입장 토큰을 받은 세션) */
     private MockHttpSession startTest() throws Exception {
         given(examApplicationService.start(eq(Level.A1), any())).willReturn(EXAM_ID);
         MockHttpSession httpSession = new MockHttpSession();
