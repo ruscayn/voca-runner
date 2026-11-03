@@ -36,13 +36,13 @@ import java.util.UUID;
 @Entity
 @Table(name = "test_session")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class TestSession extends BaseEntity {
+public class Exam extends BaseEntity {
 
     public static final int DEFAULT_TIME_LIMIT_SEC = 5;
     public static final int MIN_TIME_LIMIT_SEC = 5;
     public static final int MAX_TIME_LIMIT_SEC = 10;
 
-    private static final int OPTION_COUNT = GeneratedQuestion.OPTION_COUNT;
+    private static final int OPTION_COUNT = Question.OPTION_COUNT;
 
     @Id
     @Column(name = "test_session_id")
@@ -94,7 +94,7 @@ public class TestSession extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 12)
-    private TestStatus status;
+    private ExamStatus status;
 
     /** 시험 화면이 문제를 한 번이라도 받아 갔는지. 못 받아 간 시험(시작 직후 연결 끊김 등)을 일찍 정리하는 데 쓴다 */
     @Column(name = "questions_delivered", nullable = false)
@@ -116,8 +116,8 @@ public class TestSession extends BaseEntity {
     @Column(name = "version", nullable = false)
     private Integer version;
 
-    private TestSession(Level level, Direction direction, int timeLimitSec, List<GeneratedQuestion> questions,
-                        TestClient client, Instant now, Duration grace) {
+    private Exam(Level level, Direction direction, int timeLimitSec, List<Question> questions,
+                        Examinee client, Instant now, Duration grace) {
         if (questions.isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "문제 수는 1 이상이어야 합니다.");
         }
@@ -132,7 +132,7 @@ public class TestSession extends BaseEntity {
         this.questionCount = count;
         this.timeLimitSec = timeLimitSec;
         this.deviceId = client.deviceId();
-        this.clientIp = client.ip();
+        this.clientIp = client.clientIp();
         this.startedAt = now;
         this.deadline = now.plus(allowedDuration(count, timeLimitSec, grace));
 
@@ -140,19 +140,19 @@ public class TestSession extends BaseEntity {
         this.correctOptionNo = new byte[count];
         this.selectedOptionNo = new byte[count];
         for (int q = 0; q < count; q++) {
-            GeneratedQuestion question = questions.get(q);
+            Question question = questions.get(q);
             for (int i = 0; i < OPTION_COUNT; i++) {
                 optionIds[q * OPTION_COUNT + i] = Math.toIntExact(question.options().get(i).levelWordId());
             }
             correctOptionNo[q] = (byte) question.correctOptionNo();
         }
-        this.status = TestStatus.IN_PROGRESS;
+        this.status = ExamStatus.IN_PROGRESS;
     }
 
-    public static TestSession start(Level level, Direction direction, int timeLimitSec,
-                                    List<GeneratedQuestion> questions, TestClient client,
+    public static Exam start(Level level, Direction direction, int timeLimitSec,
+                                    List<Question> questions, Examinee client,
                                     Instant now, Duration grace) {
-        return new TestSession(level, direction, timeLimitSec, questions, client, now, grace);
+        return new Exam(level, direction, timeLimitSec, questions, client, now, grace);
     }
 
     /**
@@ -175,7 +175,7 @@ public class TestSession extends BaseEntity {
     public void submit(Map<Integer, Integer> selectedByQuestionNo, Instant now) {
         requireInProgress();
         if (now.isAfter(deadline)) {
-            status = TestStatus.EXPIRED;
+            status = ExamStatus.EXPIRED;
             throw new CustomException(ErrorCode.TEST_TIME_OVER);
         }
         // 검사를 먼저 모두 마친 뒤 기록한다 (거절할 때 일부만 바뀐 채 남지 않게)
@@ -197,7 +197,7 @@ public class TestSession extends BaseEntity {
         // 버림 : 틀린 문제가 있으면 100점이 되지 않게 (반올림이면 997문항 중 995개도 100점, U1)
         this.score = correct * 100 / questionCount;
         this.submittedAt = now;
-        this.status = TestStatus.COMPLETED;
+        this.status = ExamStatus.COMPLETED;
     }
 
     /** 시험 화면이 문제를 받아 감 */
@@ -207,16 +207,16 @@ public class TestSession extends BaseEntity {
 
     /** 중도 이탈 등으로 무효 처리. 진행 중이 아니면 무시 */
     public void expire() {
-        if (status == TestStatus.IN_PROGRESS) {
-            status = TestStatus.EXPIRED;
+        if (status == ExamStatus.IN_PROGRESS) {
+            status = ExamStatus.EXPIRED;
         }
     }
 
     // ---------- 상태 조회 ----------
 
     /** 시작한 사용자 (기기·IP) */
-    public TestClient getClient() {
-        return new TestClient(deviceId, clientIp);
+    public Examinee getClient() {
+        return new Examinee(deviceId, clientIp);
     }
 
     /** 이 기기에서 시작한 시험인지. 문제 받기·제출·만료는 시작한 기기만 할 수 있다 (U9) */
@@ -226,11 +226,11 @@ public class TestSession extends BaseEntity {
 
     /** 진행 중이고 마감 시각 전인지 */
     public boolean isInProgress(Instant now) {
-        return status == TestStatus.IN_PROGRESS && !now.isAfter(deadline);
+        return status == ExamStatus.IN_PROGRESS && !now.isAfter(deadline);
     }
 
     public boolean isCompleted() {
-        return status == TestStatus.COMPLETED;
+        return status == ExamStatus.COMPLETED;
     }
 
     /**
@@ -289,7 +289,7 @@ public class TestSession extends BaseEntity {
     }
 
     private void requireInProgress() {
-        if (status != TestStatus.IN_PROGRESS) {
+        if (status != ExamStatus.IN_PROGRESS) {
             throw new CustomException(ErrorCode.TEST_NOT_IN_PROGRESS);
         }
     }

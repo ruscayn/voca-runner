@@ -1,7 +1,7 @@
 package org.ruscayn.vocarunner.exam.adapter.in.scheduler;
 
 import org.ruscayn.vocarunner.exam.application.port.out.TestSessionRepository;
-import org.ruscayn.vocarunner.exam.application.service.TestProperties;
+import org.ruscayn.vocarunner.exam.application.service.ExamProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,13 +19,13 @@ import java.time.Instant;
 public class TestSessionCleanupScheduler {
 
     private final TestSessionRepository testSessionRepository;
-    private final TestProperties testProperties;
+    private final ExamProperties examProperties;
 
     @Scheduled(fixedDelayString = "${voca-runner.test.cleanup-interval:1m}")
     public void cleanup() {
         Instant now = Instant.now();
         int removed = testSessionRepository.deleteDisposable(
-                now, testProperties.resultRetention(), testProperties.undeliveredTimeout());
+                now, examProperties.resultRetention(), examProperties.undeliveredTimeout());
         if (removed > 0) {
             log.info("시험 정리: {}개 삭제, 남은 {}개 (진행 중 {}개)",
                     removed, testSessionRepository.count(), testSessionRepository.countInProgress(now));

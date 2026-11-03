@@ -2,8 +2,8 @@ package org.ruscayn.vocarunner.exam.application.service;
 
 import org.ruscayn.vocarunner.exam.application.port.in.LevelGroupSummary;
 import org.ruscayn.vocarunner.exam.application.port.in.LevelSummary;
-import org.ruscayn.vocarunner.exam.domain.TestQuestionGenerator;
-import org.ruscayn.vocarunner.exam.domain.TestSession;
+import org.ruscayn.vocarunner.exam.domain.QuestionGenerator;
+import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class LevelApplicationService {
 
     private final WordCatalog wordCatalog;
-    private final TestProperties testProperties;
+    private final ExamProperties examProperties;
 
     /** 세부 레벨(A1~C2) 목록과 레벨별 단어 수·문항 수·제한 시간 (메모리 캐시 사용) */
     public List<LevelSummary> getDetailLevels() {
@@ -32,9 +32,9 @@ public class LevelApplicationService {
 
     private LevelSummary toSummary(Level level) {
         int wordCount = wordCatalog.countByLevel(level);
-        int questionCount = TestQuestionGenerator.questionCount(wordCount, testProperties.questionCount());
-        long allowedMinutes = TestSession.allowedDuration(
-                questionCount, TestSession.DEFAULT_TIME_LIMIT_SEC, testProperties.grace()).toMinutes();
+        int questionCount = QuestionGenerator.questionCount(wordCount, examProperties.questionCount());
+        long allowedMinutes = Exam.allowedDuration(
+                questionCount, Exam.DEFAULT_TIME_LIMIT_SEC, examProperties.grace()).toMinutes();
         return new LevelSummary(level, wordCount, questionCount, allowedMinutes);
     }
 

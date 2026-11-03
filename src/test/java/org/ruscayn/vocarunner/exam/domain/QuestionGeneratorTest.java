@@ -22,25 +22,25 @@ import static org.ruscayn.vocarunner.support.TestWords.excluded;
 import static org.ruscayn.vocarunner.support.TestWords.word;
 import static org.ruscayn.vocarunner.support.TestWords.words;
 
-@DisplayName("TestQuestionGenerator : 문제 생성 규칙")
-class TestQuestionGeneratorTest {
+@DisplayName("QuestionGenerator : 문제 생성 규칙")
+class QuestionGeneratorTest {
 
-    private static TestQuestionGenerator generator(List<CatalogWord> catalogWords, long seed) {
-        return new TestQuestionGenerator(new InMemoryWordCatalog(catalogWords), () -> new Random(seed));
+    private static QuestionGenerator generator(List<CatalogWord> catalogWords, long seed) {
+        return new QuestionGenerator(new InMemoryWordCatalog(catalogWords), () -> new Random(seed));
     }
 
     /** 모든 문제에 공통으로 지켜야 하는 규칙 */
-    private static void assertQuestionRules(List<GeneratedQuestion> questions) {
+    private static void assertQuestionRules(List<Question> questions) {
         Set<Long> answerWordIds = new HashSet<>();
-        for (GeneratedQuestion q : questions) {
+        for (Question q : questions) {
             // 한 시험에서 같은 단어는 한 번만 출제
             assertThat(answerWordIds.add(q.answer().wordId()))
                     .as("정답 단어 중복: %s", q.answer().headword()).isTrue();
 
             // 보기 4개, 정답 1번 포함, 보기 단어 중복 없음
-            assertThat(q.options()).hasSize(GeneratedQuestion.OPTION_COUNT).contains(q.answer());
+            assertThat(q.options()).hasSize(Question.OPTION_COUNT).contains(q.answer());
             assertThat(q.options().stream().map(CatalogWord::wordId).distinct().count())
-                    .as("보기 단어 중복").isEqualTo(GeneratedQuestion.OPTION_COUNT);
+                    .as("보기 단어 중복").isEqualTo(Question.OPTION_COUNT);
 
             // 보기는 정답과 같은 세부 레벨
             assertThat(q.options()).allMatch(o -> o.level() == q.answer().level());
@@ -62,7 +62,7 @@ class TestQuestionGeneratorTest {
         List<CatalogWord> catalog = new ArrayList<>(words(Level.B1, 1, 60));
         catalog.addAll(words(Level.B2, 1001, 60));    // 다른 레벨 단어는 섞이면 안 됨
 
-        List<GeneratedQuestion> questions = generator(catalog, seed).generate(Level.B1, 50);
+        List<Question> questions = generator(catalog, seed).generate(Level.B1, 50);
 
         assertThat(questions).hasSize(50);
         assertThat(questions).allMatch(q -> q.answer().level() == Level.B1);
@@ -74,7 +74,7 @@ class TestQuestionGeneratorTest {
     void usesAllWords() {
         List<CatalogWord> catalog = words(Level.A1, 1, 20);
 
-        List<GeneratedQuestion> questions = generator(catalog, 1).generate(Level.A1, 20);
+        List<Question> questions = generator(catalog, 1).generate(Level.A1, 20);
 
         assertThat(questions).extracting(q -> q.answer().wordId())
                 .containsExactlyInAnyOrderElementsOf(catalog.stream().map(CatalogWord::wordId).toList());
@@ -87,7 +87,7 @@ class TestQuestionGeneratorTest {
         List<CatalogWord> catalog = new ArrayList<>(words(Level.A1, 1, 30));
         catalog.addAll(words(Level.A2, 101, 30));    // 다른 레벨 단어는 섞이면 안 됨
 
-        List<GeneratedQuestion> questions = generator(catalog, 1).generate(Level.A1, TestQuestionGenerator.ALL_WORDS);
+        List<Question> questions = generator(catalog, 1).generate(Level.A1, QuestionGenerator.ALL_WORDS);
 
         assertThat(questions).hasSize(30);
         assertThat(questions).allMatch(q -> q.answer().level() == Level.A1);
@@ -97,9 +97,9 @@ class TestQuestionGeneratorTest {
     @Test
     @DisplayName("문제 수 계산 : min(단어 수, 최대 문제 수), 0 이면 단어 수 전체")
     void questionCountRule() {
-        assertThat(TestQuestionGenerator.questionCount(997, 500)).isEqualTo(500);
-        assertThat(TestQuestionGenerator.questionCount(300, 500)).isEqualTo(300);
-        assertThat(TestQuestionGenerator.questionCount(997, TestQuestionGenerator.ALL_WORDS)).isEqualTo(997);
+        assertThat(QuestionGenerator.questionCount(997, 500)).isEqualTo(500);
+        assertThat(QuestionGenerator.questionCount(300, 500)).isEqualTo(300);
+        assertThat(QuestionGenerator.questionCount(997, QuestionGenerator.ALL_WORDS)).isEqualTo(997);
     }
 
     @ParameterizedTest(name = "seed {0}")
@@ -112,7 +112,7 @@ class TestQuestionGeneratorTest {
             catalog.add(word(id, id, Level.C1, "공통" + (id % 5), "고유" + id));
         }
 
-        List<GeneratedQuestion> questions = generator(catalog, seed).generate(Level.C1, 40);
+        List<Question> questions = generator(catalog, seed).generate(Level.C1, 40);
 
         assertQuestionRules(questions);
     }
@@ -132,12 +132,12 @@ class TestQuestionGeneratorTest {
         }
 
         // 고유 단어 = A1 30 + A2 30 = 60개 (중복 10개는 한 번만)
-        List<GeneratedQuestion> questions = generator(catalog, seed).generate(Level.A, 60);
+        List<Question> questions = generator(catalog, seed).generate(Level.A, 60);
 
         assertThat(questions).hasSize(60);
         assertQuestionRules(questions);
         assertThat(questions)
-                .flatExtracting(GeneratedQuestion::options)
+                .flatExtracting(Question::options)
                 .extracting(CatalogWord::levelWordId)
                 .as("A2 쪽 중복 단어는 정답·보기로 쓰이지 않음")
                 .doesNotContainAnyElementsOf(a2DuplicateIds);
@@ -152,7 +152,7 @@ class TestQuestionGeneratorTest {
             catalog.add(word(100 + wordId, wordId, Level.A2, "A2뜻" + wordId));
         }
 
-        List<GeneratedQuestion> questions = generator(catalog, 1).generate(Level.A, 11);
+        List<Question> questions = generator(catalog, 1).generate(Level.A, 11);
 
         assertThat(questions).hasSize(10);
         assertQuestionRules(questions);
@@ -170,14 +170,14 @@ class TestQuestionGeneratorTest {
             excludedIds.add(id);
         }
 
-        List<GeneratedQuestion> questions = generator(catalog, seed).generate(Level.B1, 20);
+        List<Question> questions = generator(catalog, seed).generate(Level.B1, 20);
 
         assertThat(questions).hasSize(20);
         assertQuestionRules(questions);
         assertThat(questions).extracting(q -> q.answer().levelWordId())
                 .as("정답에 시험 제외 단어 없음")
                 .doesNotContainAnyElementsOf(excludedIds);
-        assertThat(questions).flatExtracting(GeneratedQuestion::options)
+        assertThat(questions).flatExtracting(Question::options)
                 .extracting(CatalogWord::levelWordId)
                 .as("오답 보기에도 시험 제외 단어 없음")
                 .doesNotContainAnyElementsOf(excludedIds);
@@ -193,7 +193,7 @@ class TestQuestionGeneratorTest {
 
         assertThat(new InMemoryWordCatalog(catalog).countByLevel(Level.A1)).isEqualTo(10);
 
-        List<GeneratedQuestion> questions = generator(catalog, 1).generate(Level.A1, 11);
+        List<Question> questions = generator(catalog, 1).generate(Level.A1, 11);
 
         assertThat(questions).hasSize(10);
         assertThat(questions).allMatch(q -> !q.answer().testExcluded());
@@ -226,7 +226,7 @@ class TestQuestionGeneratorTest {
         // 출제 가능 = A1 30 + A2 30 + word 900(A2) = 61
         assertThat(new InMemoryWordCatalog(catalog).countByLevel(Level.A)).isEqualTo(61);
 
-        List<GeneratedQuestion> questions = generator(catalog, seed).generate(Level.A, 61);
+        List<Question> questions = generator(catalog, seed).generate(Level.A, 61);
 
         assertQuestionRules(questions);
         assertThat(questions).extracting(q -> q.answer().levelWordId())
@@ -256,7 +256,7 @@ class TestQuestionGeneratorTest {
     void fewerWordsThanCount() {
         List<CatalogWord> catalog = words(Level.A1, 1, 10);
 
-        List<GeneratedQuestion> questions = generator(catalog, 1).generate(Level.A1, 10000);
+        List<Question> questions = generator(catalog, 1).generate(Level.A1, 10000);
 
         assertThat(questions).extracting(q -> q.answer().wordId())
                 .containsExactlyInAnyOrderElementsOf(catalog.stream().map(CatalogWord::wordId).toList());
@@ -282,8 +282,8 @@ class TestQuestionGeneratorTest {
     void sameSeedSameResult() {
         List<CatalogWord> catalog = words(Level.B1, 1, 40);
 
-        List<GeneratedQuestion> first = generator(catalog, 42).generate(Level.B1, 30);
-        List<GeneratedQuestion> second = generator(catalog, 42).generate(Level.B1, 30);
+        List<Question> first = generator(catalog, 42).generate(Level.B1, 30);
+        List<Question> second = generator(catalog, 42).generate(Level.B1, 30);
 
         assertThat(first).isEqualTo(second);
     }
@@ -303,12 +303,12 @@ class TestQuestionGeneratorTest {
         }
         InMemoryWordCatalog wordCatalog = new InMemoryWordCatalog(catalog, groups);
 
-        List<GeneratedQuestion> questions =
-                new TestQuestionGenerator(wordCatalog, () -> new Random(seed)).generate(Level.A1, 60);
+        List<Question> questions =
+                new QuestionGenerator(wordCatalog, () -> new Random(seed)).generate(Level.A1, 60);
 
         assertThat(questions).hasSize(60);
         assertQuestionRules(questions);
-        for (GeneratedQuestion q : questions) {
+        for (Question q : questions) {
             for (CatalogWord a : q.options()) {
                 for (CatalogWord b : q.options()) {
                     assertThat(wordCatalog.findConfusableWordIds(a.wordId()))
@@ -331,10 +331,10 @@ class TestQuestionGeneratorTest {
         boolean mrAppeared = false;
         for (long seed = 1; seed <= 30; seed++) {
             long s = seed;
-            List<GeneratedQuestion> questions =
-                    new TestQuestionGenerator(wordCatalog, () -> new Random(s)).generate(Level.A1, 6);
+            List<Question> questions =
+                    new QuestionGenerator(wordCatalog, () -> new Random(s)).generate(Level.A1, 6);
 
-            GeneratedQuestion teacher = questions.stream()
+            Question teacher = questions.stream()
                     .filter(q -> q.answer().wordId() == 2L).findFirst().orElseThrow();
             List<Long> optionIds = teacher.options().stream().map(CatalogWord::wordId).toList();
             assertThat(optionIds).as("teacher 문제에 sir 없음").doesNotContain(1L);
@@ -350,7 +350,7 @@ class TestQuestionGeneratorTest {
         List<CatalogWord> catalog = words(Level.A1, 1, 4);
         InMemoryWordCatalog wordCatalog = new InMemoryWordCatalog(catalog, List.of(List.of(1L, 2L)));
 
-        assertThatThrownBy(() -> new TestQuestionGenerator(wordCatalog, () -> new Random(1)).generate(Level.A1, 4))
+        assertThatThrownBy(() -> new QuestionGenerator(wordCatalog, () -> new Random(1)).generate(Level.A1, 4))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.TEST_NOT_ENOUGH_WORDS);
@@ -376,12 +376,12 @@ class TestQuestionGeneratorTest {
     void answerPositionSpread() {
         List<CatalogWord> catalog = words(Level.B1, 1, 400);
 
-        List<GeneratedQuestion> questions = generator(catalog, 42).generate(Level.B1, 400);
+        List<Question> questions = generator(catalog, 42).generate(Level.B1, 400);
 
-        int[] counts = new int[GeneratedQuestion.OPTION_COUNT + 1];
+        int[] counts = new int[Question.OPTION_COUNT + 1];
         questions.forEach(q -> counts[q.correctOptionNo()]++);
         // 400문항 → 번호당 평균 100. 무작위 편차를 고려해 넉넉하게 60~140
-        for (int no = 1; no <= GeneratedQuestion.OPTION_COUNT; no++) {
+        for (int no = 1; no <= Question.OPTION_COUNT; no++) {
             assertThat(counts[no]).as("정답 %d번 개수", no).isBetween(60, 140);
         }
     }

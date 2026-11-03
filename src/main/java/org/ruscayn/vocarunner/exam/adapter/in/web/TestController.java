@@ -3,7 +3,7 @@ package org.ruscayn.vocarunner.exam.adapter.in.web;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.exam.application.service.TestApplicationService;
-import org.ruscayn.vocarunner.exam.domain.TestClient;
+import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.word.domain.Level;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -51,7 +51,7 @@ public class TestController {
         UUID sessionId;
         try {
             // 사용자 구분 = 기기 쿠키 + IP. 운영은 CloudFront 뒤라 IP 를 CloudFront 헤더에서 읽는다 (ClientIp)
-            TestClient client = new TestClient(DeviceCookie.findOrCreate(request, response),
+            Examinee client = new Examinee(DeviceCookie.findOrCreate(request, response),
                     ClientIp.find(request, clientIpProperties.header()));
             sessionId = testApplicationService.start(level, client);
         } catch (CustomException e) {

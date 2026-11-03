@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.ruscayn.vocarunner.common.adapter.out.persistence.JpaConfig;
 import org.ruscayn.vocarunner.exam.domain.Direction;
-import org.ruscayn.vocarunner.exam.domain.TestClient;
-import org.ruscayn.vocarunner.exam.domain.TestSession;
-import org.ruscayn.vocarunner.exam.domain.TestStatus;
+import org.ruscayn.vocarunner.exam.domain.Examinee;
+import org.ruscayn.vocarunner.exam.domain.Exam;
+import org.ruscayn.vocarunner.exam.domain.ExamStatus;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -78,17 +78,17 @@ class DbTestSessionRepositoryTest {
     }
 
     /** 문항 4개(마감 = 시작 + 4분), 진행 중 */
-    private static TestSession session(String deviceId, String ip, Instant startedAt) {
-        return TestSession.start(Level.A1, Direction.EN_KO, 5, questions(4),
-                new TestClient(deviceId, ip), startedAt, GRACE);
+    private static Exam session(String deviceId, String ip, Instant startedAt) {
+        return Exam.start(Level.A1, Direction.EN_KO, 5, questions(4),
+                new Examinee(deviceId, ip), startedAt, GRACE);
     }
 
-    private TestSession saved(TestSession session) {
+    private Exam saved(Exam session) {
         repository.save(session);
         return session;
     }
 
-    private TestSession load(UUID id) {
+    private Exam load(UUID id) {
         return repository.findById(id).orElseThrow();
     }
 
@@ -99,16 +99,16 @@ class DbTestSessionRepositoryTest {
         @Test
         @DisplayName("진행 중 시험을 저장했다 불러오면 보기·정답·기기·마감이 그대로다")
         void inProgress() {
-            TestSession session = saved(session("device-1", "10.0.0.1", NOW));
+            Exam session = saved(session("device-1", "10.0.0.1", NOW));
 
-            TestSession loaded = load(session.getId());
+            Exam loaded = load(session.getId());
 
-            assertThat(loaded.getStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+            assertThat(loaded.getStatus()).isEqualTo(ExamStatus.IN_PROGRESS);
             assertThat(loaded.getLevel()).isEqualTo(Level.A1);
             assertThat(loaded.getQuestionCount()).isEqualTo(4);
             assertThat(loaded.getStartedAt()).isEqualTo(NOW);
             assertThat(loaded.getDeadline()).isEqualTo(session.getDeadline());
-            assertThat(loaded.getClient()).isEqualTo(new TestClient("device-1", "10.0.0.1"));
+            assertThat(loaded.getClient()).isEqualTo(new Examinee("device-1", "10.0.0.1"));
             assertThat(loaded.getCreatedAt()).isNotNull();
             for (int no = 1; no <= 4; no++) {
                 assertThat(loaded.optionLevelWordIds(no)).isEqualTo(session.optionLevelWordIds(no));
@@ -119,15 +119,15 @@ class DbTestSessionRepositoryTest {
         @Test
         @DisplayName("제출한 시험을 다시 불러오면 고른 답·점수가 그대로다 (시간 초과 = 고른 답 없음)")
         void completed() {
-            TestSession session = saved(session("device-1", "10.0.0.1", NOW));
-            TestSession inProgress = load(session.getId());
+            Exam session = saved(session("device-1", "10.0.0.1", NOW));
+            Exam inProgress = load(session.getId());
             inProgress.submit(Map.of(1, correctOptionNo(1), 2, wrongOptionNo(2), 3, correctOptionNo(3)),
                     NOW.plusSeconds(30));
             repository.save(inProgress);
 
-            TestSession loaded = load(session.getId());
+            Exam loaded = load(session.getId());
 
-            assertThat(loaded.getStatus()).isEqualTo(TestStatus.COMPLETED);
+            assertThat(loaded.getStatus()).isEqualTo(ExamStatus.COMPLETED);
             assertThat(loaded.getCorrectCount()).isEqualTo(2);
             assertThat(loaded.getScore()).isEqualTo(50);
             assertThat(loaded.getSubmittedAt()).isEqualTo(NOW.plusSeconds(30));
@@ -147,10 +147,10 @@ class DbTestSessionRepositoryTest {
     @Test
     @DisplayName("같은 시험을 동시에 두 번 제출하면 먼저 저장한 것만 반영되고 나머지는 거절된다")
     void submitTwiceAtOnce() {
-        TestSession session = saved(session("device-1", "10.0.0.1", NOW));
+        Exam session = saved(session("device-1", "10.0.0.1", NOW));
         // 두 요청이 같은 시점에 같은 시험을 읽음
-        TestSession first = load(session.getId());
-        TestSession second = load(session.getId());
+        Exam first = load(session.getId());
+        Exam second = load(session.getId());
 
         first.submit(Map.of(1, correctOptionNo(1)), NOW.plusSeconds(10));
         repository.save(first);
@@ -158,7 +158,7 @@ class DbTestSessionRepositoryTest {
 
         assertThatThrownBy(() -> repository.save(second))
                 .isInstanceOf(ObjectOptimisticLockingFailureException.class);
-        TestSession loaded = load(session.getId());
+        Exam loaded = load(session.getId());
         assertThat(loaded.getCorrectCount()).isEqualTo(1);
         assertThat(loaded.getSubmittedAt()).isEqualTo(NOW.plusSeconds(10));
     }
@@ -171,10 +171,10 @@ class DbTestSessionRepositoryTest {
         @DisplayName("진행 중이고 마감 전인 시험만 센다 (제출·무효·마감 지남 제외)")
         void count() {
             saved(session("device-1", "10.0.0.1", NOW));
-            TestSession completed = session("device-2", "10.0.0.1", NOW);
+            Exam completed = session("device-2", "10.0.0.1", NOW);
             completed.submit(Map.of(), NOW.plusSeconds(10));
             saved(completed);
-            TestSession expired = session("device-3", "10.0.0.1", NOW);
+            Exam expired = session("device-3", "10.0.0.1", NOW);
             expired.expire();
             saved(expired);
             saved(session("device-4", "10.0.0.1", NOW.minus(Duration.ofHours(1))));   // 마감 지남
@@ -183,9 +183,9 @@ class DbTestSessionRepositoryTest {
         }
 
         @Test
-        @DisplayName("마감 시각 정각까지는 진행 중, 1초 지나면 아니다 (TestSession.isInProgress 와 같음)")
+        @DisplayName("마감 시각 정각까지는 진행 중, 1초 지나면 아니다 (Exam.isInProgress 와 같음)")
         void deadlineBoundary() {
-            TestSession session = saved(session("device-1", "10.0.0.1", NOW));
+            Exam session = saved(session("device-1", "10.0.0.1", NOW));
             Instant deadline = session.getDeadline();
 
             assertThat(repository.countInProgress(deadline)).isEqualTo(1);
@@ -197,12 +197,12 @@ class DbTestSessionRepositoryTest {
         @Test
         @DisplayName("기기별 진행 중 시험은 그 기기 것만 찾는다")
         void byDevice() {
-            TestSession mine = saved(session("device-1", "10.0.0.1", NOW));
+            Exam mine = saved(session("device-1", "10.0.0.1", NOW));
             saved(session("device-2", "10.0.0.1", NOW));
 
-            List<TestSession> found = repository.findInProgressByDevice("device-1", NOW);
+            List<Exam> found = repository.findInProgressByDevice("device-1", NOW);
 
-            assertThat(found).extracting(TestSession::getId).containsExactly(mine.getId());
+            assertThat(found).extracting(Exam::getId).containsExactly(mine.getId());
         }
 
         @Test
@@ -218,36 +218,36 @@ class DbTestSessionRepositoryTest {
     }
 
     @Test
-    @DisplayName("정리 작업은 지울 시험만 지운다 (TestSession.isDisposable 과 같은 조건)")
+    @DisplayName("정리 작업은 지울 시험만 지운다 (Exam.isDisposable 과 같은 조건)")
     void deleteDisposable() {
         Instant now = NOW.plus(Duration.ofHours(3));
         // 남아야 하는 시험
-        TestSession delivered = session("d1", "10.0.0.1", now.minus(Duration.ofMinutes(3)));
+        Exam delivered = session("d1", "10.0.0.1", now.minus(Duration.ofMinutes(3)));
         delivered.markQuestionsDelivered();
-        TestSession justStarted = session("d2", "10.0.0.1", now.minus(Duration.ofMinutes(1)));     // 아직 문제를 받기 전
-        TestSession recentResult = session("d3", "10.0.0.1", now.minus(Duration.ofMinutes(10)));
+        Exam justStarted = session("d2", "10.0.0.1", now.minus(Duration.ofMinutes(1)));     // 아직 문제를 받기 전
+        Exam recentResult = session("d3", "10.0.0.1", now.minus(Duration.ofMinutes(10)));
         recentResult.submit(Map.of(), now.minus(Duration.ofMinutes(9)));                            // 결과 보관 중
         // 지워야 하는 시험
-        TestSession pastDeadline = session("d4", "10.0.0.1", now.minus(Duration.ofMinutes(30)));
+        Exam pastDeadline = session("d4", "10.0.0.1", now.minus(Duration.ofMinutes(30)));
         pastDeadline.markQuestionsDelivered();
-        TestSession undelivered = session("d5", "10.0.0.1", now.minus(Duration.ofMinutes(6)));      // 5분 넘게 문제를 안 받아 감
-        TestSession oldResult = session("d6", "10.0.0.1", now.minus(Duration.ofHours(3)));
+        Exam undelivered = session("d5", "10.0.0.1", now.minus(Duration.ofMinutes(6)));      // 5분 넘게 문제를 안 받아 감
+        Exam oldResult = session("d6", "10.0.0.1", now.minus(Duration.ofHours(3)));
         oldResult.submit(Map.of(), now.minus(Duration.ofHours(3)).plusSeconds(30));                 // 보관 1시간 지남
-        TestSession expired = session("d7", "10.0.0.1", now.minus(Duration.ofMinutes(1)));
+        Exam expired = session("d7", "10.0.0.1", now.minus(Duration.ofMinutes(1)));
         expired.expire();
 
-        List<TestSession> all = List.of(delivered, justStarted, recentResult, pastDeadline, undelivered, oldResult, expired);
+        List<Exam> all = List.of(delivered, justStarted, recentResult, pastDeadline, undelivered, oldResult, expired);
         all.forEach(repository::save);
 
         int deleted = repository.deleteDisposable(now, RETENTION, UNDELIVERED);
 
         assertThat(deleted).isEqualTo(4);
-        assertThat(jpa.findAll()).extracting(TestSession::getId)
+        assertThat(jpa.findAll()).extracting(Exam::getId)
                 .containsExactlyInAnyOrder(delivered.getId(), justStarted.getId(), recentResult.getId());
         // 화면·서비스가 쓰는 판정과 DB 삭제 조건이 어긋나지 않는지
         List<UUID> disposable = all.stream()
                 .filter(s -> s.isDisposable(now, RETENTION, UNDELIVERED))
-                .map(TestSession::getId)
+                .map(Exam::getId)
                 .toList();
         assertThat(disposable).containsExactlyInAnyOrder(
                 pastDeadline.getId(), undelivered.getId(), oldResult.getId(), expired.getId());

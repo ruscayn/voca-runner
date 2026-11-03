@@ -7,11 +7,11 @@ import java.util.List;
 /**
  * 생성된 문제 1개. options 는 화면에 보여줄 순서(섞인 순서)이며 answer 를 정확히 1번 포함한다.
  */
-public record GeneratedQuestion(CatalogWord answer, List<CatalogWord> options) {
+public record Question(CatalogWord answer, List<CatalogWord> options) {
 
     public static final int OPTION_COUNT = 4;
 
-    public GeneratedQuestion {
+    public Question {
         if (options.size() != OPTION_COUNT) {
             throw new IllegalArgumentException("보기는 " + OPTION_COUNT + "개여야 합니다: " + options.size());
         }

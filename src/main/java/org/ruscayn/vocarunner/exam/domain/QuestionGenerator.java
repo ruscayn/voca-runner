@@ -28,12 +28,12 @@ import java.util.random.RandomGenerator;
  * </ul>
  */
 @Service
-public class TestQuestionGenerator {
+public class QuestionGenerator {
 
     /** 최대 문제 수에 이 값을 주면 레벨 단어 전체를 출제 (개발·베타 테스트용) */
     public static final int ALL_WORDS = 0;
 
-    private static final int DISTRACTOR_COUNT = GeneratedQuestion.OPTION_COUNT - 1;
+    private static final int DISTRACTOR_COUNT = Question.OPTION_COUNT - 1;
     /** 무작위 뽑기 시도 횟수. 초과하면 전체를 섞어 순서대로 검사 */
     private static final int RANDOM_TRY_LIMIT = 200;
 
@@ -42,12 +42,12 @@ public class TestQuestionGenerator {
     private final Supplier<RandomGenerator> randomSupplier;
 
     @Autowired
-    public TestQuestionGenerator(WordCatalog wordCatalog) {
+    public QuestionGenerator(WordCatalog wordCatalog) {
         this(wordCatalog, ThreadLocalRandom::current);
     }
 
     /** 테스트에서 시드 고정용 */
-    public TestQuestionGenerator(WordCatalog wordCatalog, Supplier<RandomGenerator> randomSupplier) {
+    public QuestionGenerator(WordCatalog wordCatalog, Supplier<RandomGenerator> randomSupplier) {
         this.wordCatalog = wordCatalog;
         this.randomSupplier = randomSupplier;
     }
@@ -58,7 +58,7 @@ public class TestQuestionGenerator {
      * @param level    사용자가 고른 레벨 (세부 또는 묶음)
      * @param maxCount 최대 문제 수 (설정값). {@link #ALL_WORDS}(0)이면 레벨 단어 전체
      */
-    public List<GeneratedQuestion> generate(Level level, int maxCount) {
+    public List<Question> generate(Level level, int maxCount) {
         List<CatalogWord> answerPool = wordCatalog.findAnswerPool(level);
         int count = questionCount(answerPool.size(), maxCount);
         if (count == 0) {
@@ -75,10 +75,10 @@ public class TestQuestionGenerator {
         List<CatalogWord> answers = new ArrayList<>(answerPool);
         shuffle(answers, random);
 
-        List<GeneratedQuestion> result = new ArrayList<>(count);
+        List<Question> result = new ArrayList<>(count);
         for (CatalogWord answer : answers.subList(0, count)) {
             List<CatalogWord> sameLevel = optionPoolByLevel.getOrDefault(answer.level(), List.of());
-            result.add(new GeneratedQuestion(answer, pickOptions(answer, sameLevel, random)));
+            result.add(new Question(answer, pickOptions(answer, sameLevel, random)));
         }
         return result;
     }
@@ -96,7 +96,7 @@ public class TestQuestionGenerator {
 
     /** 정답 + 오답 3개를 섞어서 반환 */
     private List<CatalogWord> pickOptions(CatalogWord answer, List<CatalogWord> sameLevel, RandomGenerator random) {
-        List<CatalogWord> options = new ArrayList<>(GeneratedQuestion.OPTION_COUNT);
+        List<CatalogWord> options = new ArrayList<>(Question.OPTION_COUNT);
         options.add(answer);
         // 이미 고른 단어 + 그 단어들과 헷갈리는 단어 → 보기로 낼 수 없는 word_id
         Set<Long> blockedWordIds = new HashSet<>();
@@ -105,21 +105,21 @@ public class TestQuestionGenerator {
         Set<String> usedMeanings = new HashSet<>(answer.meanings());
 
         // 1차: 무작위로 뽑아 조건 검사
-        for (int i = 0; !sameLevel.isEmpty() && i < RANDOM_TRY_LIMIT && options.size() < GeneratedQuestion.OPTION_COUNT; i++) {
+        for (int i = 0; !sameLevel.isEmpty() && i < RANDOM_TRY_LIMIT && options.size() < Question.OPTION_COUNT; i++) {
             tryAdd(sameLevel.get(random.nextInt(sameLevel.size())), options, blockedWordIds, usedMeanings);
         }
         // 2차: 전체를 섞어 순서대로 검사
-        if (options.size() < GeneratedQuestion.OPTION_COUNT) {
+        if (options.size() < Question.OPTION_COUNT) {
             List<CatalogWord> shuffled = new ArrayList<>(sameLevel);
             shuffle(shuffled, random);
             for (CatalogWord candidate : shuffled) {
-                if (options.size() >= GeneratedQuestion.OPTION_COUNT) {
+                if (options.size() >= Question.OPTION_COUNT) {
                     break;
                 }
                 tryAdd(candidate, options, blockedWordIds, usedMeanings);
             }
         }
-        if (options.size() < GeneratedQuestion.OPTION_COUNT) {
+        if (options.size() < Question.OPTION_COUNT) {
             throw new CustomException(ErrorCode.TEST_NOT_ENOUGH_WORDS,
                     "'" + answer.headword() + "' 의 오답 보기 " + DISTRACTOR_COUNT + "개를 만들 수 없습니다.");
         }

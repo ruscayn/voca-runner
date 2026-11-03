@@ -8,7 +8,7 @@ import org.mockito.ArgumentCaptor;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.exam.application.service.TestApplicationService;
-import org.ruscayn.vocarunner.exam.domain.TestClient;
+import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -113,9 +113,9 @@ class TestControllerTest {
                     .header("CloudFront-Viewer-Address", "198.51.100.10:46532"));
             mockMvc.perform(post("/test/start").param("level", "A1"));
 
-            ArgumentCaptor<TestClient> clients = ArgumentCaptor.forClass(TestClient.class);
+            ArgumentCaptor<Examinee> clients = ArgumentCaptor.forClass(Examinee.class);
             verify(testApplicationService, times(2)).start(eq(Level.A1), clients.capture());
-            assertThat(clients.getAllValues()).extracting(TestClient::ip)
+            assertThat(clients.getAllValues()).extracting(Examinee::clientIp)
                     .containsExactly("198.51.100.10", "127.0.0.1");
         }
     }

@@ -1,6 +1,6 @@
 package org.ruscayn.vocarunner.support;
 
-import org.ruscayn.vocarunner.exam.domain.GeneratedQuestion;
+import org.ruscayn.vocarunner.exam.domain.Question;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
 import org.ruscayn.vocarunner.word.domain.Level;
 
@@ -47,28 +47,28 @@ public final class TestWords {
      * 문제 count 개. 문제 n 의 정답은 (n-1) % 4 + 1 번 보기에 둔다 (1,2,3,4,1,...)
      * 단어 id : 문제 n 의 보기 i = n * 10 + i
      */
-    public static List<GeneratedQuestion> questions(int count) {
-        List<GeneratedQuestion> list = new ArrayList<>(count);
+    public static List<Question> questions(int count) {
+        List<Question> list = new ArrayList<>(count);
         for (int n = 1; n <= count; n++) {
-            List<CatalogWord> options = new ArrayList<>(GeneratedQuestion.OPTION_COUNT);
-            for (int i = 1; i <= GeneratedQuestion.OPTION_COUNT; i++) {
+            List<CatalogWord> options = new ArrayList<>(Question.OPTION_COUNT);
+            for (int i = 1; i <= Question.OPTION_COUNT; i++) {
                 long id = n * 10L + i;
                 options.add(word(id, id, Level.A1));
             }
             CatalogWord answer = options.get(correctOptionNo(n) - 1);
-            list.add(new GeneratedQuestion(answer, options));
+            list.add(new Question(answer, options));
         }
         return list;
     }
 
     /** questions() 로 만든 문제 n 의 정답 보기 번호 */
     public static int correctOptionNo(int questionNo) {
-        return (questionNo - 1) % GeneratedQuestion.OPTION_COUNT + 1;
+        return (questionNo - 1) % Question.OPTION_COUNT + 1;
     }
 
     /** questions() 로 만든 문제 n 의 오답 보기 번호 하나 */
     public static int wrongOptionNo(int questionNo) {
-        return correctOptionNo(questionNo) % GeneratedQuestion.OPTION_COUNT + 1;
+        return correctOptionNo(questionNo) % Question.OPTION_COUNT + 1;
     }
 
 }

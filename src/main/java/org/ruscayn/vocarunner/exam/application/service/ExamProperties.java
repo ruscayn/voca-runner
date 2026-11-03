@@ -19,7 +19,7 @@ import java.time.Duration;
  * @param undeliveredTimeout   시작 후 이 시간 안에 문제를 받아 가지 않은 시험은 정리 (시작 직후 연결 끊김 등)
  */
 @ConfigurationProperties(prefix = "voca-runner.test")
-public record TestProperties(
+public record ExamProperties(
         @DefaultValue("500") int questionCount,
         @DefaultValue("3m") Duration grace,
         @DefaultValue("1h") Duration resultRetention,
@@ -29,7 +29,7 @@ public record TestProperties(
         @DefaultValue("5m") Duration undeliveredTimeout
 ) {
 
-    public TestProperties {
+    public ExamProperties {
         if (questionCount < 0) {
             throw new IllegalArgumentException("voca-runner.test.question-count 는 0(전체) 이상이어야 합니다: " + questionCount);
         }

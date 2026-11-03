@@ -6,8 +6,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.ruscayn.vocarunner.exam.application.port.in.TestSubmitRequest;
 import org.ruscayn.vocarunner.exam.application.port.out.TestSessionRepository;
 import org.ruscayn.vocarunner.exam.domain.Direction;
-import org.ruscayn.vocarunner.exam.domain.TestClient;
-import org.ruscayn.vocarunner.exam.domain.TestSession;
+import org.ruscayn.vocarunner.exam.domain.Examinee;
+import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
@@ -44,8 +44,8 @@ class TestApplicationServiceTest {
     // 제출에는 저장소만 쓴다
     private final TestApplicationService service = new TestApplicationService(repository, null, null, null, null);
 
-    private final TestSession session = TestSession.start(Level.A1, Direction.EN_KO, 5, questions(2),
-            new TestClient(DEVICE_ID, "10.0.0.1"), Instant.now(), Duration.ofMinutes(3));
+    private final Exam session = Exam.start(Level.A1, Direction.EN_KO, 5, questions(2),
+            new Examinee(DEVICE_ID, "10.0.0.1"), Instant.now(), Duration.ofMinutes(3));
 
     @Test
     @DisplayName("저장(커밋)이 끝나면 제출 로그를 남긴다")
@@ -86,7 +86,7 @@ class TestApplicationServiceTest {
             @Override
             protected void doCommit(DefaultTransactionStatus status) {
                 if (conflict) {
-                    throw new ObjectOptimisticLockingFailureException(TestSession.class, session.getId());
+                    throw new ObjectOptimisticLockingFailureException(Exam.class, session.getId());
                 }
             }
 

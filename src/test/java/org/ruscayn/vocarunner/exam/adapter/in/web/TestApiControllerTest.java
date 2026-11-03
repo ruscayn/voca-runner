@@ -8,7 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.exam.application.service.TestApplicationService;
-import org.ruscayn.vocarunner.exam.domain.TestSession;
+import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
@@ -112,7 +112,7 @@ class TestApiControllerTest {
         @DisplayName("동시에 두 번 제출해 늦은 쪽이 저장에서 충돌하면 500 이 아니라 400 진행 중인 시험이 아님 (U39)")
         void concurrentSubmit() throws Exception {
             given(testApplicationService.submit(eq(SESSION_ID), eq(DEVICE_ID), any()))
-                    .willThrow(new ObjectOptimisticLockingFailureException(TestSession.class, SESSION_ID));
+                    .willThrow(new ObjectOptimisticLockingFailureException(Exam.class, SESSION_ID));
 
             submit(MediaType.APPLICATION_JSON, """
                     {"answers": [{"questionNo": 1, "selectedOptionNo": 2}]}

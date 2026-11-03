@@ -3,7 +3,7 @@ package org.ruscayn.vocarunner.exam.adapter.in.web;
 import org.ruscayn.vocarunner.exam.application.port.in.LevelGroupSummary;
 import org.ruscayn.vocarunner.exam.application.port.in.LevelSummary;
 import org.ruscayn.vocarunner.exam.application.service.LevelApplicationService;
-import org.ruscayn.vocarunner.exam.domain.TestSession;
+import org.ruscayn.vocarunner.exam.domain.Exam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -45,7 +45,7 @@ public class MainController {
         LevelSummary first = levelGroups.getFirst().levels().getFirst();
         model.addAttribute("levelGroups", levelGroups);
         model.addAttribute("questionCount", first.questionCount());
-        model.addAttribute("timeLimitSec", TestSession.DEFAULT_TIME_LIMIT_SEC);
+        model.addAttribute("timeLimitSec", Exam.DEFAULT_TIME_LIMIT_SEC);
         model.addAttribute("allowedMinutes", first.allowedMinutes());
         return "main";
     }

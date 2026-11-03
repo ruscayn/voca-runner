@@ -9,10 +9,10 @@ import org.ruscayn.vocarunner.exam.application.port.in.TestSubmitRequest;
 import org.ruscayn.vocarunner.exam.application.port.in.TestSubmitResponse;
 import org.ruscayn.vocarunner.exam.application.port.out.TestSessionRepository;
 import org.ruscayn.vocarunner.exam.domain.Direction;
-import org.ruscayn.vocarunner.exam.domain.GeneratedQuestion;
-import org.ruscayn.vocarunner.exam.domain.TestClient;
-import org.ruscayn.vocarunner.exam.domain.TestQuestionGenerator;
-import org.ruscayn.vocarunner.exam.domain.TestSession;
+import org.ruscayn.vocarunner.exam.domain.Question;
+import org.ruscayn.vocarunner.exam.domain.Examinee;
+import org.ruscayn.vocarunner.exam.domain.QuestionGenerator;
+import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
@@ -44,9 +44,9 @@ import java.util.stream.IntStream;
 public class TestApplicationService {
 
     private final TestSessionRepository testSessionRepository;
-    private final TestQuestionGenerator testQuestionGenerator;
+    private final QuestionGenerator questionGenerator;
     private final WordCatalog wordCatalog;
-    private final TestProperties testProperties;
+    private final ExamProperties examProperties;
     private final TransactionTemplate transactionTemplate;
 
     /**
@@ -61,17 +61,17 @@ public class TestApplicationService {
      *
      * @param client 시작한 사용자 (기기·IP)
      */
-    public UUID start(Level level, TestClient client) {
+    public UUID start(Level level, Examinee client) {
         long begin = System.currentTimeMillis();
         Instant now = Instant.now();
         checkCapacity(client, now);
 
-        List<GeneratedQuestion> questions = testQuestionGenerator.generate(level, testProperties.questionCount());
-        TestSession session = TestSession.start(level, Direction.EN_KO, TestSession.DEFAULT_TIME_LIMIT_SEC,
-                questions, client, now, testProperties.grace());
+        List<Question> questions = questionGenerator.generate(level, examProperties.questionCount());
+        Exam session = Exam.start(level, Direction.EN_KO, Exam.DEFAULT_TIME_LIMIT_SEC,
+                questions, client, now, examProperties.grace());
         transactionTemplate.executeWithoutResult(tx -> {
             testSessionRepository.lockForStart();
-            List<TestSession> replaced = checkCapacity(client, Instant.now());
+            List<Exam> replaced = checkCapacity(client, Instant.now());
             replaced.forEach(old -> {
                 testSessionRepository.delete(old.getId());
                 log.info("시험 만료 (같은 기기에서 새 시험 시작) session={}", old.getId());
@@ -91,17 +91,17 @@ public class TestApplicationService {
      *
      * @return 새 시험을 시작하면 종료할 같은 기기의 진행 중 시험
      */
-    private List<TestSession> checkCapacity(TestClient client, Instant now) {
-        List<TestSession> byDevice = testSessionRepository.findInProgressByDevice(client.deviceId(), now);
+    private List<Exam> checkCapacity(Examinee client, Instant now) {
+        List<Exam> byDevice = testSessionRepository.findInProgressByDevice(client.deviceId(), now);
         int inProgress = testSessionRepository.countInProgress(now) - byDevice.size();
-        if (inProgress >= testProperties.maxInProgress()) {
-            log.warn("시험 시작 거절 (전체 상한) 진행 중={} 상한={}", inProgress, testProperties.maxInProgress());
+        if (inProgress >= examProperties.maxInProgress()) {
+            log.warn("시험 시작 거절 (전체 상한) 진행 중={} 상한={}", inProgress, examProperties.maxInProgress());
             throw new CustomException(ErrorCode.TEST_SERVER_BUSY);
         }
-        long sameIp = byDevice.stream().filter(s -> client.ip().equals(s.getClient().ip())).count();
-        long byIp = testSessionRepository.countInProgressByIp(client.ip(), now) - sameIp;
-        if (byIp >= testProperties.maxInProgressPerIp()) {
-            log.warn("시험 시작 거절 (IP 상한) ip={} 진행 중={}", client.ip(), byIp);
+        long sameIp = byDevice.stream().filter(s -> client.clientIp().equals(s.getClient().clientIp())).count();
+        long byIp = testSessionRepository.countInProgressByIp(client.clientIp(), now) - sameIp;
+        if (byIp >= examProperties.maxInProgressPerIp()) {
+            log.warn("시험 시작 거절 (IP 상한) ip={} 진행 중={}", client.clientIp(), byIp);
             throw new CustomException(ErrorCode.TEST_TOO_MANY_IN_PROGRESS_SAME_NETWORK);
         }
         return byDevice;
@@ -110,7 +110,7 @@ public class TestApplicationService {
     /** 시험 화면용 문제 (진행 중인 시험만, 정답 번호 제외). 시작한 기기만 */
     @Transactional
     public TestQuestionsResponse getQuestions(UUID sessionId, String deviceId) {
-        TestSession session = findStartedBy(sessionId, deviceId);
+        Exam session = findStartedBy(sessionId, deviceId);
         Instant now = Instant.now();
         if (!session.isInProgress(now)) {
             throw new CustomException(ErrorCode.TEST_NOT_IN_PROGRESS);
@@ -142,7 +142,7 @@ public class TestApplicationService {
      */
     @Transactional(noRollbackFor = CustomException.class)
     public TestSubmitResponse submit(UUID sessionId, String deviceId, TestSubmitRequest request) {
-        TestSession session = findStartedBy(sessionId, deviceId);
+        Exam session = findStartedBy(sessionId, deviceId);
 
         Map<Integer, Integer> selectedByNo = new HashMap<>();  // null 값 허용 (시간 초과)
         for (TestSubmitRequest.Answer answer : request.answers()) {
@@ -178,7 +178,7 @@ public class TestApplicationService {
     @Transactional(readOnly = true)
     public Optional<TestResultResponse> findResult(UUID sessionId) {
         return testSessionRepository.findById(sessionId)
-                .filter(TestSession::isCompleted)
+                .filter(Exam::isCompleted)
                 .map(this::toResult);
     }
 
@@ -186,14 +186,14 @@ public class TestApplicationService {
     @Transactional(readOnly = true)
     public boolean hasResult(UUID sessionId) {
         return testSessionRepository.findById(sessionId)
-                .filter(TestSession::isCompleted)
+                .filter(Exam::isCompleted)
                 .isPresent();
     }
 
     /** 결과 (API) */
     @Transactional(readOnly = true)
     public TestResultResponse getResult(UUID sessionId) {
-        TestSession session = find(sessionId);
+        Exam session = find(sessionId);
         if (!session.isCompleted()) {
             throw new CustomException(ErrorCode.TEST_NOT_COMPLETED);
         }
@@ -221,7 +221,7 @@ public class TestApplicationService {
                 .orElse(false);
     }
 
-    private TestResultResponse toResult(TestSession session) {
+    private TestResultResponse toResult(Exam session) {
         Direction direction = session.getDirection();
         List<TestResultResponse.WrongItem> wrongItems = new ArrayList<>();
         for (int no = 1; no <= session.getQuestionCount(); no++) {
@@ -245,12 +245,12 @@ public class TestApplicationService {
                 session.getQuestionCount(),
                 session.getCorrectCount(),
                 session.getScore(),
-                session.getSubmittedAt().plus(testProperties.resultRetention()),
-                testProperties.resultRetention().toMinutes(),
+                session.getSubmittedAt().plus(examProperties.resultRetention()),
+                examProperties.resultRetention().toMinutes(),
                 wrongItems);
     }
 
-    private TestQuestionView toView(TestSession session, int no, Direction direction) {
+    private TestQuestionView toView(Exam session, int no, Direction direction) {
         List<Long> optionIds = session.optionLevelWordIds(no);
         List<TestQuestionView.Option> optionViews = IntStream.range(0, optionIds.size())
                 .mapToObj(i -> new TestQuestionView.Option(i + 1, optionText(wordCatalog.get(optionIds.get(i)), direction)))
@@ -276,8 +276,8 @@ public class TestApplicationService {
      * 이 기기에서 시작한 시험. 다른 기기면 없는 시험과 같은 응답을 준다.
      * 주소(시험 id)가 새어도 다른 사람이 문제를 받아 가거나 대신 제출해 끝내 버릴 수 없게 한다 (U9)
      */
-    private TestSession findStartedBy(UUID sessionId, String deviceId) {
-        TestSession session = find(sessionId);
+    private Exam findStartedBy(UUID sessionId, String deviceId) {
+        Exam session = find(sessionId);
         if (!session.isStartedBy(deviceId)) {
             log.warn("다른 기기의 시험 요청 거절 session={}", sessionId);
             throw notFound();
@@ -285,7 +285,7 @@ public class TestApplicationService {
         return session;
     }
 
-    private TestSession find(UUID sessionId) {
+    private Exam find(UUID sessionId) {
         return testSessionRepository.findById(sessionId)
                 .orElseThrow(TestApplicationService::notFound);
     }
