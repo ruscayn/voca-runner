@@ -1,8 +1,8 @@
 package org.ruscayn.vocarunner.support;
 
-import org.ruscayn.vocarunner.domain.model.level.Level;
-import org.ruscayn.vocarunner.domain.model.test.GeneratedQuestion;
-import org.ruscayn.vocarunner.domain.model.vocabulary.CatalogWord;
+import org.ruscayn.vocarunner.exam.domain.GeneratedQuestion;
+import org.ruscayn.vocarunner.word.domain.CatalogWord;
+import org.ruscayn.vocarunner.word.domain.Level;
 
 import java.util.ArrayList;
 import java.util.List;
