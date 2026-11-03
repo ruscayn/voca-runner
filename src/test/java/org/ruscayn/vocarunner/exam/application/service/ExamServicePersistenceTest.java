@@ -7,8 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.common.adapter.out.persistence.JpaConfig;
-import org.ruscayn.vocarunner.exam.adapter.in.scheduler.ExamCleanupScheduler;
 import org.ruscayn.vocarunner.exam.adapter.out.persistence.ExamPersistenceAdapter;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
 import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
@@ -60,11 +60,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 @DataJpaTest
 @Testcontainers
-@Import({ExamApplicationService.class, ExamPersistenceAdapter.class, JpaConfig.class,
-        ExamApplicationServicePersistenceTest.Config.class})
+@Import({ExamService.class, ExamPersistenceAdapter.class, JpaConfig.class,
+        ExamServicePersistenceTest.Config.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
-@DisplayName("ExamApplicationService : 유스케이스별 DB 상태 (PostgreSQL)")
-class ExamApplicationServicePersistenceTest {
+@DisplayName("ExamService : 유스케이스별 DB 상태 (PostgreSQL)")
+class ExamServicePersistenceTest {
 
     @Container
     @ServiceConnection
@@ -98,13 +98,10 @@ class ExamApplicationServicePersistenceTest {
     }
 
     @Autowired
-    private ExamApplicationService service;
+    private ExamUseCase examUseCase;
 
     @Autowired
     private ExamPersistencePort examPersistencePort;
-
-    @Autowired
-    private ExamProperties examProperties;
 
     @Autowired
     private PlatformTransactionManager transactionManager;
@@ -118,7 +115,7 @@ class ExamApplicationServicePersistenceTest {
     }
 
     private UUID start(String deviceId, String ip) {
-        return service.start(new StartExamCommand(Level.A1, new Examinee(deviceId, ip)));
+        return examUseCase.start(new StartExamCommand(Level.A1, new Examinee(deviceId, ip)));
     }
 
     /** 서비스를 거치지 않고 시작 시각을 정한 시험 (마감 지남 · 오래된 결과 등을 만들 때) */
@@ -160,7 +157,7 @@ class ExamApplicationServicePersistenceTest {
     }
 
     private void submit(UUID examId, String deviceId, SubmitExamCommand.Answer... answers) {
-        service.submit(new SubmitExamCommand(examId, deviceId, List.of(answers)));
+        examUseCase.submit(new SubmitExamCommand(examId, deviceId, List.of(answers)));
     }
 
     private static Consumer<CustomException> errorCode(ErrorCode expected) {
@@ -239,7 +236,7 @@ class ExamApplicationServicePersistenceTest {
             UUID examId = start(DEVICE_ID, IP);
             Timestamp createdAt = (Timestamp) row(examId).get("created_at");
 
-            service.getQuestions(examId, DEVICE_ID);
+            examUseCase.getQuestions(examId, DEVICE_ID);
 
             Map<String, Object> row = row(examId);
             assertThat(row).containsEntry("questions_delivered", true)
@@ -252,9 +249,9 @@ class ExamApplicationServicePersistenceTest {
         @DisplayName("다시 받아도 바뀐 것이 없어 버전이 그대로다")
         void secondTimeNoUpdate() {
             UUID examId = start(DEVICE_ID, IP);
-            service.getQuestions(examId, DEVICE_ID);
+            examUseCase.getQuestions(examId, DEVICE_ID);
 
-            service.getQuestions(examId, DEVICE_ID);
+            examUseCase.getQuestions(examId, DEVICE_ID);
 
             assertThat(row(examId)).containsEntry("version", 1);
         }
@@ -264,7 +261,7 @@ class ExamApplicationServicePersistenceTest {
         void otherDevice() {
             UUID examId = start(DEVICE_ID, IP);
 
-            assertThatThrownBy(() -> service.getQuestions(examId, OTHER_DEVICE_ID))
+            assertThatThrownBy(() -> examUseCase.getQuestions(examId, OTHER_DEVICE_ID))
                     .isInstanceOfSatisfying(CustomException.class, errorCode(ErrorCode.ENTITY_NOT_FOUND));
             assertThat(row(examId)).containsEntry("questions_delivered", false).containsEntry("version", 0);
         }
@@ -278,7 +275,7 @@ class ExamApplicationServicePersistenceTest {
         @DisplayName("제출하면 완료로 바뀌고 고른 보기 · 맞힌 수 · 점수 · 제출 시각이 남는다 (못 고른 문항 = 0)")
         void completed() {
             UUID examId = start(DEVICE_ID, IP);
-            service.getQuestions(examId, DEVICE_ID);
+            examUseCase.getQuestions(examId, DEVICE_ID);
             Timestamp createdAt = (Timestamp) row(examId).get("created_at");
             int correct1 = answerOptionNo(examId, 1);
             int wrong2 = incorrectOptionNo(examId, 2);
@@ -357,7 +354,7 @@ class ExamApplicationServicePersistenceTest {
         void deleted() {
             UUID examId = start(DEVICE_ID, IP);
 
-            service.abortExam(examId, DEVICE_ID);
+            examUseCase.abortExam(examId, DEVICE_ID);
 
             assertThat(exists(examId)).isFalse();
         }
@@ -367,7 +364,7 @@ class ExamApplicationServicePersistenceTest {
         void otherDeviceIgnored() {
             UUID examId = start(DEVICE_ID, IP);
 
-            service.abortExam(examId, OTHER_DEVICE_ID);
+            examUseCase.abortExam(examId, OTHER_DEVICE_ID);
 
             assertThat(row(examId)).containsEntry("status", "IN_PROGRESS");
         }
@@ -378,7 +375,7 @@ class ExamApplicationServicePersistenceTest {
             UUID examId = start(DEVICE_ID, IP);
             submit(examId, DEVICE_ID, answer(1, 1));
 
-            service.abortExam(examId, DEVICE_ID);
+            examUseCase.abortExam(examId, DEVICE_ID);
 
             assertThat(row(examId)).containsEntry("status", "COMPLETED");
         }
@@ -397,7 +394,7 @@ class ExamApplicationServicePersistenceTest {
         oldResult.submit(Map.of(), now.minus(Duration.ofHours(3)).plusSeconds(30));   // 보관 1시간 지남
         List.of(delivered, justStarted, pastDeadline, undelivered, oldResult).forEach(this::saved);
 
-        new ExamCleanupScheduler(examPersistencePort, examProperties).cleanup();
+        examUseCase.cleanup();
 
         assertThat(jdbcTemplate.queryForList("select test_session_id from test_session", UUID.class))
                 .containsExactlyInAnyOrder(delivered.getId(), justStarted.getId());
@@ -418,8 +415,8 @@ class ExamApplicationServicePersistenceTest {
         void twoAborts() {
             UUID examId = start(DEVICE_ID, IP);
 
-            Overlap late = Overlap.begin(transactionManager, () -> service.abortExam(examId, DEVICE_ID));
-            service.abortExam(examId, DEVICE_ID);
+            Overlap late = Overlap.begin(transactionManager, () -> examUseCase.abortExam(examId, DEVICE_ID));
+            examUseCase.abortExam(examId, DEVICE_ID);
 
             assertThatThrownBy(late::commit).isInstanceOf(OptimisticLockingFailureException.class);
             assertThat(exists(examId)).isFalse();
@@ -430,8 +427,8 @@ class ExamApplicationServicePersistenceTest {
         void abortAfterQuestionsDelivered() {
             UUID examId = start(DEVICE_ID, IP);
 
-            Overlap late = Overlap.begin(transactionManager, () -> service.abortExam(examId, DEVICE_ID));
-            service.getQuestions(examId, DEVICE_ID);
+            Overlap late = Overlap.begin(transactionManager, () -> examUseCase.abortExam(examId, DEVICE_ID));
+            examUseCase.getQuestions(examId, DEVICE_ID);
 
             assertThatThrownBy(late::commit).isInstanceOf(OptimisticLockingFailureException.class);
             assertThat(row(examId)).containsEntry("status", "IN_PROGRESS")
@@ -443,8 +440,8 @@ class ExamApplicationServicePersistenceTest {
         void questionsDeliveredAfterAbort() {
             UUID examId = start(DEVICE_ID, IP);
 
-            Overlap late = Overlap.begin(transactionManager, () -> service.getQuestions(examId, DEVICE_ID));
-            service.abortExam(examId, DEVICE_ID);
+            Overlap late = Overlap.begin(transactionManager, () -> examUseCase.getQuestions(examId, DEVICE_ID));
+            examUseCase.abortExam(examId, DEVICE_ID);
 
             assertThatThrownBy(late::commit).isInstanceOf(OptimisticLockingFailureException.class);
             assertThat(exists(examId)).isFalse();

@@ -16,8 +16,7 @@ import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResult;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamResult;
-import org.ruscayn.vocarunner.exam.application.service.LevelApplicationService;
-import org.ruscayn.vocarunner.exam.application.service.ExamApplicationService;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -72,10 +71,8 @@ class WebNameTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private ExamApplicationService examApplicationService;
+    private ExamUseCase examUseCase;
 
-    @MockitoBean
-    private LevelApplicationService levelApplicationService;
 
     private static Map<String, Object> readObject(String json, String path) {
         return JsonPath.read(json, path);
@@ -96,7 +93,7 @@ class WebNameTest {
         void questions() throws Exception {
             ExamQuestionsResult.QuestionItem question = new ExamQuestionsResult.QuestionItem(1, "abroad", "go abroad",
                     List.of(new ExamQuestionsResult.Option(1, "해외로"), new ExamQuestionsResult.Option(2, "국내에")));
-            given(examApplicationService.getQuestions(EXAM_ID, DEVICE_ID)).willReturn(
+            given(examUseCase.getQuestions(EXAM_ID, DEVICE_ID)).willReturn(
                     new ExamQuestionsResult(EXAM_ID, "B1", "Independent", "EN_KO", 1, 5, 3, 170,
                             List.of(question)));
 
@@ -116,7 +113,7 @@ class WebNameTest {
         @Test
         @DisplayName("제출 본문 : answers[].questionNo · selectedOptionNo 를 읽는다")
         void submitBody() throws Exception {
-            given(examApplicationService.submit(any()))
+            given(examUseCase.submit(any()))
                     .willReturn(new SubmitExamResult(EXAM_ID, 2, 1, 50));
 
             mockMvc.perform(post("/api/tests/" + EXAM_ID + "/submit").cookie(DEVICE_COOKIE)
@@ -127,7 +124,7 @@ class WebNameTest {
                     .andExpect(status().isOk());
 
             ArgumentCaptor<SubmitExamCommand> captor = ArgumentCaptor.forClass(SubmitExamCommand.class);
-            verify(examApplicationService).submit(captor.capture());
+            verify(examUseCase).submit(captor.capture());
             assertThat(captor.getValue().examId()).isEqualTo(EXAM_ID);
             assertThat(captor.getValue().deviceId()).isEqualTo(DEVICE_ID);
             List<SubmitExamCommand.Answer> answers = captor.getValue().answers();
@@ -140,7 +137,7 @@ class WebNameTest {
         @Test
         @DisplayName("제출 응답 칸")
         void submitResponse() throws Exception {
-            given(examApplicationService.submit(any()))
+            given(examUseCase.submit(any()))
                     .willReturn(new SubmitExamResult(EXAM_ID, 2, 1, 50));
 
             String json = mockMvc.perform(post("/api/tests/" + EXAM_ID + "/submit").cookie(DEVICE_COOKIE)
@@ -158,7 +155,7 @@ class WebNameTest {
         @Test
         @DisplayName("결과 응답 : 시험 결과 · 틀린 항목 칸")
         void result() throws Exception {
-            given(examApplicationService.getResult(EXAM_ID)).willReturn(resultWithOneIncorrectAndOneTimeout());
+            given(examUseCase.getResult(EXAM_ID)).willReturn(resultWithOneIncorrectAndOneTimeout());
 
             String json = mockMvc.perform(get("/api/tests/" + EXAM_ID + "/result"))
                     .andExpect(status().isOk())
@@ -174,7 +171,7 @@ class WebNameTest {
         @Test
         @DisplayName("오류 응답 : code · message · path · timestamp, 오류 코드 값")
         void error() throws Exception {
-            given(examApplicationService.getQuestions(EXAM_ID, DEVICE_ID))
+            given(examUseCase.getQuestions(EXAM_ID, DEVICE_ID))
                     .willThrow(new CustomException(ErrorCode.EXAM_NOT_IN_PROGRESS));
 
             String json = mockMvc.perform(get("/api/tests/" + EXAM_ID + "/questions").cookie(DEVICE_COOKIE))
@@ -194,7 +191,7 @@ class WebNameTest {
         @Test
         @DisplayName("메인 : levelGroups · questionCount · timePerQuestionSec · allowedMinutes, 레벨 카드를 그린다")
         void main() throws Exception {
-            given(levelApplicationService.getDetailLevelGroups()).willReturn(List.of(
+            given(examUseCase.getDetailLevelGroups()).willReturn(List.of(
                     new LevelGroupSummary("Independent", List.of(new LevelSummary(Level.B2, 1234, 500, 45)))));
 
             mockMvc.perform(get("/"))
@@ -211,7 +208,7 @@ class WebNameTest {
         @ValueSource(strings = {"test-in-use", "test-finished", "result-expired"})
         @DisplayName("메인 안내 코드 : 정해진 값이면 message 를 넣는다")
         void mainNotice(String notice) throws Exception {
-            given(levelApplicationService.getDetailLevelGroups()).willReturn(List.of(
+            given(examUseCase.getDetailLevelGroups()).willReturn(List.of(
                     new LevelGroupSummary("Basic", List.of(new LevelSummary(Level.A1, 1234, 500, 45)))));
 
             mockMvc.perform(get("/").param("notice", notice))
@@ -222,8 +219,8 @@ class WebNameTest {
         @Test
         @DisplayName("시험 화면 : examId 를 data-exam-id 로 그린다")
         void exam() throws Exception {
-            given(examApplicationService.start(any())).willReturn(EXAM_ID);
-            given(examApplicationService.isInProgress(EXAM_ID)).willReturn(true);
+            given(examUseCase.start(any())).willReturn(EXAM_ID);
+            given(examUseCase.isInProgress(EXAM_ID)).willReturn(true);
             MockHttpSession httpSession = new MockHttpSession();
             mockMvc.perform(post("/test/start").param("level", "A1").session(httpSession).cookie(DEVICE_COOKIE))
                     .andExpect(redirectedUrl("/test/" + EXAM_ID));
@@ -238,7 +235,7 @@ class WebNameTest {
         @Test
         @DisplayName("결과 화면 : result · retentionDeadline, 템플릿 안 호출(오답 수 · 시간 초과 수 · 보관 시간 문구)을 그린다")
         void result() throws Exception {
-            given(examApplicationService.findResult(EXAM_ID))
+            given(examUseCase.findResult(EXAM_ID))
                     .willReturn(Optional.of(resultWithOneIncorrectAndOneTimeout()));
 
             String html = mockMvc.perform(get("/test/" + EXAM_ID + "/result"))

@@ -3,7 +3,7 @@ package org.ruscayn.vocarunner.exam.adapter.in.web;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
-import org.ruscayn.vocarunner.exam.application.service.ExamApplicationService;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.word.domain.Level;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,7 +43,7 @@ public class ExamController {
     private static final DateTimeFormatter RETENTION_DEADLINE_FORMAT =
             DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of("Asia/Seoul"));
 
-    private final ExamApplicationService examApplicationService;
+    private final ExamUseCase examUseCase;
     private final ClientIpProperties clientIpProperties;
 
     @PostMapping("/test/start")
@@ -54,7 +54,7 @@ public class ExamController {
             // 사용자 구분 = 기기 쿠키 + IP. 운영은 CloudFront 뒤라 IP 를 CloudFront 헤더에서 읽는다 (ClientIp)
             Examinee examinee = new Examinee(DeviceCookie.findOrCreate(request, response),
                     ClientIp.find(request, clientIpProperties.header()));
-            examId = examApplicationService.start(new StartExamCommand(level, examinee));
+            examId = examUseCase.start(new StartExamCommand(level, examinee));
         } catch (CustomException e) {
             if (e.getErrorCode() == ErrorCode.EXAM_TOO_MANY_IN_PROGRESS
                     || e.getErrorCode() == ErrorCode.EXAM_TOO_MANY_IN_PROGRESS_PER_IP) {
@@ -75,7 +75,7 @@ public class ExamController {
         HttpSession httpSession = request.getSession(false);
         Object token = httpSession == null ? null : httpSession.getAttribute(ENTRY_TOKEN);
         Object opened = httpSession == null ? null : httpSession.getAttribute(OPENED_EXAM);
-        boolean inProgress = examApplicationService.isInProgress(examId);
+        boolean inProgress = examUseCase.isInProgress(examId);
 
         // 1) 시작 직후 첫 입장 : 입장 토큰을 쓰고, 이 브라우저가 연 시험으로 기록
         if (inProgress && examId.equals(token)) {
@@ -88,7 +88,7 @@ public class ExamController {
         // 2) 이미 끝난 시험 (결과 화면에서 뒤로가기 등) : 결과 보관 중이면 결과 화면, 아니면 안내와 함께 메인 (B8)
         //    시험 화면은 no-store 라 뒤로가기도 반드시 여기로 온다 (WebConfig)
         if (!inProgress) {
-            if (examApplicationService.hasResult(examId)) {
+            if (examUseCase.hasResult(examId)) {
                 return "redirect:/test/" + examId + "/result";
             }
             return "redirect:/?notice=" + MainController.NOTICE_EXAM_ENDED;
@@ -96,7 +96,7 @@ public class ExamController {
 
         // 3) 이 시험을 연 브라우저가 다시 들어옴 (새로고침·재접속·같은 브라우저 새 탭) : 다시 풀 수 없게 중단
         if (examId.equals(opened)) {
-            examApplicationService.abortExam(examId, DeviceCookie.find(request));
+            examUseCase.abortExam(examId, DeviceCookie.find(request));
             redirect.addFlashAttribute("message", "시험이 종료되었습니다. 처음부터 다시 시작해 주세요.");
             return "redirect:/";
         }
@@ -109,7 +109,7 @@ public class ExamController {
     /** 결과 화면 (완료된 시험만). 보관 시간이 지나 정리됐으면 안내와 함께 메인 (U17) */
     @GetMapping("/test/{examId}/result")
     public String result(@PathVariable UUID examId, Model model) {
-        return examApplicationService.findResult(examId)
+        return examUseCase.findResult(examId)
                 .map(result -> {
                     model.addAttribute("result", result);
                     model.addAttribute("retentionDeadline", RETENTION_DEADLINE_FORMAT.format(result.retentionDeadline()));

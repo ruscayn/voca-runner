@@ -6,7 +6,7 @@ import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResult;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamResult;
-import org.ruscayn.vocarunner.exam.application.service.ExamApplicationService;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -21,12 +21,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ExamApiController {
 
-    private final ExamApplicationService examApplicationService;
+    private final ExamUseCase examUseCase;
 
     /** 문제 전체 (정답 제외). 시작한 기기만 */
     @GetMapping("/{examId}/questions")
     public ExamQuestionsResult questions(@PathVariable UUID examId, HttpServletRequest httpRequest) {
-        return examApplicationService.getQuestions(examId, DeviceCookie.find(httpRequest));
+        return examUseCase.getQuestions(examId, DeviceCookie.find(httpRequest));
     }
 
     /**
@@ -39,7 +39,7 @@ public class ExamApiController {
                                    HttpServletRequest httpRequest) {
         SubmitExamCommand command = new SubmitExamCommand(examId, DeviceCookie.find(httpRequest), request.answers());
         try {
-            return examApplicationService.submit(command);
+            return examUseCase.submit(command);
         } catch (OptimisticLockingFailureException e) {
             throw new CustomException(ErrorCode.EXAM_NOT_IN_PROGRESS);
         }
@@ -48,13 +48,13 @@ public class ExamApiController {
     /** 결과 (완료된 시험만) */
     @GetMapping("/{examId}/result")
     public ExamResult result(@PathVariable UUID examId) {
-        return examApplicationService.getResult(examId);
+        return examUseCase.getResult(examId);
     }
 
     /** 중도 이탈 시 중단 (navigator.sendBeacon 용, 본문 없음). 시작한 기기만 (다른 기기면 무시) */
     @PostMapping("/{examId}/expire")
     public ResponseEntity<Void> abort(@PathVariable UUID examId, HttpServletRequest httpRequest) {
-        examApplicationService.abortExam(examId, DeviceCookie.find(httpRequest));
+        examUseCase.abortExam(examId, DeviceCookie.find(httpRequest));
         return ResponseEntity.noContent().build();
     }
 

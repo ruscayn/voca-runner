@@ -2,7 +2,7 @@ package org.ruscayn.vocarunner.exam.adapter.in.web;
 
 import org.ruscayn.vocarunner.exam.application.port.in.LevelGroupSummary;
 import org.ruscayn.vocarunner.exam.application.port.in.LevelSummary;
-import org.ruscayn.vocarunner.exam.application.service.LevelApplicationService;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -24,7 +24,7 @@ public class MainController {
     /** 결과 보관 시간이 지난 결과 주소로 들어온 경우 (ExamController) */
     public static final String NOTICE_RESULT_EXPIRED = "result-expired";
 
-    private final LevelApplicationService levelApplicationService;
+    private final ExamUseCase examUseCase;
 
     /**
      * @param notice 세션 없이 안내할 때 쓰는 코드. 정해진 코드만 문구로 바꾸고 그 밖의 값은 무시한다
@@ -40,7 +40,7 @@ public class MainController {
                 model.addAttribute("message", "결과 보관 시간이 지났습니다. 결과는 제출 후 잠시 동안만 볼 수 있어요.");
             }
         }
-        List<LevelGroupSummary> levelGroups = levelApplicationService.getDetailLevelGroups();
+        List<LevelGroupSummary> levelGroups = examUseCase.getDetailLevelGroups();
         // 처음 선택된 레벨(첫 레벨)의 문항 수·허용 시간. 다른 레벨을 고르면 화면 스크립트가 바꾼다
         LevelSummary first = levelGroups.getFirst().levels().getFirst();
         model.addAttribute("levelGroups", levelGroups);

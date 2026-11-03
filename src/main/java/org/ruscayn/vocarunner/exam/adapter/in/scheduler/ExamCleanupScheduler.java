@@ -1,35 +1,22 @@
 package org.ruscayn.vocarunner.exam.adapter.in.scheduler;
 
-import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
-import org.ruscayn.vocarunner.exam.application.service.ExamProperties;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
-
 /**
- * 끝난 시험 정리 (test_session 삭제).
- * 마감이 지난 진행 중 시험, 시작 후 문제를 받아 가지 않은 시험, 보관 시간이 지난 결과, 만료된 시험을 지운다.
+ * 끝난 시험 정리 (test_session 삭제). 정리 주기마다 시험 기능의 정리(ExamUseCase.cleanup)를 부른다.
  */
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ExamCleanupScheduler {
 
-    private final ExamPersistencePort examPersistencePort;
-    private final ExamProperties examProperties;
+    private final ExamUseCase examUseCase;
 
     @Scheduled(fixedDelayString = "${voca-runner.test.cleanup-interval:1m}")
     public void cleanup() {
-        Instant now = Instant.now();
-        int removed = examPersistencePort.deleteDisposable(
-                now, examProperties.resultRetention(), examProperties.undeliveredTimeout());
-        if (removed > 0) {
-            log.info("시험 정리: {}개 삭제, 남은 {}개 (진행 중 {}개)",
-                    removed, examPersistencePort.count(), examPersistencePort.countInProgress(now));
-        }
+        examUseCase.cleanup();
     }
 
 }

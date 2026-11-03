@@ -4,6 +4,9 @@ import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResult;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
+import org.ruscayn.vocarunner.exam.application.port.in.LevelGroupSummary;
+import org.ruscayn.vocarunner.exam.application.port.in.LevelSummary;
 import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamResult;
@@ -27,21 +30,24 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * 시험 시작·문제·제출·결과.
+ * 시험 기능 서비스 (들어오는 포트 ExamUseCase 구현) : 시험 시작·문제·제출·결과·중단·정리, 메인 화면의 레벨 요약.
  * 시험(정답지·고른 보기·결과)은 DB(test_session)에 저장해 재시작·배포 때도 이어진다 (U21).
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ExamApplicationService {
+public class ExamService implements ExamUseCase {
 
     private final ExamPersistencePort examPersistencePort;
     private final QuestionGenerator questionGenerator = new QuestionGenerator();
@@ -62,6 +68,7 @@ public class ExamApplicationService {
      *
      * @param command 시험 레벨과 시작한 응시자 (기기·IP)
      */
+    @Override
     public UUID start(StartExamCommand command) {
         Level level = command.level();
         Examinee examinee = command.examinee();
@@ -111,6 +118,7 @@ public class ExamApplicationService {
     }
 
     /** 시험 화면용 문제 (진행 중인 시험만, 정답 번호 제외). 시작한 기기만 */
+    @Override
     @Transactional
     public ExamQuestionsResult getQuestions(UUID examId, String deviceId) {
         Exam exam = findStartedBy(examId, deviceId);
@@ -144,6 +152,7 @@ public class ExamApplicationService {
      * 제출 및 채점. 마감 시각이 지났으면 만료로 바꾼 뒤 지움. 시작한 기기만.
      * 거절(예외)해도 마감 초과 삭제는 반영해야 하므로 업무 예외로는 되돌리지 않는다 (채점 전 검사에서 거절하면 바뀐 내용 없음)
      */
+    @Override
     @Transactional(noRollbackFor = CustomException.class)
     public SubmitExamResult submit(SubmitExamCommand command) {
         UUID examId = command.examId();
@@ -181,6 +190,7 @@ public class ExamApplicationService {
     }
 
     /** 결과 (완료된 시험만). 없거나(보관 시간 경과 포함) 완료 전이면 empty */
+    @Override
     @Transactional(readOnly = true)
     public Optional<ExamResult> findResult(UUID examId) {
         return examPersistencePort.findById(examId)
@@ -189,6 +199,7 @@ public class ExamApplicationService {
     }
 
     /** 제출을 마쳐 결과를 보관 중인지 (보관 시간이 지나 정리됐으면 false) */
+    @Override
     @Transactional(readOnly = true)
     public boolean hasResult(UUID examId) {
         return examPersistencePort.findById(examId)
@@ -197,6 +208,7 @@ public class ExamApplicationService {
     }
 
     /** 결과 (API) */
+    @Override
     @Transactional(readOnly = true)
     public ExamResult getResult(UUID examId) {
         Exam exam = find(examId);
@@ -207,6 +219,7 @@ public class ExamApplicationService {
     }
 
     /** 진행 중이면 중단(바로 지움). 없거나 이미 끝났거나 다른 기기에서 시작한 시험은 무시 */
+    @Override
     @Transactional
     public void abortExam(UUID examId, String deviceId) {
         Instant now = Instant.now();
@@ -219,12 +232,56 @@ public class ExamApplicationService {
     }
 
     /** 진행 중(마감 전)인 시험인지 */
+    @Override
     @Transactional(readOnly = true)
     public boolean isInProgress(UUID examId) {
         Instant now = Instant.now();
         return examPersistencePort.findById(examId)
                 .map(exam -> exam.isInProgress(now))
                 .orElse(false);
+    }
+
+    /**
+     * 폐기 대상 시험 정리 : 마감이 지난 진행 중 시험, 시작 후 문제를 받아 가지 않은 시험, 보관 시간이 지난 결과,
+     * 만료된 시험을 지운다 (정리 작업이 주기마다 부름)
+     */
+    @Override
+    public int cleanup() {
+        Instant now = Instant.now();
+        int removed = examPersistencePort.deleteDisposable(
+                now, examProperties.resultRetention(), examProperties.undeliveredTimeout());
+        if (removed > 0) {
+            log.info("시험 정리: {}개 삭제, 남은 {}개 (진행 중 {}개)",
+                    removed, examPersistencePort.count(), examPersistencePort.countInProgress(now));
+        }
+        return removed;
+    }
+
+    /** 세부 레벨(A1~C2) 목록과 레벨별 단어 수·문항 수·허용 시간 (단어 출제 목록 사용) */
+    private List<LevelSummary> getDetailLevels() {
+        return Arrays.stream(Level.values())
+                .filter(level -> !level.isGroup())
+                .map(this::toSummary)
+                .toList();
+    }
+
+    private LevelSummary toSummary(Level level) {
+        int wordCount = wordCatalog.countByLevel(level);
+        int questionCount = QuestionGenerator.questionCount(wordCount, examProperties.maxQuestionCount());
+        long allowedMinutes = Exam.allowedTime(
+                questionCount, Exam.DEFAULT_TIME_PER_QUESTION_SEC, examProperties.grace()).toMinutes();
+        return new LevelSummary(level, wordCount, questionCount, allowedMinutes);
+    }
+
+    /** 세부 레벨을 CEFR 묶음별로 나눈 목록 (선언 순서 유지) */
+    @Override
+    public List<LevelGroupSummary> getDetailLevelGroups() {
+        Map<String, List<LevelSummary>> byGroup = getDetailLevels().stream()
+                .collect(Collectors.groupingBy(summary -> summary.level().groupName(),
+                        LinkedHashMap::new, Collectors.toList()));
+        return byGroup.entrySet().stream()
+                .map(entry -> new LevelGroupSummary(entry.getKey(), entry.getValue()))
+                .toList();
     }
 
     private ExamResult toResult(Exam exam) {
@@ -295,7 +352,7 @@ public class ExamApplicationService {
 
     private Exam find(UUID examId) {
         return examPersistencePort.findById(examId)
-                .orElseThrow(ExamApplicationService::notFound);
+                .orElseThrow(ExamService::notFound);
     }
 
     private static CustomException notFound() {

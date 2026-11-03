@@ -35,14 +35,14 @@ import static org.ruscayn.vocarunner.support.TestWords.questions;
  * 저장소는 가짜, 트랜잭션은 커밋만 흉내 낸다 (DB 없음). 서비스의 @Transactional 대신 TransactionTemplate 으로 감싸 부른다
  */
 @ExtendWith(OutputCaptureExtension.class)
-@DisplayName("ExamApplicationService : 제출 로그")
-class ExamApplicationServiceTest {
+@DisplayName("ExamService : 제출 로그")
+class ExamServiceTest {
 
     private static final String DEVICE_ID = "22222222-2222-2222-2222-222222222222";
 
     private final ExamPersistencePort repository = mock(ExamPersistencePort.class);
     // 제출에는 저장소만 쓴다
-    private final ExamApplicationService service = new ExamApplicationService(repository, null, null, null);
+    private final ExamService service = new ExamService(repository, null, null, null);
 
     private final Exam exam = Exam.start(Level.A1, Direction.EN_KO, 5, questions(2),
             new Examinee(DEVICE_ID, "10.0.0.1"), Instant.now(), Duration.ofMinutes(3));

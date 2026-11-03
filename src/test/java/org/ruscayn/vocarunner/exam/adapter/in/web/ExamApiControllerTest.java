@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
-import org.ruscayn.vocarunner.exam.application.service.ExamApplicationService;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.system.CapturedOutput;
@@ -48,7 +48,7 @@ class ExamApiControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private ExamApplicationService examApplicationService;
+    private ExamUseCase examUseCase;
 
     private ResultActions submit(MediaType contentType, String body) throws Exception {
         return mockMvc.perform(post(SUBMIT_URL).cookie(DEVICE_COOKIE).contentType(contentType).content(body));
@@ -66,7 +66,7 @@ class ExamApiControllerTest {
                     """)
                     .andExpect(status().isOk());
 
-            verify(examApplicationService).submit(argThat(command ->
+            verify(examUseCase).submit(argThat(command ->
                     command.examId().equals(EXAM_ID) && DEVICE_ID.equals(command.deviceId())));
         }
 
@@ -77,7 +77,7 @@ class ExamApiControllerTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("COMMON_002"));
 
-            verify(examApplicationService, never()).submit(any());
+            verify(examUseCase, never()).submit(any());
         }
 
         @Test
@@ -94,7 +94,7 @@ class ExamApiControllerTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("COMMON_002"));
 
-            verify(examApplicationService, never()).submit(any());
+            verify(examUseCase, never()).submit(any());
         }
 
         @Test
@@ -106,13 +106,13 @@ class ExamApiControllerTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("COMMON_002"));
 
-            verify(examApplicationService, never()).submit(any());
+            verify(examUseCase, never()).submit(any());
         }
 
         @Test
         @DisplayName("동시에 두 번 제출해 늦은 쪽이 저장에서 충돌하면 500 이 아니라 400 진행 중인 시험이 아님 (U39)")
         void concurrentSubmit() throws Exception {
-            given(examApplicationService.submit(any()))
+            given(examUseCase.submit(any()))
                     .willThrow(new ObjectOptimisticLockingFailureException(Exam.class, EXAM_ID));
 
             submit(MediaType.APPLICATION_JSON, """
@@ -131,7 +131,7 @@ class ExamApiControllerTest {
                     .andExpect(status().isUnsupportedMediaType())
                     .andExpect(jsonPath("$.code").value("COMMON_005"));
 
-            verify(examApplicationService, never()).submit(any());
+            verify(examUseCase, never()).submit(any());
         }
     }
 
@@ -143,7 +143,7 @@ class ExamApiControllerTest {
         @Test
         @DisplayName("업무 오류(거절)는 스택 없이 WARN 한 줄로 남긴다")
         void businessExceptionIsWarnWithoutStack(CapturedOutput output) throws Exception {
-            given(examApplicationService.submit(any()))
+            given(examUseCase.submit(any()))
                     .willThrow(new CustomException(ErrorCode.EXAM_EXPIRED));
 
             submit(MediaType.APPLICATION_JSON, """
