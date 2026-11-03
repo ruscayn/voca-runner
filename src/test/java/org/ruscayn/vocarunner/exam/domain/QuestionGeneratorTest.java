@@ -25,8 +25,9 @@ import static org.ruscayn.vocarunner.support.TestWords.words;
 @DisplayName("QuestionGenerator : 문항 생성 규칙")
 class QuestionGeneratorTest {
 
-    private static QuestionGenerator generator(List<CatalogWord> catalogWords, long seed) {
-        return new QuestionGenerator(new InMemoryWordCatalog(catalogWords), () -> new Random(seed));
+    private static List<Question> generate(List<CatalogWord> catalogWords, long seed, Level level, int maxCount) {
+        return new QuestionGenerator(() -> new Random(seed))
+                .generate(new InMemoryWordCatalog(catalogWords), level, maxCount);
     }
 
     /** 모든 문제에 공통으로 지켜야 하는 규칙 */
@@ -62,7 +63,7 @@ class QuestionGeneratorTest {
         List<CatalogWord> catalog = new ArrayList<>(words(Level.B1, 1, 60));
         catalog.addAll(words(Level.B2, 1001, 60));    // 다른 레벨 단어는 섞이면 안 됨
 
-        List<Question> questions = generator(catalog, seed).generate(Level.B1, 50);
+        List<Question> questions = generate(catalog, seed, Level.B1, 50);
 
         assertThat(questions).hasSize(50);
         assertThat(questions).allMatch(q -> q.answer().level() == Level.B1);
@@ -74,7 +75,7 @@ class QuestionGeneratorTest {
     void usesAllWords() {
         List<CatalogWord> catalog = words(Level.A1, 1, 20);
 
-        List<Question> questions = generator(catalog, 1).generate(Level.A1, 20);
+        List<Question> questions = generate(catalog, 1, Level.A1, 20);
 
         assertThat(questions).extracting(q -> q.answer().wordId())
                 .containsExactlyInAnyOrderElementsOf(catalog.stream().map(CatalogWord::wordId).toList());
@@ -87,7 +88,7 @@ class QuestionGeneratorTest {
         List<CatalogWord> catalog = new ArrayList<>(words(Level.A1, 1, 30));
         catalog.addAll(words(Level.A2, 101, 30));    // 다른 레벨 단어는 섞이면 안 됨
 
-        List<Question> questions = generator(catalog, 1).generate(Level.A1, QuestionGenerator.ALL_WORDS);
+        List<Question> questions = generate(catalog, 1, Level.A1, QuestionGenerator.ALL_WORDS);
 
         assertThat(questions).hasSize(30);
         assertThat(questions).allMatch(q -> q.answer().level() == Level.A1);
@@ -112,7 +113,7 @@ class QuestionGeneratorTest {
             catalog.add(word(id, id, Level.C1, "공통" + (id % 5), "고유" + id));
         }
 
-        List<Question> questions = generator(catalog, seed).generate(Level.C1, 40);
+        List<Question> questions = generate(catalog, seed, Level.C1, 40);
 
         assertQuestionRules(questions);
     }
@@ -132,7 +133,7 @@ class QuestionGeneratorTest {
         }
 
         // 고유 단어 = A1 30 + A2 30 = 60개 (중복 10개는 한 번만)
-        List<Question> questions = generator(catalog, seed).generate(Level.A, 60);
+        List<Question> questions = generate(catalog, seed, Level.A, 60);
 
         assertThat(questions).hasSize(60);
         assertQuestionRules(questions);
@@ -152,7 +153,7 @@ class QuestionGeneratorTest {
             catalog.add(word(100 + wordId, wordId, Level.A2, "A2뜻" + wordId));
         }
 
-        List<Question> questions = generator(catalog, 1).generate(Level.A, 11);
+        List<Question> questions = generate(catalog, 1, Level.A, 11);
 
         assertThat(questions).hasSize(10);
         assertQuestionRules(questions);
@@ -170,7 +171,7 @@ class QuestionGeneratorTest {
             excludedIds.add(id);
         }
 
-        List<Question> questions = generator(catalog, seed).generate(Level.B1, 20);
+        List<Question> questions = generate(catalog, seed, Level.B1, 20);
 
         assertThat(questions).hasSize(20);
         assertQuestionRules(questions);
@@ -193,7 +194,7 @@ class QuestionGeneratorTest {
 
         assertThat(new InMemoryWordCatalog(catalog).countByLevel(Level.A1)).isEqualTo(10);
 
-        List<Question> questions = generator(catalog, 1).generate(Level.A1, 11);
+        List<Question> questions = generate(catalog, 1, Level.A1, 11);
 
         assertThat(questions).hasSize(10);
         assertThat(questions).allMatch(q -> !q.answer().excluded());
@@ -207,7 +208,7 @@ class QuestionGeneratorTest {
             catalog.add(excluded(id, id, Level.A2));
         }
 
-        assertThatThrownBy(() -> generator(catalog, 1).generate(Level.A2, 5))
+        assertThatThrownBy(() -> generate(catalog, 1, Level.A2, 5))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.EXAM_NOT_ENOUGH_WORDS);
@@ -226,7 +227,7 @@ class QuestionGeneratorTest {
         // 정답 후보 = A1 30 + A2 30 + word 900(A2) = 61
         assertThat(new InMemoryWordCatalog(catalog).countByLevel(Level.A)).isEqualTo(61);
 
-        List<Question> questions = generator(catalog, seed).generate(Level.A, 61);
+        List<Question> questions = generate(catalog, seed, Level.A, 61);
 
         assertQuestionRules(questions);
         assertThat(questions).extracting(q -> q.answer().levelWordId())
@@ -256,7 +257,7 @@ class QuestionGeneratorTest {
     void fewerWordsThanCount() {
         List<CatalogWord> catalog = words(Level.A1, 1, 10);
 
-        List<Question> questions = generator(catalog, 1).generate(Level.A1, 10000);
+        List<Question> questions = generate(catalog, 1, Level.A1, 10000);
 
         assertThat(questions).extracting(q -> q.answer().wordId())
                 .containsExactlyInAnyOrderElementsOf(catalog.stream().map(CatalogWord::wordId).toList());
@@ -271,7 +272,7 @@ class QuestionGeneratorTest {
             catalog.add(word(id, id, Level.B2, "같은 뜻"));
         }
 
-        assertThatThrownBy(() -> generator(catalog, 1).generate(Level.B2, 1))
+        assertThatThrownBy(() -> generate(catalog, 1, Level.B2, 1))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.EXAM_NOT_ENOUGH_WORDS);
@@ -282,8 +283,8 @@ class QuestionGeneratorTest {
     void sameSeedSameResult() {
         List<CatalogWord> catalog = words(Level.B1, 1, 40);
 
-        List<Question> first = generator(catalog, 42).generate(Level.B1, 30);
-        List<Question> second = generator(catalog, 42).generate(Level.B1, 30);
+        List<Question> first = generate(catalog, 42, Level.B1, 30);
+        List<Question> second = generate(catalog, 42, Level.B1, 30);
 
         assertThat(first).isEqualTo(second);
     }
@@ -304,7 +305,7 @@ class QuestionGeneratorTest {
         InMemoryWordCatalog wordCatalog = new InMemoryWordCatalog(catalog, groups);
 
         List<Question> questions =
-                new QuestionGenerator(wordCatalog, () -> new Random(seed)).generate(Level.A1, 60);
+                new QuestionGenerator(() -> new Random(seed)).generate(wordCatalog, Level.A1, 60);
 
         assertThat(questions).hasSize(60);
         assertQuestionRules(questions);
@@ -332,7 +333,7 @@ class QuestionGeneratorTest {
         for (long seed = 1; seed <= 30; seed++) {
             long s = seed;
             List<Question> questions =
-                    new QuestionGenerator(wordCatalog, () -> new Random(s)).generate(Level.A1, 6);
+                    new QuestionGenerator(() -> new Random(s)).generate(wordCatalog, Level.A1, 6);
 
             Question teacher = questions.stream()
                     .filter(q -> q.answer().wordId() == 2L).findFirst().orElseThrow();
@@ -350,7 +351,7 @@ class QuestionGeneratorTest {
         List<CatalogWord> catalog = words(Level.A1, 1, 4);
         InMemoryWordCatalog wordCatalog = new InMemoryWordCatalog(catalog, List.of(List.of(1L, 2L)));
 
-        assertThatThrownBy(() -> new QuestionGenerator(wordCatalog, () -> new Random(1)).generate(Level.A1, 4))
+        assertThatThrownBy(() -> new QuestionGenerator(() -> new Random(1)).generate(wordCatalog, Level.A1, 4))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.EXAM_NOT_ENOUGH_WORDS);
@@ -376,7 +377,7 @@ class QuestionGeneratorTest {
     void answerPositionSpread() {
         List<CatalogWord> catalog = words(Level.B1, 1, 400);
 
-        List<Question> questions = generator(catalog, 42).generate(Level.B1, 400);
+        List<Question> questions = generate(catalog, 42, Level.B1, 400);
 
         int[] counts = new int[Question.OPTION_COUNT + 1];
         questions.forEach(q -> counts[q.answerOptionNo()]++);

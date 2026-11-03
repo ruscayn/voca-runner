@@ -44,7 +44,7 @@ import java.util.stream.IntStream;
 public class ExamApplicationService {
 
     private final ExamPersistencePort examPersistencePort;
-    private final QuestionGenerator questionGenerator;
+    private final QuestionGenerator questionGenerator = new QuestionGenerator();
     private final WordCatalog wordCatalog;
     private final ExamProperties examProperties;
     private final TransactionTemplate transactionTemplate;
@@ -69,7 +69,7 @@ public class ExamApplicationService {
         Instant now = Instant.now();
         checkCapacity(examinee, now);
 
-        List<Question> questions = questionGenerator.generate(level, examProperties.maxQuestionCount());
+        List<Question> questions = questionGenerator.generate(wordCatalog, level, examProperties.maxQuestionCount());
         Exam exam = Exam.start(level, Direction.EN_KO, Exam.DEFAULT_TIME_PER_QUESTION_SEC,
                 questions, examinee, now, examProperties.grace());
         transactionTemplate.executeWithoutResult(tx -> {
@@ -120,6 +120,7 @@ public class ExamApplicationService {
         }
         long remainingSec = Math.max(0, Duration.between(now, exam.getDeadline()).toSeconds());
         exam.markQuestionsDelivered();
+        examPersistencePort.save(exam);
 
         Direction direction = exam.getDirection();
         List<ExamQuestionsResult.QuestionItem> questions = new ArrayList<>(exam.getQuestionCount());
@@ -169,6 +170,7 @@ public class ExamApplicationService {
             }
             throw e;
         }
+        examPersistencePort.save(exam);
         // 같은 시험을 동시에 두 번 제출하면 늦은 쪽은 커밋할 때 저장 충돌(@Version)로 되돌려지므로
         // 저장이 끝난 뒤에 남긴다. 실제로 채점·저장된 제출만 로그에 한 줄 (U39)
         afterCommit(() -> log.info("시험 제출 exam={} 맞힌 수={}/{} 점수={}",

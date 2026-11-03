@@ -2,14 +2,9 @@ package org.ruscayn.vocarunner.exam.domain;
 
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
-import org.ruscayn.vocarunner.common.adapter.out.persistence.BaseEntity;
 import org.ruscayn.vocarunner.word.domain.Level;
-import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -19,24 +14,20 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 시험 1회 (정답지·고른 보기·채점 결과). test_session 1행.
- * 재시작·배포 때 진행 중 시험이 사라지지 않도록 DB 에 저장한다 (U21).
+ * 시험 1회 (정답지·고른 보기·채점 결과).
+ * 재시작·배포 때 진행 중 시험이 사라지지 않도록 DB 에 저장한다 (U21, 저장은 영속성 어댑터가 함).
  *
- * <p>문항을 행으로 나누지 않고 배열로 1행에 보관한다.
+ * <p>문항은 배열로 보관한다.
  * <ul>
  *   <li>optionIds : 보기 level_word_id. 문항 n(1부터)의 보기 i(1~4) = optionIds[(n-1)*4 + (i-1)]</li>
  *   <li>answerOptionNo : 정답 보기 번호 1~4</li>
  *   <li>selectedOptionNo : 고른 보기 번호 1~4, 0 = 미입력(시간 초과)</li>
  * </ul>
- * 500문항 기준 약 10KB.
  *
  * <p>동시성: 같은 시험을 동시에 두 번 제출하면 version(낙관적 잠금)으로 하나만 반영된다.
  */
 @Getter
-@Entity
-@Table(name = "test_session")
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Exam extends BaseEntity {
+public class Exam {
 
     public static final int DEFAULT_TIME_PER_QUESTION_SEC = 5;
     public static final int MIN_TIME_PER_QUESTION_SEC = 5;
@@ -44,80 +35,77 @@ public class Exam extends BaseEntity {
 
     private static final int OPTION_COUNT = Question.OPTION_COUNT;
 
-    @Id
-    @Column(name = "test_session_id")
-    private UUID id;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "level_code", nullable = false, length = 2)
-    private Level level;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "direction", nullable = false, length = 10)
-    private Direction direction;
-
-    @Column(name = "question_count", nullable = false)
-    private int questionCount;
-
-    @Column(name = "time_limit_sec", nullable = false)
-    private int timePerQuestionSec;
+    private final UUID id;
+    private final Level level;
+    private final Direction direction;
+    private final int questionCount;
+    private final int timePerQuestionSec;
 
     /** 시작한 기기 (쿠키). 기기당 진행 중 시험 1개 */
     @Getter(AccessLevel.NONE)
-    @Column(name = "device_id", nullable = false, length = 36)
-    private String deviceId;
+    private final String deviceId;
 
     /** 시작한 IP. IP당 최대 진행 중 확인용 */
     @Getter(AccessLevel.NONE)
-    @Column(name = "client_ip", nullable = false, length = 45)
-    private String clientIp;
+    private final String clientIp;
 
-    @Column(name = "started_at", nullable = false)
-    private Instant startedAt;
+    private final Instant startedAt;
 
     /** 마감 = 시작 + allowedTime (분 단위 올림). 이 시각이 지나면 만료 */
-    @Column(name = "deadline", nullable = false)
-    private Instant deadline;
+    private final Instant deadline;
 
     @Getter(AccessLevel.NONE)
-    @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(name = "option_ids", nullable = false)
-    private int[] optionIds;
+    private final int[] optionIds;
 
     @Getter(AccessLevel.NONE)
-    @Column(name = "correct_option_no", nullable = false)
-    private byte[] answerOptionNo;
+    private final byte[] answerOptionNo;
 
     @Getter(AccessLevel.NONE)
-    @Column(name = "selected_option_no", nullable = false)
-    private byte[] selectedOptionNo;
+    private final byte[] selectedOptionNo;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 12)
     private ExamStatus status;
 
     /** 시험 화면이 문제를 한 번이라도 받아 갔는지. 못 받아 간 시험(시작 직후 연결 끊김 등)을 일찍 정리하는 데 쓴다 */
-    @Column(name = "questions_delivered", nullable = false)
     private boolean questionsDelivered;
 
-    @Column(name = "correct_count")
     private Integer correctCount;
 
     /** 0~100 (버림) */
-    @Column(name = "score")
     private Integer score;
 
-    @Column(name = "submitted_at")
     private Instant submittedAt;
 
-    /** 낙관적 잠금. null 이면 새 행(INSERT) */
-    @Getter(AccessLevel.NONE)
-    @Version
-    @Column(name = "version", nullable = false)
-    private Integer version;
+    /** 낙관적 잠금 번호. DB 가 저장할 때마다 올린다. null 이면 아직 저장 전 */
+    private final Integer version;
 
-    private Exam(Level level, Direction direction, int timePerQuestionSec, List<Question> questions,
-                        Examinee examinee, Instant now, Duration grace) {
+    private Exam(UUID id, Level level, Direction direction, int timePerQuestionSec, Examinee examinee,
+                 Instant startedAt, Instant deadline, int[] optionIds, byte[] answerOptionNo, byte[] selectedOptionNo,
+                 ExamStatus status, boolean questionsDelivered, Integer correctCount, Integer score,
+                 Instant submittedAt, Integer version) {
+        this.id = id;
+        this.level = level;
+        this.direction = direction;
+        this.questionCount = answerOptionNo.length;
+        this.timePerQuestionSec = timePerQuestionSec;
+        this.deviceId = examinee.deviceId();
+        this.clientIp = examinee.clientIp();
+        this.startedAt = startedAt;
+        this.deadline = deadline;
+        this.optionIds = optionIds;
+        this.answerOptionNo = answerOptionNo;
+        this.selectedOptionNo = selectedOptionNo;
+        this.status = status;
+        this.questionsDelivered = questionsDelivered;
+        this.correctCount = correctCount;
+        this.score = score;
+        this.submittedAt = submittedAt;
+        this.version = version;
+    }
+
+    /** 새 시험 시작. 아이디를 새로 만들고, 문항을 배열로 옮긴다 */
+    public static Exam start(Level level, Direction direction, int timePerQuestionSec,
+                             List<Question> questions, Examinee examinee,
+                             Instant now, Duration grace) {
         if (questions.isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "문제 수는 1 이상이어야 합니다.");
         }
@@ -126,19 +114,8 @@ public class Exam extends BaseEntity {
                     "문항당 시간은 " + MIN_TIME_PER_QUESTION_SEC + "~" + MAX_TIME_PER_QUESTION_SEC + "초여야 합니다.");
         }
         int count = questions.size();
-        this.id = UUID.randomUUID();
-        this.level = level;
-        this.direction = direction;
-        this.questionCount = count;
-        this.timePerQuestionSec = timePerQuestionSec;
-        this.deviceId = examinee.deviceId();
-        this.clientIp = examinee.clientIp();
-        this.startedAt = now;
-        this.deadline = now.plus(allowedTime(count, timePerQuestionSec, grace));
-
-        this.optionIds = new int[count * OPTION_COUNT];
-        this.answerOptionNo = new byte[count];
-        this.selectedOptionNo = new byte[count];
+        int[] optionIds = new int[count * OPTION_COUNT];
+        byte[] answerOptionNo = new byte[count];
         for (int q = 0; q < count; q++) {
             Question question = questions.get(q);
             for (int i = 0; i < OPTION_COUNT; i++) {
@@ -146,13 +123,25 @@ public class Exam extends BaseEntity {
             }
             answerOptionNo[q] = (byte) question.answerOptionNo();
         }
-        this.status = ExamStatus.IN_PROGRESS;
+        return new Exam(UUID.randomUUID(), level, direction, timePerQuestionSec, examinee,
+                now, now.plus(allowedTime(count, timePerQuestionSec, grace)),
+                optionIds, answerOptionNo, new byte[count],
+                ExamStatus.IN_PROGRESS, false, null, null, null, null);
     }
 
-    public static Exam start(Level level, Direction direction, int timePerQuestionSec,
-                                    List<Question> questions, Examinee examinee,
-                                    Instant now, Duration grace) {
-        return new Exam(level, direction, timePerQuestionSec, questions, examinee, now, grace);
+    /** 저장된 시험을 그 상태 그대로 되살린다 (영속성 어댑터가 DB 에서 읽을 때) */
+    public static Exam withId(UUID id, Level level, Direction direction, int timePerQuestionSec, Examinee examinee,
+                              Instant startedAt, Instant deadline,
+                              int[] optionIds, byte[] answerOptionNo, byte[] selectedOptionNo,
+                              ExamStatus status, boolean questionsDelivered, Integer correctCount, Integer score,
+                              Instant submittedAt, Integer version) {
+        int count = answerOptionNo.length;
+        if (optionIds.length != count * OPTION_COUNT || selectedOptionNo.length != count) {
+            throw new IllegalArgumentException("문항 배열 길이가 맞지 않습니다: exam=" + id);
+        }
+        return new Exam(id, level, direction, timePerQuestionSec, examinee, startedAt, deadline,
+                optionIds.clone(), answerOptionNo.clone(), selectedOptionNo.clone(),
+                status, questionsDelivered, correctCount, score, submittedAt, version);
     }
 
     /**
@@ -248,6 +237,20 @@ public class Exam extends BaseEntity {
             case COMPLETED -> now.isAfter(submittedAt.plus(resultRetention));
             case EXPIRED -> true;
         };
+    }
+
+    // ---------- 저장용 배열 (영속성 어댑터가 옮겨 담을 때. 복사본) ----------
+
+    public int[] getOptionIds() {
+        return optionIds.clone();
+    }
+
+    public byte[] getAnswerOptionNo() {
+        return answerOptionNo.clone();
+    }
+
+    public byte[] getSelectedOptionNo() {
+        return selectedOptionNo.clone();
     }
 
     // ---------- 문항 조회 (no: 1부터) ----------

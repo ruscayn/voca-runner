@@ -5,8 +5,6 @@ import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -27,7 +25,6 @@ import java.util.random.RandomGenerator;
  *       (예: sir 문제에 teacher 를 오답으로 내지 않음. 오답끼리도 마찬가지)</li>
  * </ul>
  */
-@Service
 public class QuestionGenerator {
 
     /** 최대 문제 수에 이 값을 주면 레벨 단어 전체를 출제 (개발·베타 테스트용) */
@@ -37,28 +34,26 @@ public class QuestionGenerator {
     /** 무작위 뽑기 시도 횟수. 초과하면 전체를 섞어 순서대로 검사 */
     private static final int RANDOM_TRY_LIMIT = 200;
 
-    private final WordCatalog wordCatalog;
     /** 싱글톤 빈에서 여러 스레드가 쓰므로 호출마다 스레드 전용 난수를 사용 */
     private final Supplier<RandomGenerator> randomSupplier;
 
-    @Autowired
-    public QuestionGenerator(WordCatalog wordCatalog) {
-        this(wordCatalog, ThreadLocalRandom::current);
+    public QuestionGenerator() {
+        this(ThreadLocalRandom::current);
     }
 
     /** 테스트에서 시드 고정용 */
-    public QuestionGenerator(WordCatalog wordCatalog, Supplier<RandomGenerator> randomSupplier) {
-        this.wordCatalog = wordCatalog;
+    public QuestionGenerator(Supplier<RandomGenerator> randomSupplier) {
         this.randomSupplier = randomSupplier;
     }
 
     /**
      * 문제를 생성한다. 정답 후보가 maxCount 보다 적으면 그 레벨 단어 전체를 출제한다.
      *
+     * @param wordCatalog 단어 출제 목록
      * @param level    사용자가 고른 레벨 (세부 또는 묶음)
      * @param maxCount 최대 문제 수 (설정값). {@link #ALL_WORDS}(0)이면 레벨 단어 전체
      */
-    public List<Question> generate(Level level, int maxCount) {
+    public List<Question> generate(WordCatalog wordCatalog, Level level, int maxCount) {
         List<CatalogWord> answerPool = wordCatalog.findAnswerPool(level);
         int count = questionCount(answerPool.size(), maxCount);
         if (count == 0) {
@@ -78,7 +73,7 @@ public class QuestionGenerator {
         List<Question> result = new ArrayList<>(count);
         for (CatalogWord answer : answers.subList(0, count)) {
             List<CatalogWord> sameLevel = optionPoolByLevel.getOrDefault(answer.level(), List.of());
-            result.add(new Question(answer, pickOptions(answer, sameLevel, random)));
+            result.add(new Question(answer, pickOptions(wordCatalog, answer, sameLevel, random)));
         }
         return result;
     }
@@ -95,7 +90,8 @@ public class QuestionGenerator {
     }
 
     /** 정답 + 오답 3개를 섞어서 반환 */
-    private List<CatalogWord> pickOptions(CatalogWord answer, List<CatalogWord> sameLevel, RandomGenerator random) {
+    private List<CatalogWord> pickOptions(WordCatalog wordCatalog, CatalogWord answer, List<CatalogWord> sameLevel,
+                                          RandomGenerator random) {
         List<CatalogWord> options = new ArrayList<>(Question.OPTION_COUNT);
         options.add(answer);
         // 이미 고른 단어 + 그 단어들과 헷갈리는 단어 → 보기로 낼 수 없는 word_id
@@ -106,7 +102,7 @@ public class QuestionGenerator {
 
         // 1차: 무작위로 뽑아 조건 검사
         for (int i = 0; !sameLevel.isEmpty() && i < RANDOM_TRY_LIMIT && options.size() < Question.OPTION_COUNT; i++) {
-            tryAdd(sameLevel.get(random.nextInt(sameLevel.size())), options, blockedWordIds, usedMeanings);
+            tryAdd(wordCatalog, sameLevel.get(random.nextInt(sameLevel.size())), options, blockedWordIds, usedMeanings);
         }
         // 2차: 전체를 섞어 순서대로 검사
         if (options.size() < Question.OPTION_COUNT) {
@@ -116,7 +112,7 @@ public class QuestionGenerator {
                 if (options.size() >= Question.OPTION_COUNT) {
                     break;
                 }
-                tryAdd(candidate, options, blockedWordIds, usedMeanings);
+                tryAdd(wordCatalog, candidate, options, blockedWordIds, usedMeanings);
             }
         }
         if (options.size() < Question.OPTION_COUNT) {
@@ -132,7 +128,7 @@ public class QuestionGenerator {
      * 조건을 통과하면 보기에 추가한다.
      * 탈락: 이미 고른 단어 / 고른 단어와 헷갈리는 단어(묶음) / 고른 보기와 보기 뜻이 하나라도 같은 단어
      */
-    private void tryAdd(CatalogWord candidate, List<CatalogWord> options,
+    private void tryAdd(WordCatalog wordCatalog, CatalogWord candidate, List<CatalogWord> options,
                         Set<Long> blockedWordIds, Set<String> usedMeanings) {
         if (blockedWordIds.contains(candidate.wordId())) {
             return;

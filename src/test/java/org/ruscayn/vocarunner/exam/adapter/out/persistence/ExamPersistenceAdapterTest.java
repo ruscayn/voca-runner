@@ -109,7 +109,8 @@ class ExamPersistenceAdapterTest {
             assertThat(loaded.getStartedAt()).isEqualTo(NOW);
             assertThat(loaded.getDeadline()).isEqualTo(exam.getDeadline());
             assertThat(loaded.getExaminee()).isEqualTo(new Examinee("device-1", "10.0.0.1"));
-            assertThat(loaded.getCreatedAt()).isNotNull();
+            assertThat(jdbcTemplate.queryForObject("select created_at is not null from test_session"
+                    + " where test_session_id = ?", Boolean.class, exam.getId())).isTrue();
             for (int no = 1; no <= 4; no++) {
                 assertThat(loaded.optionLevelWordIds(no)).isEqualTo(exam.optionLevelWordIds(no));
                 assertThat(loaded.answerLevelWordId(no)).isEqualTo(exam.answerLevelWordId(no));
@@ -242,7 +243,7 @@ class ExamPersistenceAdapterTest {
         int deleted = repository.deleteDisposable(now, RETENTION, UNDELIVERED);
 
         assertThat(deleted).isEqualTo(4);
-        assertThat(springDataRepository.findAll()).extracting(Exam::getId)
+        assertThat(springDataRepository.findAll()).extracting(ExamJpaEntity::getId)
                 .containsExactlyInAnyOrder(delivered.getId(), justStarted.getId(), recentResult.getId());
         // 화면·서비스가 쓰는 판정과 DB 삭제 조건이 어긋나지 않는지
         List<UUID> disposable = all.stream()

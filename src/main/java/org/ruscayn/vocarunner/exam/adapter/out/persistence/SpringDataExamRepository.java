@@ -1,6 +1,5 @@
 package org.ruscayn.vocarunner.exam.adapter.out.persistence;
 
-import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.ExamStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -12,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 /** test_session Spring Data 저장소. 나가는 포트(ExamPersistencePort)를 구현한 ExamPersistenceAdapter 에서만 쓴다 */
-public interface SpringDataExamRepository extends JpaRepository<Exam, UUID> {
+public interface SpringDataExamRepository extends JpaRepository<ExamJpaEntity, UUID> {
 
     /** 시험 시작 잠금 키 (pg_advisory_xact_lock). 다른 용도의 잠금과 겹치지 않는 임의의 값 */
     long START_LOCK_KEY = 7_726_001L;
@@ -22,27 +21,27 @@ public interface SpringDataExamRepository extends JpaRepository<Exam, UUID> {
     Integer advisoryLock(@Param("key") long key);
 
     @Query("""
-            select count(s) from Exam s
+            select count(s) from ExamJpaEntity s
              where s.status = :status and s.deadline >= :now
             """)
     long countActive(@Param("status") ExamStatus status, @Param("now") Instant now);
 
     @Query("""
-            select s from Exam s
+            select s from ExamJpaEntity s
              where s.status = :status and s.deadline >= :now and s.deviceId = :deviceId
             """)
-    List<Exam> findActiveByDevice(@Param("status") ExamStatus status, @Param("now") Instant now,
-                                         @Param("deviceId") String deviceId);
+    List<ExamJpaEntity> findActiveByDevice(@Param("status") ExamStatus status, @Param("now") Instant now,
+            @Param("deviceId") String deviceId);
 
     @Query("""
-            select count(s) from Exam s
+            select count(s) from ExamJpaEntity s
              where s.status = :status and s.deadline >= :now and s.clientIp = :ip
             """)
     long countActiveByIp(@Param("status") ExamStatus status, @Param("now") Instant now, @Param("ip") String ip);
 
     @Modifying
     @Query("""
-            delete from Exam s
+            delete from ExamJpaEntity s
              where s.status = org.ruscayn.vocarunner.exam.domain.ExamStatus.EXPIRED
                 or (s.status = org.ruscayn.vocarunner.exam.domain.ExamStatus.IN_PROGRESS
                     and (s.deadline < :now

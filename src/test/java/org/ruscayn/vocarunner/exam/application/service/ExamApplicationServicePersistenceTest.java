@@ -15,7 +15,6 @@ import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
 import org.ruscayn.vocarunner.exam.domain.Direction;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
-import org.ruscayn.vocarunner.exam.domain.QuestionGenerator;
 import org.ruscayn.vocarunner.support.TestWords;
 import org.ruscayn.vocarunner.word.domain.InMemoryWordCatalog;
 import org.ruscayn.vocarunner.word.domain.Level;
@@ -87,11 +86,6 @@ class ExamApplicationServicePersistenceTest {
         @Bean
         WordCatalog wordCatalog() {
             return new InMemoryWordCatalog(TestWords.words(Level.A1, 1, 20));
-        }
-
-        @Bean
-        QuestionGenerator questionGenerator(WordCatalog wordCatalog) {
-            return new QuestionGenerator(wordCatalog);
         }
 
         /** 문항 4개, IP당 최대 진행 중 2개. 나머지는 기본값 */
