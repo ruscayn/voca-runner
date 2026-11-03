@@ -45,10 +45,10 @@ import static org.ruscayn.vocarunner.support.TestWords.incorrectOptionNo;
  */
 @DataJpaTest
 @Testcontainers
-@Import({DbExamRepository.class, JpaConfig.class})
+@Import({ExamPersistenceAdapter.class, JpaConfig.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
-@DisplayName("DbExamRepository : 시험 저장 (PostgreSQL)")
-class DbExamRepositoryTest {
+@DisplayName("ExamPersistenceAdapter : 시험 저장 (PostgreSQL)")
+class ExamPersistenceAdapterTest {
 
     @Container
     @ServiceConnection
@@ -61,10 +61,10 @@ class DbExamRepositoryTest {
     private static final Duration UNDELIVERED = Duration.ofMinutes(5);
 
     @Autowired
-    private DbExamRepository repository;
+    private ExamPersistenceAdapter repository;
 
     @Autowired
-    private JpaExamRepository jpa;
+    private SpringDataExamRepository springDataRepository;
 
     @Autowired
     private PlatformTransactionManager transactionManager;
@@ -74,7 +74,7 @@ class DbExamRepositoryTest {
 
     @AfterEach
     void clear() {
-        jpa.deleteAllInBatch();
+        springDataRepository.deleteAllInBatch();
     }
 
     /** 문항 4개(마감 = 시작 + 4분), 진행 중 */
@@ -242,7 +242,7 @@ class DbExamRepositoryTest {
         int deleted = repository.deleteDisposable(now, RETENTION, UNDELIVERED);
 
         assertThat(deleted).isEqualTo(4);
-        assertThat(jpa.findAll()).extracting(Exam::getId)
+        assertThat(springDataRepository.findAll()).extracting(Exam::getId)
                 .containsExactlyInAnyOrder(delivered.getId(), justStarted.getId(), recentResult.getId());
         // 화면·서비스가 쓰는 판정과 DB 삭제 조건이 어긋나지 않는지
         List<UUID> disposable = all.stream()
@@ -270,7 +270,7 @@ class DbExamRepositoryTest {
     private boolean tryStartLock() {
         return Boolean.TRUE.equals(new TransactionTemplate(transactionManager).execute(status ->
                 jdbcTemplate.queryForObject("select pg_try_advisory_xact_lock(?)", Boolean.class,
-                        JpaExamRepository.START_LOCK_KEY)));
+                        SpringDataExamRepository.START_LOCK_KEY)));
     }
 
 }

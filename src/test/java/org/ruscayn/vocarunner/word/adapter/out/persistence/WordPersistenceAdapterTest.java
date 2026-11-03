@@ -33,9 +33,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 @DataJpaTest
 @Testcontainers
-@Import({CatalogWordLoader.class, JpaConfig.class})
-@DisplayName("CatalogWordLoader : 단어 출제 목록 로딩과 단어 노출 (PostgreSQL)")
-class CatalogWordLoaderTest {
+@Import({WordPersistenceAdapter.class, CatalogWordMapper.class, JpaConfig.class})
+@DisplayName("WordPersistenceAdapter : 단어 출제 목록 로딩과 단어 노출 (PostgreSQL)")
+class WordPersistenceAdapterTest {
 
     @Container
     @ServiceConnection
@@ -43,7 +43,7 @@ class CatalogWordLoaderTest {
             .withInitScript("db/schema.sql");
 
     @Autowired
-    private CatalogWordLoader loader;
+    private WordPersistenceAdapter adapter;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -88,7 +88,8 @@ class CatalogWordLoaderTest {
     }
 
     private Map<Long, CatalogWord> loadById() {
-        return loader.loadAll().stream().collect(Collectors.toMap(CatalogWord::levelWordId, Function.identity()));
+        return adapter.loadCatalogWords().stream()
+                .collect(Collectors.toMap(CatalogWord::levelWordId, Function.identity()));
     }
 
     @Test
@@ -116,7 +117,7 @@ class CatalogWordLoaderTest {
     void noExposure() {
         jdbcTemplate.update("DELETE FROM word_exposure");
 
-        assertThat(loader.loadAll()).hasSize(6).noneMatch(CatalogWord::excluded);
+        assertThat(adapter.loadCatalogWords()).hasSize(6).noneMatch(CatalogWord::excluded);
     }
 
     /** 오류가 나면 PostgreSQL 트랜잭션이 깨지므로 한 테스트에 잘못된 줄 하나씩 */

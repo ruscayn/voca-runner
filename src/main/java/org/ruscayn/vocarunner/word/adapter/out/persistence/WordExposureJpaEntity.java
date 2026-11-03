@@ -24,7 +24,7 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "word_exposure")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class WordExposure extends BaseEntity {
+public class WordExposureJpaEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

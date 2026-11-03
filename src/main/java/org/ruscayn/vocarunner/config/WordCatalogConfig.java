@@ -1,6 +1,6 @@
 package org.ruscayn.vocarunner.config;
 
-import org.ruscayn.vocarunner.word.adapter.out.persistence.CatalogWordLoader;
+import org.ruscayn.vocarunner.word.application.port.out.WordPersistencePort;
 import org.ruscayn.vocarunner.word.domain.InMemoryWordCatalog;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
@@ -20,9 +20,10 @@ import java.util.stream.Collectors;
 public class WordCatalogConfig {
 
     @Bean
-    public WordCatalog wordCatalog(CatalogWordLoader loader) {
+    public WordCatalog wordCatalog(WordPersistencePort wordPersistencePort) {
         long begin = System.currentTimeMillis();
-        InMemoryWordCatalog catalog = new InMemoryWordCatalog(loader.loadAll(), loader.loadConfusableGroups());
+        InMemoryWordCatalog catalog = new InMemoryWordCatalog(wordPersistencePort.loadCatalogWords(),
+                wordPersistencePort.loadConfusableGroups());
 
         String perLevel = Arrays.stream(Level.values())
                 .filter(level -> !level.isGroup())

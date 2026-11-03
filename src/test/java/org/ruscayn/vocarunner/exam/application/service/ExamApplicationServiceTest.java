@@ -4,7 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
-import org.ruscayn.vocarunner.exam.application.port.out.ExamRepository;
+import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
 import org.ruscayn.vocarunner.exam.domain.Direction;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.exam.domain.Exam;
@@ -40,7 +40,7 @@ class ExamApplicationServiceTest {
 
     private static final String DEVICE_ID = "22222222-2222-2222-2222-222222222222";
 
-    private final ExamRepository repository = mock(ExamRepository.class);
+    private final ExamPersistencePort repository = mock(ExamPersistencePort.class);
     // 제출에는 저장소만 쓴다
     private final ExamApplicationService service = new ExamApplicationService(repository, null, null, null, null);
 

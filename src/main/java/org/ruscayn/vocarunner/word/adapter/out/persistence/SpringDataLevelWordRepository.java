@@ -5,15 +5,15 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
-public interface JpaLevelWordRepository extends JpaRepository<LevelWord, Long> {
+public interface SpringDataLevelWordRepository extends JpaRepository<LevelWordJpaEntity, Long> {
 
     /** 단어 출제 목록 로딩용: level_word 전체 (단어, 보기 뜻 함께 조회) */
     @Query("""
-            select lw from LevelWord lw
+            select lw from LevelWordJpaEntity lw
               join fetch lw.word
               join fetch lw.meaning1
               left join fetch lw.meaning2
             """)
-    List<LevelWord> findAllFetch();
+    List<LevelWordJpaEntity> findAllFetch();
 
 }

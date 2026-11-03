@@ -19,7 +19,7 @@ import java.time.Instant;
 @Table(name = "confusable_group_word")
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ConfusableGroupWord {
+public class ConfusableGroupWordJpaEntity {
 
     @EmbeddedId
     private Id id;
@@ -27,12 +27,12 @@ public class ConfusableGroupWord {
     @MapsId("groupId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "confusable_group_id", nullable = false)
-    private ConfusableGroup group;
+    private ConfusableGroupJpaEntity group;
 
     @MapsId("wordId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "word_id", nullable = false)
-    private Word word;
+    private WordJpaEntity word;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)

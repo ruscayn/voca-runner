@@ -14,13 +14,13 @@ import java.util.List;
 /**
  * 레벨 단어 (level_word) = 한 단어의 한 세부 레벨. 한 레벨에 같은 단어는 1번.
  * 시험 보기에는 meaning1, meaning2(없을 수 있음) 를 보여준다.
- * 원본에 있는 레벨마다 레벨 단어가 있고, 시험에 낼지는 단어 노출({@link WordExposure})로 정한다.
+ * 원본에 있는 레벨마다 레벨 단어가 있고, 시험에 낼지는 단어 노출({@link WordExposureJpaEntity})로 정한다.
  */
 @Getter
 @Entity
 @Table(name = "level_word")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class LevelWord extends BaseEntity {
+public class LevelWordJpaEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,19 +34,19 @@ public class LevelWord extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "word_id", nullable = false)
-    private Word word;
+    private WordJpaEntity word;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "meaning1_id", nullable = false)
-    private WordMeaning meaning1;
+    private WordMeaningJpaEntity meaning1;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "meaning2_id")
-    private WordMeaning meaning2;
+    private WordMeaningJpaEntity meaning2;
 
     /** 보기에 보여줄 뜻 목록 (1~2개) */
-    public List<WordMeaning> optionMeanings() {
-        List<WordMeaning> result = new ArrayList<>(2);
+    public List<WordMeaningJpaEntity> optionMeanings() {
+        List<WordMeaningJpaEntity> result = new ArrayList<>(2);
         result.add(meaning1);
         if (meaning2 != null) {
             result.add(meaning2);
@@ -56,7 +56,7 @@ public class LevelWord extends BaseEntity {
 
     /** 보기에 보여줄 한국어 뜻 텍스트 (보기 간 중복 검사용) */
     public List<String> optionMeaningTexts() {
-        return optionMeanings().stream().map(WordMeaning::getMeaningKo).toList();
+        return optionMeanings().stream().map(WordMeaningJpaEntity::getMeaningKo).toList();
     }
 
     public String headword() {

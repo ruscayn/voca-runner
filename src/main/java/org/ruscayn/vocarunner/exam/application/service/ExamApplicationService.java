@@ -7,7 +7,7 @@ import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
 import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamResult;
-import org.ruscayn.vocarunner.exam.application.port.out.ExamRepository;
+import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
 import org.ruscayn.vocarunner.exam.domain.Direction;
 import org.ruscayn.vocarunner.exam.domain.Question;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
@@ -43,7 +43,7 @@ import java.util.stream.IntStream;
 @RequiredArgsConstructor
 public class ExamApplicationService {
 
-    private final ExamRepository examRepository;
+    private final ExamPersistencePort examPersistencePort;
     private final QuestionGenerator questionGenerator;
     private final WordCatalog wordCatalog;
     private final ExamProperties examProperties;
@@ -73,13 +73,13 @@ public class ExamApplicationService {
         Exam exam = Exam.start(level, Direction.EN_KO, Exam.DEFAULT_TIME_PER_QUESTION_SEC,
                 questions, examinee, now, examProperties.grace());
         transactionTemplate.executeWithoutResult(tx -> {
-            examRepository.lockForStart();
+            examPersistencePort.lockForStart();
             List<Exam> replaced = checkCapacity(examinee, Instant.now());
             replaced.forEach(old -> {
-                examRepository.delete(old.getId());
+                examPersistencePort.delete(old.getId());
                 log.info("시험 중단 (같은 기기에서 새 시험 시작) exam={}", old.getId());
             });
-            examRepository.save(exam);
+            examPersistencePort.save(exam);
         });
 
         log.info("시험 시작 exam={} level={} 문제={} 마감={} ({}ms)",
@@ -95,14 +95,14 @@ public class ExamApplicationService {
      * @return 새 시험을 시작하면 중단할 같은 기기의 진행 중 시험
      */
     private List<Exam> checkCapacity(Examinee examinee, Instant now) {
-        List<Exam> byDevice = examRepository.findInProgressByDevice(examinee.deviceId(), now);
-        int inProgress = examRepository.countInProgress(now) - byDevice.size();
+        List<Exam> byDevice = examPersistencePort.findInProgressByDevice(examinee.deviceId(), now);
+        int inProgress = examPersistencePort.countInProgress(now) - byDevice.size();
         if (inProgress >= examProperties.maxInProgress()) {
             log.warn("시험 시작 거절 (최대 진행 중) 진행 중={} 최대={}", inProgress, examProperties.maxInProgress());
             throw new CustomException(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS);
         }
         long sameIp = byDevice.stream().filter(s -> examinee.clientIp().equals(s.getExaminee().clientIp())).count();
-        long byIp = examRepository.countInProgressByIp(examinee.clientIp(), now) - sameIp;
+        long byIp = examPersistencePort.countInProgressByIp(examinee.clientIp(), now) - sameIp;
         if (byIp >= examProperties.maxInProgressPerIp()) {
             log.warn("시험 시작 거절 (IP당 최대 진행 중) ip={} 진행 중={}", examinee.clientIp(), byIp);
             throw new CustomException(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS_PER_IP);
@@ -164,7 +164,7 @@ public class ExamApplicationService {
             exam.submit(selectedByNo, Instant.now());
         } catch (CustomException e) {
             if (e.getErrorCode() == ErrorCode.EXAM_EXPIRED) {
-                examRepository.delete(examId);
+                examPersistencePort.delete(examId);
                 log.info("시험 제출 거절 (마감 초과) exam={} 마감={}", examId, exam.getDeadline());
             }
             throw e;
@@ -181,7 +181,7 @@ public class ExamApplicationService {
     /** 결과 (완료된 시험만). 없거나(보관 시간 경과 포함) 완료 전이면 empty */
     @Transactional(readOnly = true)
     public Optional<ExamResult> findResult(UUID examId) {
-        return examRepository.findById(examId)
+        return examPersistencePort.findById(examId)
                 .filter(Exam::isCompleted)
                 .map(this::toResult);
     }
@@ -189,7 +189,7 @@ public class ExamApplicationService {
     /** 제출을 마쳐 결과를 보관 중인지 (보관 시간이 지나 정리됐으면 false) */
     @Transactional(readOnly = true)
     public boolean hasResult(UUID examId) {
-        return examRepository.findById(examId)
+        return examPersistencePort.findById(examId)
                 .filter(Exam::isCompleted)
                 .isPresent();
     }
@@ -208,10 +208,10 @@ public class ExamApplicationService {
     @Transactional
     public void abortExam(UUID examId, String deviceId) {
         Instant now = Instant.now();
-        examRepository.findById(examId)
+        examPersistencePort.findById(examId)
                 .filter(exam -> exam.isStartedBy(deviceId) && exam.isInProgress(now))
                 .ifPresent(exam -> {
-                    examRepository.delete(examId);
+                    examPersistencePort.delete(examId);
                     log.info("시험 중단 exam={}", examId);
                 });
     }
@@ -220,7 +220,7 @@ public class ExamApplicationService {
     @Transactional(readOnly = true)
     public boolean isInProgress(UUID examId) {
         Instant now = Instant.now();
-        return examRepository.findById(examId)
+        return examPersistencePort.findById(examId)
                 .map(exam -> exam.isInProgress(now))
                 .orElse(false);
     }
@@ -292,7 +292,7 @@ public class ExamApplicationService {
     }
 
     private Exam find(UUID examId) {
-        return examRepository.findById(examId)
+        return examPersistencePort.findById(examId)
                 .orElseThrow(ExamApplicationService::notFound);
     }
 

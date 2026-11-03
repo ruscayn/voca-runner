@@ -15,7 +15,7 @@ import org.hibernate.type.SqlTypes;
 @Entity
 @Table(name = "word_meaning")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class WordMeaning extends BaseEntity {
+public class WordMeaningJpaEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,7 +24,7 @@ public class WordMeaning extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "word_id", nullable = false)
-    private Word word;
+    private WordJpaEntity word;
 
     @JdbcTypeCode(SqlTypes.SMALLINT)
     @Column(name = "seq", nullable = false)

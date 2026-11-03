@@ -11,7 +11,7 @@ import java.util.UUID;
 /**
  * 진행 중·결과 보관 중인 시험 저장소 (test_session).
  */
-public interface ExamRepository {
+public interface ExamPersistencePort {
 
     void save(Exam exam);
 

@@ -1,6 +1,6 @@
 package org.ruscayn.vocarunner.exam.adapter.out.persistence;
 
-import org.ruscayn.vocarunner.exam.application.port.out.ExamRepository;
+import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.ExamStatus;
 import lombok.RequiredArgsConstructor;
@@ -19,54 +19,54 @@ import java.util.UUID;
  */
 @Repository
 @RequiredArgsConstructor
-public class DbExamRepository implements ExamRepository {
+public class ExamPersistenceAdapter implements ExamPersistencePort {
 
-    private final JpaExamRepository jpa;
+    private final SpringDataExamRepository springDataRepository;
 
     @Override
     public void save(Exam exam) {
-        jpa.save(exam);
+        springDataRepository.save(exam);
     }
 
     @Override
     public Optional<Exam> findById(UUID examId) {
-        return jpa.findById(examId);
+        return springDataRepository.findById(examId);
     }
 
     @Override
     public void delete(UUID examId) {
-        jpa.deleteById(examId);
+        springDataRepository.deleteById(examId);
     }
 
     @Override
     public void lockForStart() {
-        jpa.advisoryLock(JpaExamRepository.START_LOCK_KEY);
+        springDataRepository.advisoryLock(SpringDataExamRepository.START_LOCK_KEY);
     }
 
     @Override
     public int countInProgress(Instant now) {
-        return Math.toIntExact(jpa.countActive(ExamStatus.IN_PROGRESS, now));
+        return Math.toIntExact(springDataRepository.countActive(ExamStatus.IN_PROGRESS, now));
     }
 
     @Override
     public List<Exam> findInProgressByDevice(String deviceId, Instant now) {
-        return jpa.findActiveByDevice(ExamStatus.IN_PROGRESS, now, deviceId);
+        return springDataRepository.findActiveByDevice(ExamStatus.IN_PROGRESS, now, deviceId);
     }
 
     @Override
     public int countInProgressByIp(String ip, Instant now) {
-        return Math.toIntExact(jpa.countActiveByIp(ExamStatus.IN_PROGRESS, now, ip));
+        return Math.toIntExact(springDataRepository.countActiveByIp(ExamStatus.IN_PROGRESS, now, ip));
     }
 
     @Override
     @Transactional
     public int deleteDisposable(Instant now, Duration resultRetention, Duration undeliveredTimeout) {
-        return jpa.deleteDisposable(now, now.minus(undeliveredTimeout), now.minus(resultRetention));
+        return springDataRepository.deleteDisposable(now, now.minus(undeliveredTimeout), now.minus(resultRetention));
     }
 
     @Override
     public long count() {
-        return jpa.count();
+        return springDataRepository.count();
     }
 
 }

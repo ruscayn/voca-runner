@@ -16,7 +16,7 @@ import java.util.List;
 @Entity
 @Table(name = "word")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Word extends BaseEntity {
+public class WordJpaEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,6 +40,6 @@ public class Word extends BaseEntity {
 
     @OneToMany(mappedBy = "word")
     @OrderBy("seq ASC")
-    private List<WordMeaning> meanings = new ArrayList<>();
+    private List<WordMeaningJpaEntity> meanings = new ArrayList<>();
 
 }
