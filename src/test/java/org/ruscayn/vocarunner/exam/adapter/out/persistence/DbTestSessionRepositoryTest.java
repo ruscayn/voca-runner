@@ -108,7 +108,7 @@ class DbTestSessionRepositoryTest {
             assertThat(loaded.getQuestionCount()).isEqualTo(4);
             assertThat(loaded.getStartedAt()).isEqualTo(NOW);
             assertThat(loaded.getDeadline()).isEqualTo(session.getDeadline());
-            assertThat(loaded.getClient()).isEqualTo(new Examinee("device-1", "10.0.0.1"));
+            assertThat(loaded.getExaminee()).isEqualTo(new Examinee("device-1", "10.0.0.1"));
             assertThat(loaded.getCreatedAt()).isNotNull();
             for (int no = 1; no <= 4; no++) {
                 assertThat(loaded.optionLevelWordIds(no)).isEqualTo(session.optionLevelWordIds(no));

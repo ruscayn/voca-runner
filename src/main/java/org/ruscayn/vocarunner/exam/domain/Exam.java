@@ -117,7 +117,7 @@ public class Exam extends BaseEntity {
     private Integer version;
 
     private Exam(Level level, Direction direction, int timeLimitSec, List<Question> questions,
-                        Examinee client, Instant now, Duration grace) {
+                        Examinee examinee, Instant now, Duration grace) {
         if (questions.isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "문제 수는 1 이상이어야 합니다.");
         }
@@ -131,8 +131,8 @@ public class Exam extends BaseEntity {
         this.direction = direction;
         this.questionCount = count;
         this.timeLimitSec = timeLimitSec;
-        this.deviceId = client.deviceId();
-        this.clientIp = client.clientIp();
+        this.deviceId = examinee.deviceId();
+        this.clientIp = examinee.clientIp();
         this.startedAt = now;
         this.deadline = now.plus(allowedDuration(count, timeLimitSec, grace));
 
@@ -150,9 +150,9 @@ public class Exam extends BaseEntity {
     }
 
     public static Exam start(Level level, Direction direction, int timeLimitSec,
-                                    List<Question> questions, Examinee client,
+                                    List<Question> questions, Examinee examinee,
                                     Instant now, Duration grace) {
-        return new Exam(level, direction, timeLimitSec, questions, client, now, grace);
+        return new Exam(level, direction, timeLimitSec, questions, examinee, now, grace);
     }
 
     /**
@@ -214,8 +214,8 @@ public class Exam extends BaseEntity {
 
     // ---------- 상태 조회 ----------
 
-    /** 시작한 사용자 (기기·IP) */
-    public Examinee getClient() {
+    /** 시작한 응시자 (기기·IP) */
+    public Examinee getExaminee() {
         return new Examinee(deviceId, clientIp);
     }
 

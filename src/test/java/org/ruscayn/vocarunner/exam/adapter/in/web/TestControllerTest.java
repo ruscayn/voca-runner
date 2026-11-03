@@ -113,9 +113,9 @@ class TestControllerTest {
                     .header("CloudFront-Viewer-Address", "198.51.100.10:46532"));
             mockMvc.perform(post("/test/start").param("level", "A1"));
 
-            ArgumentCaptor<Examinee> clients = ArgumentCaptor.forClass(Examinee.class);
-            verify(testApplicationService, times(2)).start(eq(Level.A1), clients.capture());
-            assertThat(clients.getAllValues()).extracting(Examinee::clientIp)
+            ArgumentCaptor<Examinee> examinees = ArgumentCaptor.forClass(Examinee.class);
+            verify(testApplicationService, times(2)).start(eq(Level.A1), examinees.capture());
+            assertThat(examinees.getAllValues()).extracting(Examinee::clientIp)
                     .containsExactly("198.51.100.10", "127.0.0.1");
         }
     }

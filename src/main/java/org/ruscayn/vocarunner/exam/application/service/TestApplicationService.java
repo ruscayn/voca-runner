@@ -59,19 +59,19 @@ public class TestApplicationService {
      * 마지막 확인과 저장은 DB 잠금(트랜잭션 단위)으로 한 번에 하나씩 한다. 문제 생성은 시간이 걸려 잠금 밖에서 하고,
      * 상한에 걸릴 요청이 생성부터 하지 않도록 잠금 없이 한 번 먼저 확인한다.
      *
-     * @param client 시작한 사용자 (기기·IP)
+     * @param examinee 시작한 응시자 (기기·IP)
      */
-    public UUID start(Level level, Examinee client) {
+    public UUID start(Level level, Examinee examinee) {
         long begin = System.currentTimeMillis();
         Instant now = Instant.now();
-        checkCapacity(client, now);
+        checkCapacity(examinee, now);
 
         List<Question> questions = questionGenerator.generate(level, examProperties.questionCount());
         Exam session = Exam.start(level, Direction.EN_KO, Exam.DEFAULT_TIME_LIMIT_SEC,
-                questions, client, now, examProperties.grace());
+                questions, examinee, now, examProperties.grace());
         transactionTemplate.executeWithoutResult(tx -> {
             testSessionRepository.lockForStart();
-            List<Exam> replaced = checkCapacity(client, Instant.now());
+            List<Exam> replaced = checkCapacity(examinee, Instant.now());
             replaced.forEach(old -> {
                 testSessionRepository.delete(old.getId());
                 log.info("시험 만료 (같은 기기에서 새 시험 시작) session={}", old.getId());
@@ -91,17 +91,17 @@ public class TestApplicationService {
      *
      * @return 새 시험을 시작하면 종료할 같은 기기의 진행 중 시험
      */
-    private List<Exam> checkCapacity(Examinee client, Instant now) {
-        List<Exam> byDevice = testSessionRepository.findInProgressByDevice(client.deviceId(), now);
+    private List<Exam> checkCapacity(Examinee examinee, Instant now) {
+        List<Exam> byDevice = testSessionRepository.findInProgressByDevice(examinee.deviceId(), now);
         int inProgress = testSessionRepository.countInProgress(now) - byDevice.size();
         if (inProgress >= examProperties.maxInProgress()) {
             log.warn("시험 시작 거절 (전체 상한) 진행 중={} 상한={}", inProgress, examProperties.maxInProgress());
             throw new CustomException(ErrorCode.TEST_SERVER_BUSY);
         }
-        long sameIp = byDevice.stream().filter(s -> client.clientIp().equals(s.getClient().clientIp())).count();
-        long byIp = testSessionRepository.countInProgressByIp(client.clientIp(), now) - sameIp;
+        long sameIp = byDevice.stream().filter(s -> examinee.clientIp().equals(s.getExaminee().clientIp())).count();
+        long byIp = testSessionRepository.countInProgressByIp(examinee.clientIp(), now) - sameIp;
         if (byIp >= examProperties.maxInProgressPerIp()) {
-            log.warn("시험 시작 거절 (IP 상한) ip={} 진행 중={}", client.clientIp(), byIp);
+            log.warn("시험 시작 거절 (IP 상한) ip={} 진행 중={}", examinee.clientIp(), byIp);
             throw new CustomException(ErrorCode.TEST_TOO_MANY_IN_PROGRESS_SAME_NETWORK);
         }
         return byDevice;
