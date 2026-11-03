@@ -30,7 +30,7 @@ class WordExposureRulesTest {
     void noRule() {
         Applied applied = WordExposureRules.NONE.apply(LARK, Level.B2, LARK_MEANINGS);
 
-        assertThat(applied.meanings()).containsExactly("종달새", "장난");
+        assertThat(applied.optionMeanings()).containsExactly("종달새", "장난");
         assertThat(applied.excluded()).isFalse();
     }
 
@@ -61,7 +61,7 @@ class WordExposureRulesTest {
 
         Applied applied = rules.apply(SEX, Level.B1, SEX_MEANINGS);
 
-        assertThat(applied.meanings()).containsExactly("성별");
+        assertThat(applied.optionMeanings()).containsExactly("성별");
         assertThat(applied.excluded()).isFalse();
     }
 
@@ -75,7 +75,7 @@ class WordExposureRulesTest {
         Applied applied = rules.apply(SEX, Level.B1, SEX_MEANINGS);
 
         assertThat(applied.excluded()).isTrue();
-        assertThat(applied.meanings()).containsExactly("성별", "성관계");
+        assertThat(applied.optionMeanings()).containsExactly("성별", "성관계");
     }
 
     @Test
@@ -83,7 +83,7 @@ class WordExposureRulesTest {
     void excludeMeaningNotShown() {
         WordExposureRules rules = rules(new Rule(SEX, 3, null, ExposureAction.EXCLUDE_MEANING));
 
-        assertThat(rules.apply(SEX, Level.B1, SEX_MEANINGS).meanings()).containsExactly("성별", "성관계");
+        assertThat(rules.apply(SEX, Level.B1, SEX_MEANINGS).optionMeanings()).containsExactly("성별", "성관계");
     }
 
     @Test

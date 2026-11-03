@@ -98,17 +98,17 @@ class CatalogWordLoaderTest {
 
         assertThat(words).hasSize(6);
         // 레벨 제외: lark C2 만 제외
-        assertThat(words.get(101L).testExcluded()).isFalse();
-        assertThat(words.get(102L).testExcluded()).isTrue();
+        assertThat(words.get(101L).excluded()).isFalse();
+        assertThat(words.get(102L).excluded()).isTrue();
         assertThat(words.get(102L).level()).isEqualTo(Level.C2);
         // 일부 제외: sex 뜻 2 를 보기에서 빼고 출제
-        assertThat(words.get(201L).meanings()).containsExactly("성별");
-        assertThat(words.get(201L).testExcluded()).isFalse();
+        assertThat(words.get(201L).optionMeanings()).containsExactly("성별");
+        assertThat(words.get(201L).excluded()).isFalse();
         // 완전 제외: gook 모든 칸
-        assertThat(List.of(words.get(301L), words.get(302L))).allMatch(CatalogWord::testExcluded);
+        assertThat(List.of(words.get(301L), words.get(302L))).allMatch(CatalogWord::excluded);
         // 유지: 그대로
-        assertThat(words.get(401L).testExcluded()).isFalse();
-        assertThat(words.get(401L).meanings()).containsExactly("버스");
+        assertThat(words.get(401L).excluded()).isFalse();
+        assertThat(words.get(401L).optionMeanings()).containsExactly("버스");
     }
 
     @Test
@@ -116,7 +116,7 @@ class CatalogWordLoaderTest {
     void noExposure() {
         jdbcTemplate.update("DELETE FROM word_exposure");
 
-        assertThat(loader.loadAll()).hasSize(6).noneMatch(CatalogWord::testExcluded);
+        assertThat(loader.loadAll()).hasSize(6).noneMatch(CatalogWord::excluded);
     }
 
     /** 오류가 나면 PostgreSQL 트랜잭션이 깨지므로 한 테스트에 잘못된 줄 하나씩 */

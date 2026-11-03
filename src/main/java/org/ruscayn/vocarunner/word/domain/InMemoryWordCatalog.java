@@ -41,7 +41,7 @@ public class InMemoryWordCatalog implements WordCatalog {
                 throw new IllegalArgumentException("level_word_id 중복: " + word.levelWordId());
             }
             detail.computeIfAbsent(word.level(), k -> new ArrayList<>()).add(word);
-            if (word.testExcluded()) {
+            if (word.excluded()) {
                 excluded++;
             }
         }
@@ -56,7 +56,7 @@ public class InMemoryWordCatalog implements WordCatalog {
             // 시험 제외를 먼저 빼고 중복 정리 (순서 중요)
             // 정답 후보와 오답 보기 후보는 같은 목록 : 시험 제외 단어는 오답 보기로도 내지 않는다
             // (너무 쉬운 오답이 되거나, supermarket·team 처럼 정답과 헷갈리는 오답이 되므로)
-            List<CatalogWord> answerable = keepLowestLevelPerWord(all.stream().filter(CatalogWord::isAnswerable).toList());
+            List<CatalogWord> answerable = lowestLevelPerWord(all.stream().filter(CatalogWord::isAnswerable).toList());
             answers.put(level, answerable);
             options.put(level, answerable);
         }
@@ -70,7 +70,7 @@ public class InMemoryWordCatalog implements WordCatalog {
     }
 
     /** 단어당 1행만 남긴다. 여러 레벨에 있으면 낮은 레벨. 처음 나온 순서 유지 */
-    private static List<CatalogWord> keepLowestLevelPerWord(List<CatalogWord> candidates) {
+    private static List<CatalogWord> lowestLevelPerWord(List<CatalogWord> candidates) {
         Map<Long, CatalogWord> byWord = new LinkedHashMap<>();
         for (CatalogWord word : candidates) {
             byWord.merge(word.wordId(), word,

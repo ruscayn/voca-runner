@@ -31,7 +31,7 @@ public class CatalogWordLoader {
 
     private static CatalogWord toCatalogWord(LevelWord lw, WordExposureRules rules) {
         long wordId = lw.getWord().getId();
-        WordExposureRules.Applied applied = rules.apply(wordId, lw.getLevel(), lw.displayMeanings().stream()
+        WordExposureRules.Applied applied = rules.apply(wordId, lw.getLevel(), lw.optionMeanings().stream()
                 .map(m -> new WordExposureRules.Meaning(m.getSeq(), m.getMeaningKo()))
                 .toList());
         return new CatalogWord(
@@ -40,7 +40,7 @@ public class CatalogWordLoader {
                 lw.headword(),
                 lw.getWord().getHeadwordSub(),
                 lw.getLevel(),
-                applied.meanings(),
+                applied.optionMeanings(),
                 applied.excluded());
     }
 

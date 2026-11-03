@@ -18,8 +18,8 @@ public final class TestWords {
         return new CatalogWord(levelWordId, wordId, "word" + wordId, null, level, List.of("뜻" + wordId), false);
     }
 
-    public static CatalogWord word(long levelWordId, long wordId, Level level, String... meanings) {
-        return new CatalogWord(levelWordId, wordId, "word" + wordId, null, level, List.of(meanings), false);
+    public static CatalogWord word(long levelWordId, long wordId, Level level, String... optionMeanings) {
+        return new CatalogWord(levelWordId, wordId, "word" + wordId, null, level, List.of(optionMeanings), false);
     }
 
     /** 시험 제외 단어 1개. 뜻은 "뜻{wordId}" */
@@ -28,8 +28,8 @@ public final class TestWords {
     }
 
     /** 시험 제외 단어 1개 (뜻 지정) */
-    public static CatalogWord excluded(long levelWordId, long wordId, Level level, String... meanings) {
-        return new CatalogWord(levelWordId, wordId, "word" + wordId, null, level, List.of(meanings), true);
+    public static CatalogWord excluded(long levelWordId, long wordId, Level level, String... optionMeanings) {
+        return new CatalogWord(levelWordId, wordId, "word" + wordId, null, level, List.of(optionMeanings), true);
     }
 
     /**

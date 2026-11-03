@@ -46,10 +46,10 @@ class QuestionGeneratorTest {
             assertThat(q.options()).allMatch(o -> o.level() == q.answer().level());
 
             // 보기 간 표시 뜻이 하나도 겹치지 않음
-            Set<String> meanings = new HashSet<>();
+            Set<String> optionMeanings = new HashSet<>();
             for (CatalogWord option : q.options()) {
-                for (String meaning : option.meanings()) {
-                    assertThat(meanings.add(meaning)).as("보기 뜻 중복: %s", meaning).isTrue();
+                for (String meaning : option.optionMeanings()) {
+                    assertThat(optionMeanings.add(meaning)).as("보기 뜻 중복: %s", meaning).isTrue();
                 }
             }
         }
@@ -196,7 +196,7 @@ class QuestionGeneratorTest {
         List<Question> questions = generator(catalog, 1).generate(Level.A1, 11);
 
         assertThat(questions).hasSize(10);
-        assertThat(questions).allMatch(q -> !q.answer().testExcluded());
+        assertThat(questions).allMatch(q -> !q.answer().excluded());
     }
 
     @Test

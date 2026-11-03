@@ -102,7 +102,7 @@ public class QuestionGenerator {
         Set<Long> blockedWordIds = new HashSet<>();
         blockedWordIds.add(answer.wordId());
         blockedWordIds.addAll(wordCatalog.findConfusableWordIds(answer.wordId()));
-        Set<String> usedMeanings = new HashSet<>(answer.meanings());
+        Set<String> usedMeanings = new HashSet<>(answer.optionMeanings());
 
         // 1차: 무작위로 뽑아 조건 검사
         for (int i = 0; !sameLevel.isEmpty() && i < RANDOM_TRY_LIMIT && options.size() < Question.OPTION_COUNT; i++) {
@@ -137,7 +137,7 @@ public class QuestionGenerator {
         if (blockedWordIds.contains(candidate.wordId())) {
             return;
         }
-        for (String meaning : candidate.meanings()) {
+        for (String meaning : candidate.optionMeanings()) {
             if (usedMeanings.contains(meaning)) {
                 return;
             }
@@ -145,7 +145,7 @@ public class QuestionGenerator {
         options.add(candidate);
         blockedWordIds.add(candidate.wordId());
         blockedWordIds.addAll(wordCatalog.findConfusableWordIds(candidate.wordId()));
-        usedMeanings.addAll(candidate.meanings());
+        usedMeanings.addAll(candidate.optionMeanings());
     }
 
     /** Fisher–Yates */

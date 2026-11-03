@@ -60,7 +60,7 @@ public class WordExposure extends BaseEntity {
     private String reason;
 
     @Column(name = "decided_at", nullable = false)
-    private LocalDate decidedAt;
+    private LocalDate decidedDate;
 
     @Column(name = "decided_by", nullable = false, length = 30)
     private String decidedBy;

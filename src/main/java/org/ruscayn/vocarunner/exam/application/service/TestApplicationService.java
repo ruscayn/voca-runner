@@ -260,7 +260,7 @@ public class TestApplicationService {
     }
 
     private String promptText(CatalogWord answer, Direction direction) {
-        return direction == Direction.EN_KO ? answer.headword() : answer.meaningText();
+        return direction == Direction.EN_KO ? answer.headword() : answer.optionText();
     }
 
     /** 영어 단어가 문제일 때만 함께 표시할 형태를 붙인다 */
@@ -269,7 +269,7 @@ public class TestApplicationService {
     }
 
     private String optionText(CatalogWord option, Direction direction) {
-        return direction == Direction.EN_KO ? option.meaningText() : option.headword();
+        return direction == Direction.EN_KO ? option.optionText() : option.headword();
     }
 
     /**

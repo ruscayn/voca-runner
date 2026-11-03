@@ -45,7 +45,7 @@ public class LevelWord extends BaseEntity {
     private WordMeaning meaning2;
 
     /** 보기에 보여줄 뜻 목록 (1~2개) */
-    public List<WordMeaning> displayMeanings() {
+    public List<WordMeaning> optionMeanings() {
         List<WordMeaning> result = new ArrayList<>(2);
         result.add(meaning1);
         if (meaning2 != null) {
@@ -55,8 +55,8 @@ public class LevelWord extends BaseEntity {
     }
 
     /** 보기에 보여줄 한국어 뜻 텍스트 (보기 간 중복 검사용) */
-    public List<String> displayMeaningTexts() {
-        return displayMeanings().stream().map(WordMeaning::getMeaningKo).toList();
+    public List<String> optionMeaningTexts() {
+        return optionMeanings().stream().map(WordMeaning::getMeaningKo).toList();
     }
 
     public String headword() {
