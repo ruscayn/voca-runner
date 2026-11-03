@@ -13,11 +13,11 @@ import java.util.UUID;
  */
 public interface TestSessionRepository {
 
-    void save(Exam session);
+    void save(Exam exam);
 
-    Optional<Exam> findById(UUID sessionId);
+    Optional<Exam> findById(UUID examId);
 
-    void delete(UUID sessionId);
+    void delete(UUID examId);
 
     /**
      * 시험 시작 잠금 (트랜잭션이 끝날 때 풀림).

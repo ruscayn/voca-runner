@@ -33,7 +33,7 @@ public class QuestionGenerator {
     /** 최대 문제 수에 이 값을 주면 레벨 단어 전체를 출제 (개발·베타 테스트용) */
     public static final int ALL_WORDS = 0;
 
-    private static final int DISTRACTOR_COUNT = Question.OPTION_COUNT - 1;
+    private static final int INCORRECT_OPTION_COUNT = Question.OPTION_COUNT - 1;
     /** 무작위 뽑기 시도 횟수. 초과하면 전체를 섞어 순서대로 검사 */
     private static final int RANDOM_TRY_LIMIT = 200;
 
@@ -62,7 +62,7 @@ public class QuestionGenerator {
         List<CatalogWord> answerPool = wordCatalog.findAnswerPool(level);
         int count = questionCount(answerPool.size(), maxCount);
         if (count == 0) {
-            throw new CustomException(ErrorCode.TEST_NOT_ENOUGH_WORDS, "레벨 " + level + " 에 출제 가능한 단어가 없습니다.");
+            throw new CustomException(ErrorCode.EXAM_NOT_ENOUGH_WORDS, "레벨 " + level + " 에 출제 가능한 단어가 없습니다.");
         }
 
         // 오답 보기 후보 (시험 제외 단어 제외), 세부 레벨별
@@ -120,8 +120,8 @@ public class QuestionGenerator {
             }
         }
         if (options.size() < Question.OPTION_COUNT) {
-            throw new CustomException(ErrorCode.TEST_NOT_ENOUGH_WORDS,
-                    "'" + answer.headword() + "' 의 오답 보기 " + DISTRACTOR_COUNT + "개를 만들 수 없습니다.");
+            throw new CustomException(ErrorCode.EXAM_NOT_ENOUGH_WORDS,
+                    "'" + answer.headword() + "' 의 오답 보기 " + INCORRECT_OPTION_COUNT + "개를 만들 수 없습니다.");
         }
 
         shuffle(options, random);

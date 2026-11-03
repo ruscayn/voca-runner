@@ -47,7 +47,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("TestController : 시험 화면 이동 규칙")
 class TestControllerTest {
 
-    private static final UUID SESSION_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    private static final UUID EXAM_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final String DEVICE_ID = "22222222-2222-2222-2222-222222222222";
     private static final Cookie DEVICE_COOKIE = new Cookie("VR_DEVICE", DEVICE_ID);
 
@@ -59,10 +59,10 @@ class TestControllerTest {
 
     /** [시작]을 누른 브라우저 (시험 화면 입장권을 받은 세션) */
     private MockHttpSession startTest() throws Exception {
-        given(testApplicationService.start(eq(Level.A1), any())).willReturn(SESSION_ID);
+        given(testApplicationService.start(eq(Level.A1), any())).willReturn(EXAM_ID);
         MockHttpSession httpSession = new MockHttpSession();
         mockMvc.perform(post("/test/start").param("level", "A1").session(httpSession).cookie(DEVICE_COOKIE))
-                .andExpect(redirectedUrl("/test/" + SESSION_ID));
+                .andExpect(redirectedUrl("/test/" + EXAM_ID));
         return httpSession;
     }
 
@@ -73,11 +73,11 @@ class TestControllerTest {
         @Test
         @DisplayName("시작하면 시험 화면으로 보내고, 기기 쿠키가 없으면 새로 준다")
         void redirectsToTest() throws Exception {
-            given(testApplicationService.start(eq(Level.A1), any())).willReturn(SESSION_ID);
+            given(testApplicationService.start(eq(Level.A1), any())).willReturn(EXAM_ID);
 
             mockMvc.perform(post("/test/start").param("level", "A1"))
                     .andExpect(status().is3xxRedirection())
-                    .andExpect(redirectedUrl("/test/" + SESSION_ID))
+                    .andExpect(redirectedUrl("/test/" + EXAM_ID))
                     .andExpect(cookie().exists("VR_DEVICE"));
         }
 
@@ -85,29 +85,29 @@ class TestControllerTest {
         @DisplayName("응시자가 많아 거절되면 안내와 함께 메인으로")
         void serverBusy() throws Exception {
             given(testApplicationService.start(eq(Level.A1), any()))
-                    .willThrow(new CustomException(ErrorCode.TEST_SERVER_BUSY));
+                    .willThrow(new CustomException(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS));
 
             mockMvc.perform(post("/test/start").param("level", "A1"))
                     .andExpect(redirectedUrl("/"))
-                    .andExpect(flash().attribute("message", ErrorCode.TEST_SERVER_BUSY.getMessage()));
+                    .andExpect(flash().attribute("message", ErrorCode.EXAM_TOO_MANY_IN_PROGRESS.getMessage()));
         }
 
         @Test
         @DisplayName("같은 인터넷에서 진행 중 시험이 너무 많으면 안내와 함께 메인으로")
         void tooManySameNetwork() throws Exception {
             given(testApplicationService.start(eq(Level.A1), any()))
-                    .willThrow(new CustomException(ErrorCode.TEST_TOO_MANY_IN_PROGRESS_SAME_NETWORK));
+                    .willThrow(new CustomException(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS_PER_IP));
 
             mockMvc.perform(post("/test/start").param("level", "A1"))
                     .andExpect(redirectedUrl("/"))
                     .andExpect(flash().attribute("message",
-                            ErrorCode.TEST_TOO_MANY_IN_PROGRESS_SAME_NETWORK.getMessage()));
+                            ErrorCode.EXAM_TOO_MANY_IN_PROGRESS_PER_IP.getMessage()));
         }
 
         @Test
         @DisplayName("IP 는 CloudFront 헤더에서 포트를 빼고 읽고, 헤더가 없으면 연결 IP (U32)")
         void clientIp() throws Exception {
-            given(testApplicationService.start(eq(Level.A1), any())).willReturn(SESSION_ID);
+            given(testApplicationService.start(eq(Level.A1), any())).willReturn(EXAM_ID);
 
             mockMvc.perform(post("/test/start").param("level", "A1")
                     .header("CloudFront-Viewer-Address", "198.51.100.10:46532"));
@@ -128,9 +128,9 @@ class TestControllerTest {
         @DisplayName("시작한 브라우저가 처음 들어오면 시험 화면을 보여 주고, 브라우저가 저장하지 않게 한다")
         void firstEntry() throws Exception {
             MockHttpSession httpSession = startTest();
-            given(testApplicationService.isInProgress(SESSION_ID)).willReturn(true);
+            given(testApplicationService.isInProgress(EXAM_ID)).willReturn(true);
 
-            mockMvc.perform(get("/test/" + SESSION_ID).session(httpSession).cookie(DEVICE_COOKIE))
+            mockMvc.perform(get("/test/" + EXAM_ID).session(httpSession).cookie(DEVICE_COOKIE))
                     .andExpect(status().isOk())
                     .andExpect(view().name("test"))
                     .andExpect(header().string("Cache-Control", "no-store"));
@@ -140,26 +140,26 @@ class TestControllerTest {
         @DisplayName("같은 브라우저가 다시 들어오면(새로고침) 시험을 끝내고 안내와 함께 메인으로")
         void reEntry() throws Exception {
             MockHttpSession httpSession = startTest();
-            given(testApplicationService.isInProgress(SESSION_ID)).willReturn(true);
-            mockMvc.perform(get("/test/" + SESSION_ID).session(httpSession).cookie(DEVICE_COOKIE))
+            given(testApplicationService.isInProgress(EXAM_ID)).willReturn(true);
+            mockMvc.perform(get("/test/" + EXAM_ID).session(httpSession).cookie(DEVICE_COOKIE))
                     .andExpect(view().name("test"));
 
-            mockMvc.perform(get("/test/" + SESSION_ID).session(httpSession).cookie(DEVICE_COOKIE))
+            mockMvc.perform(get("/test/" + EXAM_ID).session(httpSession).cookie(DEVICE_COOKIE))
                     .andExpect(redirectedUrl("/"))
                     .andExpect(flash().attribute("message", "시험이 종료되었습니다. 처음부터 다시 시작해 주세요."));
-            verify(testApplicationService).expireIfInProgress(SESSION_ID, DEVICE_ID);
+            verify(testApplicationService).abortExam(EXAM_ID, DEVICE_ID);
         }
 
         @Test
         @DisplayName("다른 브라우저·기기가 진행 중 시험 주소를 열면 그쪽만 메인으로 보내고 시험은 그대로 둔다 (B2)")
         void otherBrowser() throws Exception {
-            given(testApplicationService.isInProgress(SESSION_ID)).willReturn(true);
+            given(testApplicationService.isInProgress(EXAM_ID)).willReturn(true);
 
-            MvcResult result = mockMvc.perform(get("/test/" + SESSION_ID))
-                    .andExpect(redirectedUrl("/?notice=" + MainController.NOTICE_TEST_IN_USE))
+            MvcResult result = mockMvc.perform(get("/test/" + EXAM_ID))
+                    .andExpect(redirectedUrl("/?notice=" + MainController.NOTICE_EXAM_IN_USE))
                     .andReturn();
 
-            verify(testApplicationService, never()).expireIfInProgress(any(), any());
+            verify(testApplicationService, never()).abortExam(any(), any());
             // 세션을 만들지 않는다 (만들면 주소에 ;jsessionid 가 붙음, B9)
             assertThat(result.getRequest().getSession(false)).isNull();
         }
@@ -167,21 +167,21 @@ class TestControllerTest {
         @Test
         @DisplayName("이미 끝난 시험이고 결과를 보관 중이면 결과 화면으로 (결과 화면에서 뒤로 가기, B8)")
         void finishedWithResult() throws Exception {
-            given(testApplicationService.isInProgress(SESSION_ID)).willReturn(false);
-            given(testApplicationService.hasResult(SESSION_ID)).willReturn(true);
+            given(testApplicationService.isInProgress(EXAM_ID)).willReturn(false);
+            given(testApplicationService.hasResult(EXAM_ID)).willReturn(true);
 
-            mockMvc.perform(get("/test/" + SESSION_ID))
-                    .andExpect(redirectedUrl("/test/" + SESSION_ID + "/result"));
+            mockMvc.perform(get("/test/" + EXAM_ID))
+                    .andExpect(redirectedUrl("/test/" + EXAM_ID + "/result"));
         }
 
         @Test
         @DisplayName("이미 끝났고 결과도 정리된 시험이면 안내와 함께 메인으로 (B8)")
         void finishedWithoutResult() throws Exception {
-            given(testApplicationService.isInProgress(SESSION_ID)).willReturn(false);
-            given(testApplicationService.hasResult(SESSION_ID)).willReturn(false);
+            given(testApplicationService.isInProgress(EXAM_ID)).willReturn(false);
+            given(testApplicationService.hasResult(EXAM_ID)).willReturn(false);
 
-            mockMvc.perform(get("/test/" + SESSION_ID))
-                    .andExpect(redirectedUrl("/?notice=" + MainController.NOTICE_TEST_FINISHED));
+            mockMvc.perform(get("/test/" + EXAM_ID))
+                    .andExpect(redirectedUrl("/?notice=" + MainController.NOTICE_EXAM_ENDED));
         }
 
         @Test
@@ -200,9 +200,9 @@ class TestControllerTest {
         @Test
         @DisplayName("결과 보관 시간이 지났으면 안내와 함께 메인으로 (U17)")
         void expired() throws Exception {
-            given(testApplicationService.findResult(SESSION_ID)).willReturn(Optional.empty());
+            given(testApplicationService.findResult(EXAM_ID)).willReturn(Optional.empty());
 
-            mockMvc.perform(get("/test/" + SESSION_ID + "/result"))
+            mockMvc.perform(get("/test/" + EXAM_ID + "/result"))
                     .andExpect(redirectedUrl("/?notice=" + MainController.NOTICE_RESULT_EXPIRED));
         }
     }

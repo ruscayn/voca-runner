@@ -18,9 +18,9 @@ import java.util.List;
 public class MainController {
 
     /** 진행 중인 시험 주소를 다른 브라우저·기기에서 연 경우 (TestController) */
-    public static final String NOTICE_TEST_IN_USE = "test-in-use";
+    public static final String NOTICE_EXAM_IN_USE = "test-in-use";
     /** 이미 끝났고 결과 보관 시간도 지난 시험 주소로 들어온 경우 (TestController) */
-    public static final String NOTICE_TEST_FINISHED = "test-finished";
+    public static final String NOTICE_EXAM_ENDED = "test-finished";
     /** 결과 보관 시간이 지난 결과 주소로 들어온 경우 (TestController) */
     public static final String NOTICE_RESULT_EXPIRED = "result-expired";
 
@@ -32,9 +32,9 @@ public class MainController {
     @GetMapping("/")
     public String main(@RequestParam(required = false) String notice, Model model) {
         if (!model.containsAttribute("message")) {
-            if (NOTICE_TEST_IN_USE.equals(notice)) {
+            if (NOTICE_EXAM_IN_USE.equals(notice)) {
                 model.addAttribute("message", "이미 시작된 시험입니다. 시험을 시작한 화면에서만 풀 수 있습니다.");
-            } else if (NOTICE_TEST_FINISHED.equals(notice)) {
+            } else if (NOTICE_EXAM_ENDED.equals(notice)) {
                 model.addAttribute("message", "이미 끝난 시험입니다. 새 시험을 시작해 주세요.");
             } else if (NOTICE_RESULT_EXPIRED.equals(notice)) {
                 model.addAttribute("message", "결과 보관 시간이 지났습니다. 결과는 제출 후 잠시 동안만 볼 수 있어요.");
@@ -45,7 +45,7 @@ public class MainController {
         LevelSummary first = levelGroups.getFirst().levels().getFirst();
         model.addAttribute("levelGroups", levelGroups);
         model.addAttribute("questionCount", first.questionCount());
-        model.addAttribute("timeLimitSec", Exam.DEFAULT_TIME_LIMIT_SEC);
+        model.addAttribute("timeLimitSec", Exam.DEFAULT_TIME_PER_QUESTION_SEC);
         model.addAttribute("allowedMinutes", first.allowedMinutes());
         return "main";
     }

@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
-import static org.ruscayn.vocarunner.support.TestWords.correctOptionNo;
+import static org.ruscayn.vocarunner.support.TestWords.answerOptionNo;
 import static org.ruscayn.vocarunner.support.TestWords.questions;
 
 /**
@@ -44,7 +44,7 @@ class TestApplicationServiceTest {
     // 제출에는 저장소만 쓴다
     private final TestApplicationService service = new TestApplicationService(repository, null, null, null, null);
 
-    private final Exam session = Exam.start(Level.A1, Direction.EN_KO, 5, questions(2),
+    private final Exam exam = Exam.start(Level.A1, Direction.EN_KO, 5, questions(2),
             new Examinee(DEVICE_ID, "10.0.0.1"), Instant.now(), Duration.ofMinutes(3));
 
     @Test
@@ -52,7 +52,7 @@ class TestApplicationServiceTest {
     void logAfterCommit(CapturedOutput output) {
         submitIn(transactionManager(false));
 
-        assertThat(output.getOut()).contains("시험 제출 session=" + session.getId());
+        assertThat(output.getOut()).contains("시험 제출 exam=" + exam.getId());
     }
 
     @Test
@@ -61,14 +61,14 @@ class TestApplicationServiceTest {
         assertThatThrownBy(() -> submitIn(transactionManager(true)))
                 .isInstanceOf(ObjectOptimisticLockingFailureException.class);
 
-        assertThat(output.getOut()).doesNotContain("시험 제출 session=");
+        assertThat(output.getOut()).doesNotContain("시험 제출 exam=");
     }
 
     private void submitIn(PlatformTransactionManager transactionManager) {
-        given(repository.findById(session.getId())).willReturn(Optional.of(session));
-        TestSubmitRequest request = new TestSubmitRequest(List.of(new TestSubmitRequest.Answer(1, correctOptionNo(1))));
+        given(repository.findById(exam.getId())).willReturn(Optional.of(exam));
+        TestSubmitRequest request = new TestSubmitRequest(List.of(new TestSubmitRequest.Answer(1, answerOptionNo(1))));
         new TransactionTemplate(transactionManager)
-                .executeWithoutResult(tx -> service.submit(session.getId(), DEVICE_ID, request));
+                .executeWithoutResult(tx -> service.submit(exam.getId(), DEVICE_ID, request));
     }
 
     /** DB 없이 커밋만 흉내 내는 트랜잭션 관리자. conflict 이면 커밋할 때 저장 충돌(@Version)을 낸다 */
@@ -86,7 +86,7 @@ class TestApplicationServiceTest {
             @Override
             protected void doCommit(DefaultTransactionStatus status) {
                 if (conflict) {
-                    throw new ObjectOptimisticLockingFailureException(Exam.class, session.getId());
+                    throw new ObjectOptimisticLockingFailureException(Exam.class, exam.getId());
                 }
             }
 

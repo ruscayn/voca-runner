@@ -25,9 +25,9 @@ public class TestApiController {
     private final TestApplicationService testApplicationService;
 
     /** 문제 전체 (정답 제외). 시작한 기기만 */
-    @GetMapping("/{sessionId}/questions")
-    public TestQuestionsResponse questions(@PathVariable UUID sessionId, HttpServletRequest httpRequest) {
-        return testApplicationService.getQuestions(sessionId, DeviceCookie.find(httpRequest));
+    @GetMapping("/{examId}/questions")
+    public TestQuestionsResponse questions(@PathVariable UUID examId, HttpServletRequest httpRequest) {
+        return testApplicationService.getQuestions(examId, DeviceCookie.find(httpRequest));
     }
 
     /**
@@ -35,26 +35,26 @@ public class TestApiController {
      * 같은 시험을 동시에 두 번 제출하면(요청을 직접 보낸 경우. 화면은 한 번만 보내고, 같은 브라우저 새 탭으로 열면 시험이 끝난다)
      * 먼저 저장한 쪽만 채점되고(@Version) 늦은 쪽은 저장할 때 충돌하므로, 이미 끝난 시험을 제출한 것과 같은 응답을 준다 (U39)
      */
-    @PostMapping("/{sessionId}/submit")
-    public TestSubmitResponse submit(@PathVariable UUID sessionId,
+    @PostMapping("/{examId}/submit")
+    public TestSubmitResponse submit(@PathVariable UUID examId,
                                      @Valid @RequestBody TestSubmitRequest request, HttpServletRequest httpRequest) {
         try {
-            return testApplicationService.submit(sessionId, DeviceCookie.find(httpRequest), request);
+            return testApplicationService.submit(examId, DeviceCookie.find(httpRequest), request);
         } catch (OptimisticLockingFailureException e) {
-            throw new CustomException(ErrorCode.TEST_NOT_IN_PROGRESS);
+            throw new CustomException(ErrorCode.EXAM_NOT_IN_PROGRESS);
         }
     }
 
     /** 결과 (완료된 시험만) */
-    @GetMapping("/{sessionId}/result")
-    public TestResultResponse result(@PathVariable UUID sessionId) {
-        return testApplicationService.getResult(sessionId);
+    @GetMapping("/{examId}/result")
+    public TestResultResponse result(@PathVariable UUID examId) {
+        return testApplicationService.getResult(examId);
     }
 
     /** 중도 이탈 시 만료 (navigator.sendBeacon 용, 본문 없음). 시작한 기기만 (다른 기기면 무시) */
-    @PostMapping("/{sessionId}/expire")
-    public ResponseEntity<Void> expire(@PathVariable UUID sessionId, HttpServletRequest httpRequest) {
-        testApplicationService.expireIfInProgress(sessionId, DeviceCookie.find(httpRequest));
+    @PostMapping("/{examId}/expire")
+    public ResponseEntity<Void> abort(@PathVariable UUID examId, HttpServletRequest httpRequest) {
+        testApplicationService.abortExam(examId, DeviceCookie.find(httpRequest));
         return ResponseEntity.noContent().build();
     }
 

@@ -25,7 +25,7 @@ import java.util.UUID;
  * <p>문항을 행으로 나누지 않고 배열로 1행에 보관한다.
  * <ul>
  *   <li>optionIds : 보기 level_word_id. 문항 n(1부터)의 보기 i(1~4) = optionIds[(n-1)*4 + (i-1)]</li>
- *   <li>correctOptionNo : 정답 보기 번호 1~4</li>
+ *   <li>answerOptionNo : 정답 보기 번호 1~4</li>
  *   <li>selectedOptionNo : 고른 보기 번호 1~4, 0 = 미입력(시간 초과)</li>
  * </ul>
  * 500문항 기준 약 10KB.
@@ -38,9 +38,9 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Exam extends BaseEntity {
 
-    public static final int DEFAULT_TIME_LIMIT_SEC = 5;
-    public static final int MIN_TIME_LIMIT_SEC = 5;
-    public static final int MAX_TIME_LIMIT_SEC = 10;
+    public static final int DEFAULT_TIME_PER_QUESTION_SEC = 5;
+    public static final int MIN_TIME_PER_QUESTION_SEC = 5;
+    public static final int MAX_TIME_PER_QUESTION_SEC = 10;
 
     private static final int OPTION_COUNT = Question.OPTION_COUNT;
 
@@ -60,7 +60,7 @@ public class Exam extends BaseEntity {
     private int questionCount;
 
     @Column(name = "time_limit_sec", nullable = false)
-    private int timeLimitSec;
+    private int timePerQuestionSec;
 
     /** 시작한 기기 (쿠키). 기기당 진행 중 시험 1개 */
     @Getter(AccessLevel.NONE)
@@ -75,7 +75,7 @@ public class Exam extends BaseEntity {
     @Column(name = "started_at", nullable = false)
     private Instant startedAt;
 
-    /** 이 시각이 지나면 시험 무효 = 시작 + allowedDuration (분 단위 올림) */
+    /** 이 시각이 지나면 시험 무효 = 시작 + allowedTime (분 단위 올림) */
     @Column(name = "deadline", nullable = false)
     private Instant deadline;
 
@@ -86,7 +86,7 @@ public class Exam extends BaseEntity {
 
     @Getter(AccessLevel.NONE)
     @Column(name = "correct_option_no", nullable = false)
-    private byte[] correctOptionNo;
+    private byte[] answerOptionNo;
 
     @Getter(AccessLevel.NONE)
     @Column(name = "selected_option_no", nullable = false)
@@ -116,43 +116,43 @@ public class Exam extends BaseEntity {
     @Column(name = "version", nullable = false)
     private Integer version;
 
-    private Exam(Level level, Direction direction, int timeLimitSec, List<Question> questions,
+    private Exam(Level level, Direction direction, int timePerQuestionSec, List<Question> questions,
                         Examinee examinee, Instant now, Duration grace) {
         if (questions.isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "문제 수는 1 이상이어야 합니다.");
         }
-        if (timeLimitSec < MIN_TIME_LIMIT_SEC || timeLimitSec > MAX_TIME_LIMIT_SEC) {
+        if (timePerQuestionSec < MIN_TIME_PER_QUESTION_SEC || timePerQuestionSec > MAX_TIME_PER_QUESTION_SEC) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE,
-                    "제한 시간은 " + MIN_TIME_LIMIT_SEC + "~" + MAX_TIME_LIMIT_SEC + "초여야 합니다.");
+                    "제한 시간은 " + MIN_TIME_PER_QUESTION_SEC + "~" + MAX_TIME_PER_QUESTION_SEC + "초여야 합니다.");
         }
         int count = questions.size();
         this.id = UUID.randomUUID();
         this.level = level;
         this.direction = direction;
         this.questionCount = count;
-        this.timeLimitSec = timeLimitSec;
+        this.timePerQuestionSec = timePerQuestionSec;
         this.deviceId = examinee.deviceId();
         this.clientIp = examinee.clientIp();
         this.startedAt = now;
-        this.deadline = now.plus(allowedDuration(count, timeLimitSec, grace));
+        this.deadline = now.plus(allowedTime(count, timePerQuestionSec, grace));
 
         this.optionIds = new int[count * OPTION_COUNT];
-        this.correctOptionNo = new byte[count];
+        this.answerOptionNo = new byte[count];
         this.selectedOptionNo = new byte[count];
         for (int q = 0; q < count; q++) {
             Question question = questions.get(q);
             for (int i = 0; i < OPTION_COUNT; i++) {
                 optionIds[q * OPTION_COUNT + i] = Math.toIntExact(question.options().get(i).levelWordId());
             }
-            correctOptionNo[q] = (byte) question.correctOptionNo();
+            answerOptionNo[q] = (byte) question.answerOptionNo();
         }
         this.status = ExamStatus.IN_PROGRESS;
     }
 
-    public static Exam start(Level level, Direction direction, int timeLimitSec,
+    public static Exam start(Level level, Direction direction, int timePerQuestionSec,
                                     List<Question> questions, Examinee examinee,
                                     Instant now, Duration grace) {
-        return new Exam(level, direction, timeLimitSec, questions, examinee, now, grace);
+        return new Exam(level, direction, timePerQuestionSec, questions, examinee, now, grace);
     }
 
     /**
@@ -160,8 +160,8 @@ public class Exam extends BaseEntity {
      * 안내 문구를 "45분"처럼 분 단위로 보여주므로 실제 마감도 같은 값으로 맞춘다.
      * 예: 500문항 × 5초 + 3분 = 44분 40초 → 45분
      */
-    public static Duration allowedDuration(int questionCount, int timeLimitSec, Duration grace) {
-        long seconds = Duration.ofSeconds((long) questionCount * timeLimitSec).plus(grace).toSeconds();
+    public static Duration allowedTime(int questionCount, int timePerQuestionSec, Duration grace) {
+        long seconds = Duration.ofSeconds((long) questionCount * timePerQuestionSec).plus(grace).toSeconds();
         return Duration.ofMinutes(Math.ceilDiv(seconds, 60));
     }
 
@@ -176,12 +176,12 @@ public class Exam extends BaseEntity {
         requireInProgress();
         if (now.isAfter(deadline)) {
             status = ExamStatus.EXPIRED;
-            throw new CustomException(ErrorCode.TEST_TIME_OVER);
+            throw new CustomException(ErrorCode.EXAM_EXPIRED);
         }
         // 검사를 먼저 모두 마친 뒤 기록한다 (거절할 때 일부만 바뀐 채 남지 않게)
         selectedByQuestionNo.forEach((no, selected) -> {
             if (selected != null && (selected < 1 || selected > OPTION_COUNT)) {
-                throw new CustomException(ErrorCode.TEST_INVALID_OPTION,
+                throw new CustomException(ErrorCode.EXAM_INVALID_OPTION,
                         "문제 " + no + "의 보기 번호가 올바르지 않습니다: " + selected);
             }
         });
@@ -189,7 +189,7 @@ public class Exam extends BaseEntity {
         for (int q = 0; q < questionCount; q++) {
             Integer selected = selectedByQuestionNo.get(q + 1);
             selectedOptionNo[q] = selected == null ? 0 : selected.byteValue();
-            if (selected != null && selected == correctOptionNo[q]) {
+            if (selected != null && selected == answerOptionNo[q]) {
                 correct++;
             }
         }
@@ -255,7 +255,7 @@ public class Exam extends BaseEntity {
     /** 출제 단어 level_word_id */
     public long answerLevelWordId(int no) {
         int q = index(no);
-        return optionIds[q * OPTION_COUNT + correctOptionNo[q] - 1];
+        return optionIds[q * OPTION_COUNT + answerOptionNo[q] - 1];
     }
 
     /** 보기 1~4 의 level_word_id */
@@ -278,7 +278,7 @@ public class Exam extends BaseEntity {
     /** 맞혔는지 (채점 후에만 의미 있음) */
     public boolean isCorrect(int no) {
         int q = index(no);
-        return selectedOptionNo[q] != 0 && selectedOptionNo[q] == correctOptionNo[q];
+        return selectedOptionNo[q] != 0 && selectedOptionNo[q] == answerOptionNo[q];
     }
 
     private int index(int no) {
@@ -290,7 +290,7 @@ public class Exam extends BaseEntity {
 
     private void requireInProgress() {
         if (status != ExamStatus.IN_PROGRESS) {
-            throw new CustomException(ErrorCode.TEST_NOT_IN_PROGRESS);
+            throw new CustomException(ErrorCode.EXAM_NOT_IN_PROGRESS);
         }
     }
 

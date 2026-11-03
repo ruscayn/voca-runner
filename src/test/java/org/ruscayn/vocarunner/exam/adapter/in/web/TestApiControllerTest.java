@@ -39,10 +39,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("TestApiController : 시험 API 요청 형식")
 class TestApiControllerTest {
 
-    private static final UUID SESSION_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    private static final UUID EXAM_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final String DEVICE_ID = "22222222-2222-2222-2222-222222222222";
     private static final Cookie DEVICE_COOKIE = new Cookie("VR_DEVICE", DEVICE_ID);
-    private static final String SUBMIT_URL = "/api/tests/" + SESSION_ID + "/submit";
+    private static final String SUBMIT_URL = "/api/tests/" + EXAM_ID + "/submit";
 
     @Autowired
     private MockMvc mockMvc;
@@ -66,7 +66,7 @@ class TestApiControllerTest {
                     """)
                     .andExpect(status().isOk());
 
-            verify(testApplicationService).submit(eq(SESSION_ID), eq(DEVICE_ID), any());
+            verify(testApplicationService).submit(eq(EXAM_ID), eq(DEVICE_ID), any());
         }
 
         @Test
@@ -111,8 +111,8 @@ class TestApiControllerTest {
         @Test
         @DisplayName("동시에 두 번 제출해 늦은 쪽이 저장에서 충돌하면 500 이 아니라 400 진행 중인 시험이 아님 (U39)")
         void concurrentSubmit() throws Exception {
-            given(testApplicationService.submit(eq(SESSION_ID), eq(DEVICE_ID), any()))
-                    .willThrow(new ObjectOptimisticLockingFailureException(Exam.class, SESSION_ID));
+            given(testApplicationService.submit(eq(EXAM_ID), eq(DEVICE_ID), any()))
+                    .willThrow(new ObjectOptimisticLockingFailureException(Exam.class, EXAM_ID));
 
             submit(MediaType.APPLICATION_JSON, """
                     {"answers": [{"questionNo": 1, "selectedOptionNo": 2}]}
@@ -142,8 +142,8 @@ class TestApiControllerTest {
         @Test
         @DisplayName("업무 오류(거절)는 스택 없이 WARN 한 줄로 남긴다")
         void businessExceptionIsWarnWithoutStack(CapturedOutput output) throws Exception {
-            given(testApplicationService.submit(eq(SESSION_ID), eq(DEVICE_ID), any()))
-                    .willThrow(new CustomException(ErrorCode.TEST_TIME_OVER));
+            given(testApplicationService.submit(eq(EXAM_ID), eq(DEVICE_ID), any()))
+                    .willThrow(new CustomException(ErrorCode.EXAM_EXPIRED));
 
             submit(MediaType.APPLICATION_JSON, """
                     {"answers": []}

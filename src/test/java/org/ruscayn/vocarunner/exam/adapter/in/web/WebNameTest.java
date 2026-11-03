@@ -175,7 +175,7 @@ class WebNameTest {
         @DisplayName("오류 응답 : code · message · path · timestamp, 오류 코드 값")
         void error() throws Exception {
             given(testApplicationService.getQuestions(EXAM_ID, DEVICE_ID))
-                    .willThrow(new CustomException(ErrorCode.TEST_NOT_IN_PROGRESS));
+                    .willThrow(new CustomException(ErrorCode.EXAM_NOT_IN_PROGRESS));
 
             String json = mockMvc.perform(get("/api/tests/" + EXAM_ID + "/questions").cookie(DEVICE_COOKIE))
                     .andExpect(status().isBadRequest())

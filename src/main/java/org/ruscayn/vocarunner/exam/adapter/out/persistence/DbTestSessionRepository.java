@@ -24,18 +24,18 @@ public class DbTestSessionRepository implements TestSessionRepository {
     private final JpaTestSessionRepository jpa;
 
     @Override
-    public void save(Exam session) {
-        jpa.save(session);
+    public void save(Exam exam) {
+        jpa.save(exam);
     }
 
     @Override
-    public Optional<Exam> findById(UUID sessionId) {
-        return jpa.findById(sessionId);
+    public Optional<Exam> findById(UUID examId) {
+        return jpa.findById(examId);
     }
 
     @Override
-    public void delete(UUID sessionId) {
-        jpa.deleteById(sessionId);
+    public void delete(UUID examId) {
+        jpa.deleteById(examId);
     }
 
     @Override

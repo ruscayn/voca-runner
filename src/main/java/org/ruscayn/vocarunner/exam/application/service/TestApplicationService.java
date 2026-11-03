@@ -66,23 +66,23 @@ public class TestApplicationService {
         Instant now = Instant.now();
         checkCapacity(examinee, now);
 
-        List<Question> questions = questionGenerator.generate(level, examProperties.questionCount());
-        Exam session = Exam.start(level, Direction.EN_KO, Exam.DEFAULT_TIME_LIMIT_SEC,
+        List<Question> questions = questionGenerator.generate(level, examProperties.maxQuestionCount());
+        Exam exam = Exam.start(level, Direction.EN_KO, Exam.DEFAULT_TIME_PER_QUESTION_SEC,
                 questions, examinee, now, examProperties.grace());
         transactionTemplate.executeWithoutResult(tx -> {
             testSessionRepository.lockForStart();
             List<Exam> replaced = checkCapacity(examinee, Instant.now());
             replaced.forEach(old -> {
                 testSessionRepository.delete(old.getId());
-                log.info("시험 만료 (같은 기기에서 새 시험 시작) session={}", old.getId());
+                log.info("시험 만료 (같은 기기에서 새 시험 시작) exam={}", old.getId());
             });
-            testSessionRepository.save(session);
+            testSessionRepository.save(exam);
         });
 
-        log.info("시험 시작 session={} level={} 문제={} 마감={} ({}ms)",
-                session.getId(), level, session.getQuestionCount(), session.getDeadline(),
+        log.info("시험 시작 exam={} level={} 문제={} 마감={} ({}ms)",
+                exam.getId(), level, exam.getQuestionCount(), exam.getDeadline(),
                 System.currentTimeMillis() - begin);
-        return session.getId();
+        return exam.getId();
     }
 
     /**
@@ -96,42 +96,42 @@ public class TestApplicationService {
         int inProgress = testSessionRepository.countInProgress(now) - byDevice.size();
         if (inProgress >= examProperties.maxInProgress()) {
             log.warn("시험 시작 거절 (전체 상한) 진행 중={} 상한={}", inProgress, examProperties.maxInProgress());
-            throw new CustomException(ErrorCode.TEST_SERVER_BUSY);
+            throw new CustomException(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS);
         }
         long sameIp = byDevice.stream().filter(s -> examinee.clientIp().equals(s.getExaminee().clientIp())).count();
         long byIp = testSessionRepository.countInProgressByIp(examinee.clientIp(), now) - sameIp;
         if (byIp >= examProperties.maxInProgressPerIp()) {
             log.warn("시험 시작 거절 (IP 상한) ip={} 진행 중={}", examinee.clientIp(), byIp);
-            throw new CustomException(ErrorCode.TEST_TOO_MANY_IN_PROGRESS_SAME_NETWORK);
+            throw new CustomException(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS_PER_IP);
         }
         return byDevice;
     }
 
     /** 시험 화면용 문제 (진행 중인 시험만, 정답 번호 제외). 시작한 기기만 */
     @Transactional
-    public TestQuestionsResponse getQuestions(UUID sessionId, String deviceId) {
-        Exam session = findStartedBy(sessionId, deviceId);
+    public TestQuestionsResponse getQuestions(UUID examId, String deviceId) {
+        Exam exam = findStartedBy(examId, deviceId);
         Instant now = Instant.now();
-        if (!session.isInProgress(now)) {
-            throw new CustomException(ErrorCode.TEST_NOT_IN_PROGRESS);
+        if (!exam.isInProgress(now)) {
+            throw new CustomException(ErrorCode.EXAM_NOT_IN_PROGRESS);
         }
-        long remainingSec = Math.max(0, Duration.between(now, session.getDeadline()).toSeconds());
-        session.markQuestionsDelivered();
+        long remainingSec = Math.max(0, Duration.between(now, exam.getDeadline()).toSeconds());
+        exam.markQuestionsDelivered();
 
-        Direction direction = session.getDirection();
-        List<TestQuestionView> questions = new ArrayList<>(session.getQuestionCount());
-        for (int no = 1; no <= session.getQuestionCount(); no++) {
-            questions.add(toView(session, no, direction));
+        Direction direction = exam.getDirection();
+        List<TestQuestionView> questions = new ArrayList<>(exam.getQuestionCount());
+        for (int no = 1; no <= exam.getQuestionCount(); no++) {
+            questions.add(toView(exam, no, direction));
         }
 
         return new TestQuestionsResponse(
-                session.getId(),
-                session.getLevel().name(),
-                session.getLevel().groupName(),
+                exam.getId(),
+                exam.getLevel().name(),
+                exam.getLevel().groupName(),
                 direction.name(),
-                session.getQuestionCount(),
-                session.getTimeLimitSec(),
-                Duration.between(session.getStartedAt(), session.getDeadline()).toMinutes(),
+                exam.getQuestionCount(),
+                exam.getTimePerQuestionSec(),
+                Duration.between(exam.getStartedAt(), exam.getDeadline()).toMinutes(),
                 remainingSec,
                 questions);
     }
@@ -141,13 +141,13 @@ public class TestApplicationService {
      * 거절(예외)해도 마감 초과 삭제는 반영해야 하므로 업무 예외로는 되돌리지 않는다 (채점 전 검사에서 거절하면 바뀐 내용 없음)
      */
     @Transactional(noRollbackFor = CustomException.class)
-    public TestSubmitResponse submit(UUID sessionId, String deviceId, TestSubmitRequest request) {
-        Exam session = findStartedBy(sessionId, deviceId);
+    public TestSubmitResponse submit(UUID examId, String deviceId, TestSubmitRequest request) {
+        Exam exam = findStartedBy(examId, deviceId);
 
         Map<Integer, Integer> selectedByNo = new HashMap<>();  // null 값 허용 (시간 초과)
         for (TestSubmitRequest.Answer answer : request.answers()) {
             int no = answer.questionNo();
-            if (no > session.getQuestionCount()) {
+            if (no > exam.getQuestionCount()) {
                 throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "없는 문제 번호입니다: " + no);
             }
             if (selectedByNo.containsKey(no)) {
@@ -157,79 +157,79 @@ public class TestApplicationService {
         }
 
         try {
-            session.submit(selectedByNo, Instant.now());
+            exam.submit(selectedByNo, Instant.now());
         } catch (CustomException e) {
-            if (e.getErrorCode() == ErrorCode.TEST_TIME_OVER) {
-                testSessionRepository.delete(sessionId);
-                log.info("시험 제출 거절 (마감 초과) session={} 마감={}", sessionId, session.getDeadline());
+            if (e.getErrorCode() == ErrorCode.EXAM_EXPIRED) {
+                testSessionRepository.delete(examId);
+                log.info("시험 제출 거절 (마감 초과) exam={} 마감={}", examId, exam.getDeadline());
             }
             throw e;
         }
         // 같은 시험을 동시에 두 번 제출하면 늦은 쪽은 커밋할 때 저장 충돌(@Version)로 되돌려지므로
         // 저장이 끝난 뒤에 남긴다. 실제로 채점·저장된 제출만 로그에 한 줄 (U39)
-        afterCommit(() -> log.info("시험 제출 session={} 맞힌 수={}/{} 점수={}",
-                session.getId(), session.getCorrectCount(), session.getQuestionCount(), session.getScore()));
+        afterCommit(() -> log.info("시험 제출 exam={} 맞힌 수={}/{} 점수={}",
+                exam.getId(), exam.getCorrectCount(), exam.getQuestionCount(), exam.getScore()));
 
         return new TestSubmitResponse(
-                session.getId(), session.getQuestionCount(), session.getCorrectCount(), session.getScore());
+                exam.getId(), exam.getQuestionCount(), exam.getCorrectCount(), exam.getScore());
     }
 
     /** 결과 (완료된 시험만). 없거나(보관 시간 경과 포함) 완료 전이면 empty */
     @Transactional(readOnly = true)
-    public Optional<TestResultResponse> findResult(UUID sessionId) {
-        return testSessionRepository.findById(sessionId)
+    public Optional<TestResultResponse> findResult(UUID examId) {
+        return testSessionRepository.findById(examId)
                 .filter(Exam::isCompleted)
                 .map(this::toResult);
     }
 
     /** 제출을 마쳐 결과를 보관 중인지 (보관 시간이 지나 정리됐으면 false) */
     @Transactional(readOnly = true)
-    public boolean hasResult(UUID sessionId) {
-        return testSessionRepository.findById(sessionId)
+    public boolean hasResult(UUID examId) {
+        return testSessionRepository.findById(examId)
                 .filter(Exam::isCompleted)
                 .isPresent();
     }
 
     /** 결과 (API) */
     @Transactional(readOnly = true)
-    public TestResultResponse getResult(UUID sessionId) {
-        Exam session = find(sessionId);
-        if (!session.isCompleted()) {
-            throw new CustomException(ErrorCode.TEST_NOT_COMPLETED);
+    public TestResultResponse getResult(UUID examId) {
+        Exam exam = find(examId);
+        if (!exam.isCompleted()) {
+            throw new CustomException(ErrorCode.EXAM_NOT_COMPLETED);
         }
-        return toResult(session);
+        return toResult(exam);
     }
 
     /** 진행 중이면 무효 처리(삭제). 없거나 이미 끝났거나 다른 기기에서 시작한 시험은 무시 */
     @Transactional
-    public void expireIfInProgress(UUID sessionId, String deviceId) {
+    public void abortExam(UUID examId, String deviceId) {
         Instant now = Instant.now();
-        testSessionRepository.findById(sessionId)
-                .filter(session -> session.isStartedBy(deviceId) && session.isInProgress(now))
-                .ifPresent(session -> {
-                    testSessionRepository.delete(sessionId);
-                    log.info("시험 만료 session={}", sessionId);
+        testSessionRepository.findById(examId)
+                .filter(exam -> exam.isStartedBy(deviceId) && exam.isInProgress(now))
+                .ifPresent(exam -> {
+                    testSessionRepository.delete(examId);
+                    log.info("시험 만료 exam={}", examId);
                 });
     }
 
     /** 진행 중(마감 전)인 시험인지 */
     @Transactional(readOnly = true)
-    public boolean isInProgress(UUID sessionId) {
+    public boolean isInProgress(UUID examId) {
         Instant now = Instant.now();
-        return testSessionRepository.findById(sessionId)
-                .map(session -> session.isInProgress(now))
+        return testSessionRepository.findById(examId)
+                .map(exam -> exam.isInProgress(now))
                 .orElse(false);
     }
 
-    private TestResultResponse toResult(Exam session) {
-        Direction direction = session.getDirection();
+    private TestResultResponse toResult(Exam exam) {
+        Direction direction = exam.getDirection();
         List<TestResultResponse.WrongItem> wrongItems = new ArrayList<>();
-        for (int no = 1; no <= session.getQuestionCount(); no++) {
-            if (session.isCorrect(no)) {
+        for (int no = 1; no <= exam.getQuestionCount(); no++) {
+            if (exam.isCorrect(no)) {
                 continue;
             }
-            CatalogWord answer = wordCatalog.get(session.answerLevelWordId(no));
-            Long selectedId = session.selectedLevelWordId(no);
+            CatalogWord answer = wordCatalog.get(exam.answerLevelWordId(no));
+            Long selectedId = exam.selectedLevelWordId(no);
             wrongItems.add(new TestResultResponse.WrongItem(
                     no,
                     promptText(answer, direction),
@@ -239,23 +239,23 @@ public class TestApplicationService {
                     answer.headword()));
         }
         return new TestResultResponse(
-                session.getId(),
-                session.getLevel().name(),
-                session.getLevel().groupName(),
-                session.getQuestionCount(),
-                session.getCorrectCount(),
-                session.getScore(),
-                session.getSubmittedAt().plus(examProperties.resultRetention()),
+                exam.getId(),
+                exam.getLevel().name(),
+                exam.getLevel().groupName(),
+                exam.getQuestionCount(),
+                exam.getCorrectCount(),
+                exam.getScore(),
+                exam.getSubmittedAt().plus(examProperties.resultRetention()),
                 examProperties.resultRetention().toMinutes(),
                 wrongItems);
     }
 
-    private TestQuestionView toView(Exam session, int no, Direction direction) {
-        List<Long> optionIds = session.optionLevelWordIds(no);
+    private TestQuestionView toView(Exam exam, int no, Direction direction) {
+        List<Long> optionIds = exam.optionLevelWordIds(no);
         List<TestQuestionView.Option> optionViews = IntStream.range(0, optionIds.size())
                 .mapToObj(i -> new TestQuestionView.Option(i + 1, optionText(wordCatalog.get(optionIds.get(i)), direction)))
                 .toList();
-        CatalogWord answer = wordCatalog.get(session.answerLevelWordId(no));
+        CatalogWord answer = wordCatalog.get(exam.answerLevelWordId(no));
         return new TestQuestionView(no, promptText(answer, direction), promptSubText(answer, direction), optionViews);
     }
 
@@ -276,17 +276,17 @@ public class TestApplicationService {
      * 이 기기에서 시작한 시험. 다른 기기면 없는 시험과 같은 응답을 준다.
      * 주소(시험 id)가 새어도 다른 사람이 문제를 받아 가거나 대신 제출해 끝내 버릴 수 없게 한다 (U9)
      */
-    private Exam findStartedBy(UUID sessionId, String deviceId) {
-        Exam session = find(sessionId);
-        if (!session.isStartedBy(deviceId)) {
-            log.warn("다른 기기의 시험 요청 거절 session={}", sessionId);
+    private Exam findStartedBy(UUID examId, String deviceId) {
+        Exam exam = find(examId);
+        if (!exam.isStartedBy(deviceId)) {
+            log.warn("다른 기기의 시험 요청 거절 exam={}", examId);
             throw notFound();
         }
-        return session;
+        return exam;
     }
 
-    private Exam find(UUID sessionId) {
-        return testSessionRepository.findById(sessionId)
+    private Exam find(UUID examId) {
+        return testSessionRepository.findById(examId)
                 .orElseThrow(TestApplicationService::notFound);
     }
 

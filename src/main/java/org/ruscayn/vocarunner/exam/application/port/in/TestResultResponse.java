@@ -33,7 +33,7 @@ public record TestResultResponse(
     }
 
     /** 답을 골랐지만 틀린 문제 수 */
-    public long wrongCount() {
+    public long incorrectCount() {
         return wrongItems.size() - timeoutCount();
     }
 

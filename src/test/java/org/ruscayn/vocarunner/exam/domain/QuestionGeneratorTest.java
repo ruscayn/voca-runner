@@ -200,7 +200,7 @@ class QuestionGeneratorTest {
     }
 
     @Test
-    @DisplayName("레벨에 출제 가능 단어가 하나도 없으면 TEST_NOT_ENOUGH_WORDS")
+    @DisplayName("레벨에 출제 가능 단어가 하나도 없으면 EXAM_NOT_ENOUGH_WORDS")
     void noAnswerableWords() {
         List<CatalogWord> catalog = new ArrayList<>(words(Level.A1, 1, 10));
         for (long id = 101; id <= 110; id++) {
@@ -210,7 +210,7 @@ class QuestionGeneratorTest {
         assertThatThrownBy(() -> generator(catalog, 1).generate(Level.A2, 5))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
-                .isEqualTo(ErrorCode.TEST_NOT_ENOUGH_WORDS);
+                .isEqualTo(ErrorCode.EXAM_NOT_ENOUGH_WORDS);
     }
 
     @ParameterizedTest(name = "seed {0}")
@@ -264,7 +264,7 @@ class QuestionGeneratorTest {
     }
 
     @Test
-    @DisplayName("뜻이 모두 같아 오답 보기를 만들 수 없으면 TEST_NOT_ENOUGH_WORDS")
+    @DisplayName("뜻이 모두 같아 오답 보기를 만들 수 없으면 EXAM_NOT_ENOUGH_WORDS")
     void cannotMakeDistractors() {
         List<CatalogWord> catalog = new ArrayList<>();
         for (long id = 1; id <= 10; id++) {
@@ -274,7 +274,7 @@ class QuestionGeneratorTest {
         assertThatThrownBy(() -> generator(catalog, 1).generate(Level.B2, 1))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
-                .isEqualTo(ErrorCode.TEST_NOT_ENOUGH_WORDS);
+                .isEqualTo(ErrorCode.EXAM_NOT_ENOUGH_WORDS);
     }
 
     @Test
@@ -344,7 +344,7 @@ class QuestionGeneratorTest {
     }
 
     @Test
-    @DisplayName("헷갈리는 단어 묶음 때문에 오답 보기를 만들 수 없으면 TEST_NOT_ENOUGH_WORDS")
+    @DisplayName("헷갈리는 단어 묶음 때문에 오답 보기를 만들 수 없으면 EXAM_NOT_ENOUGH_WORDS")
     void confusableLeavesNotEnoughDistractors() {
         // 단어 4개 중 1·2 가 같은 묶음 → 1 문제의 오답 후보는 3, 4 뿐
         List<CatalogWord> catalog = words(Level.A1, 1, 4);
@@ -353,7 +353,7 @@ class QuestionGeneratorTest {
         assertThatThrownBy(() -> new QuestionGenerator(wordCatalog, () -> new Random(1)).generate(Level.A1, 4))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
-                .isEqualTo(ErrorCode.TEST_NOT_ENOUGH_WORDS);
+                .isEqualTo(ErrorCode.EXAM_NOT_ENOUGH_WORDS);
     }
 
     @Test
@@ -379,7 +379,7 @@ class QuestionGeneratorTest {
         List<Question> questions = generator(catalog, 42).generate(Level.B1, 400);
 
         int[] counts = new int[Question.OPTION_COUNT + 1];
-        questions.forEach(q -> counts[q.correctOptionNo()]++);
+        questions.forEach(q -> counts[q.answerOptionNo()]++);
         // 400문항 → 번호당 평균 100. 무작위 편차를 고려해 넉넉하게 60~140
         for (int no = 1; no <= Question.OPTION_COUNT; no++) {
             assertThat(counts[no]).as("정답 %d번 개수", no).isBetween(60, 140);

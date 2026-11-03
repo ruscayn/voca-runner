@@ -26,9 +26,9 @@ class TestResultResponseTest {
         TestResultResponse result = new TestResultResponse(
                 UUID.randomUUID(), "B1", "Independent", 10, 5, 50, Instant.now(), 20, wrongItems);
 
-        assertThat(result.wrongCount()).isEqualTo(2);
+        assertThat(result.incorrectCount()).isEqualTo(2);
         assertThat(result.timeoutCount()).isEqualTo(3);
-        assertThat(result.correctCount() + result.wrongCount() + result.timeoutCount())
+        assertThat(result.correctCount() + result.incorrectCount() + result.timeoutCount())
                 .isEqualTo(result.questionCount());
     }
 
@@ -38,7 +38,7 @@ class TestResultResponseTest {
         TestResultResponse result = new TestResultResponse(
                 UUID.randomUUID(), "A1", "Basic", 5, 5, 100, Instant.now(), 20, List.of());
 
-        assertThat(result.wrongCount()).isZero();
+        assertThat(result.incorrectCount()).isZero();
         assertThat(result.timeoutCount()).isZero();
     }
 

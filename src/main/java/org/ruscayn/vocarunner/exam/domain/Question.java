@@ -23,7 +23,7 @@ public record Question(CatalogWord answer, List<CatalogWord> options) {
     }
 
     /** 정답 보기 번호 1~4 */
-    public int correctOptionNo() {
+    public int answerOptionNo() {
         for (int i = 0; i < options.size(); i++) {
             if (options.get(i).levelWordId() == answer.levelWordId()) {
                 return i + 1;

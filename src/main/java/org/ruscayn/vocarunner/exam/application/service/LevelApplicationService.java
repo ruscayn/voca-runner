@@ -32,9 +32,9 @@ public class LevelApplicationService {
 
     private LevelSummary toSummary(Level level) {
         int wordCount = wordCatalog.countByLevel(level);
-        int questionCount = QuestionGenerator.questionCount(wordCount, examProperties.questionCount());
-        long allowedMinutes = Exam.allowedDuration(
-                questionCount, Exam.DEFAULT_TIME_LIMIT_SEC, examProperties.grace()).toMinutes();
+        int questionCount = QuestionGenerator.questionCount(wordCount, examProperties.maxQuestionCount());
+        long allowedMinutes = Exam.allowedTime(
+                questionCount, Exam.DEFAULT_TIME_PER_QUESTION_SEC, examProperties.grace()).toMinutes();
         return new LevelSummary(level, wordCount, questionCount, allowedMinutes);
     }
 

@@ -55,20 +55,20 @@ public final class TestWords {
                 long id = n * 10L + i;
                 options.add(word(id, id, Level.A1));
             }
-            CatalogWord answer = options.get(correctOptionNo(n) - 1);
+            CatalogWord answer = options.get(answerOptionNo(n) - 1);
             list.add(new Question(answer, options));
         }
         return list;
     }
 
     /** questions() 로 만든 문제 n 의 정답 보기 번호 */
-    public static int correctOptionNo(int questionNo) {
+    public static int answerOptionNo(int questionNo) {
         return (questionNo - 1) % Question.OPTION_COUNT + 1;
     }
 
     /** questions() 로 만든 문제 n 의 오답 보기 번호 하나 */
-    public static int wrongOptionNo(int questionNo) {
-        return correctOptionNo(questionNo) % Question.OPTION_COUNT + 1;
+    public static int incorrectOptionNo(int questionNo) {
+        return answerOptionNo(questionNo) % Question.OPTION_COUNT + 1;
     }
 
 }
