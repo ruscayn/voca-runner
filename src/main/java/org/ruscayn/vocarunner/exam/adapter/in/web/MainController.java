@@ -45,7 +45,7 @@ public class MainController {
         LevelSummary first = levelGroups.getFirst().levels().getFirst();
         model.addAttribute("levelGroups", levelGroups);
         model.addAttribute("questionCount", first.questionCount());
-        model.addAttribute("timeLimitSec", Exam.DEFAULT_TIME_PER_QUESTION_SEC);
+        model.addAttribute("timePerQuestionSec", Exam.DEFAULT_TIME_PER_QUESTION_SEC);
         model.addAttribute("allowedMinutes", first.allowedMinutes());
         return "main";
     }

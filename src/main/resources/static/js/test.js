@@ -29,8 +29,8 @@
     const PROMPT_SUB_GAP_PX = 8;   // 아래 줄은 단어보다 이만큼 작게. 단어가 32px 아래로 줄면 아래 줄도 같이 줄어 28px일 때 20px
 
     const app = document.getElementById('test-app');
-    const sessionId = app.dataset.sessionId;
-    const api = (path) => `/api/tests/${sessionId}${path}`;
+    const examId = app.dataset.examId;
+    const api = (path) => `/api/tests/${examId}${path}`;
     const $ = (id) => document.getElementById(id);
 
     const el = {
@@ -57,7 +57,7 @@
 
     const state = {
         questions: [],
-        timeLimitMs: 5000,
+        timePerQuestionMs: 5000,
         direction: 'EN_KO',
         questionCount: 0,
         deadlineAt: 0,        // 전체 마감 시각 (performance.now() 기준, 기기 시계와 무관)
@@ -230,10 +230,10 @@
     /** 시작 전 안내 : 레벨, 500문항 / 5초 / 45분, 안내 2가지, [이전] [시작] */
     function showReady(data) {
         showOverlay('준비되면 출발하세요', '', '시작', begin);
-        el.sheetEyebrow.textContent = `${data.level} · ${data.levelGroup}`;
+        el.sheetEyebrow.textContent = `${data.level} · ${data.groupName}`;
         el.sheetEyebrow.hidden = false;
         $('ready-count').textContent = data.questionCount.toLocaleString('ko-KR');
-        $('ready-sec').textContent = data.timeLimitSec;
+        $('ready-sec').textContent = data.timePerQuestionSec;
         $('ready-min').textContent = data.allowedMinutes;
         $('ready-min-text').textContent = data.allowedMinutes;
         el.readyInfo.hidden = false;
@@ -262,7 +262,7 @@
         const remainMs = Math.max(0, state.questionEndAt - performance.now());
         const bar = el.timerBar;
         bar.style.transition = 'none';
-        bar.style.transform = `scaleX(${remainMs / state.timeLimitMs})`;
+        bar.style.transform = `scaleX(${remainMs / state.timePerQuestionMs})`;
         void bar.offsetWidth;                          // 애니메이션 재시작
         bar.style.transition = `transform ${remainMs}ms linear`;
         bar.style.transform = 'scaleX(0)';
@@ -290,7 +290,7 @@
                 return;
             }
             state.index += 1;
-            state.questionEndAt += state.timeLimitMs;
+            state.questionEndAt += state.timePerQuestionMs;
         }
         showQuestion(state.index);
     }
@@ -408,7 +408,7 @@
         state.answers.push({ questionNo: q.no, selectedOptionNo });
 
         if (index + 1 < state.questions.length) {
-            state.questionEndAt = performance.now() + state.timeLimitMs;
+            state.questionEndAt = performance.now() + state.timePerQuestionMs;
             showQuestion(index + 1);
         } else {
             finish();
@@ -459,7 +459,7 @@
         tts.unlock();                 // 터치 이벤트 안에서 호출 (iOS)
         hideOverlay();
         state.status = 'RUNNING';
-        state.questionEndAt = performance.now() + state.timeLimitMs;
+        state.questionEndAt = performance.now() + state.timePerQuestionMs;
         showQuestion(0);
     }
 
@@ -472,20 +472,20 @@
             const data = await res.json();
 
             state.questions = data.questions;
-            state.timeLimitMs = data.timeLimitSec * 1000;
+            state.timePerQuestionMs = data.timePerQuestionSec * 1000;
             state.direction = data.direction;
             state.questionCount = data.questionCount;
             el.total.textContent = data.questionCount;
-            el.timerSec.textContent = data.timeLimitSec;
-            el.levelCaption.textContent = `${data.level} · ${data.levelGroup}`;
+            el.timerSec.textContent = data.timePerQuestionSec;
+            el.levelCaption.textContent = `${data.level} · ${data.groupName}`;
 
             state.status = 'READY';
             showReady(data);
             startClock(data.remainingSec);
         } catch (e) {
             state.status = 'ABORTED';
-            if (isSessionGone(e)) {
-                showOverlay('시험이 종료되었습니다', MSG_SESSION_GONE, '확인', goMain);
+            if (isExamGone(e)) {
+                showOverlay('시험이 종료되었습니다', MSG_EXAM_GONE, '확인', goMain);
                 return;
             }
             // 서버에 남은 시험이 동시 진행 개수를 차지하지 않게 만료 요청.
@@ -518,8 +518,8 @@
                 // 서버가 거절 (마감 초과·이미 종료·없는 시험 등) : 다시 제출해도 소용없으므로 메인으로
                 state.status = 'ABORTED';
                 stopClock();
-                if (isSessionGone(e)) {
-                    showOverlay('시험이 종료되었습니다', MSG_SESSION_GONE, '확인', goMain);
+                if (isExamGone(e)) {
+                    showOverlay('시험이 종료되었습니다', MSG_EXAM_GONE, '확인', goMain);
                     return;
                 }
                 const title = e.code === 'TEST_005' ? '시험이 무효 처리되었습니다' : '제출할 수 없습니다';
@@ -537,7 +537,7 @@
     function goResult() {
         state.status = 'DONE';
         stopClock();
-        location.replace(`/test/${sessionId}/result`);
+        location.replace(`/test/${examId}/result`);
     }
 
     /** 채점이 끝나 결과가 저장돼 있는지 */
@@ -575,7 +575,7 @@
         goMain();
     }
 
-    const MSG_SESSION_GONE = '서버 점검 등으로 시험 정보가 사라졌습니다.\n불편을 드려 죄송합니다. 처음부터 다시 시작해 주세요.';
+    const MSG_EXAM_GONE = '서버 점검 등으로 시험 정보가 사라졌습니다.\n불편을 드려 죄송합니다. 처음부터 다시 시작해 주세요.';
     const MSG_OFFLINE_LOAD = '서버와 연결할 수 없습니다.\n인터넷 연결을 확인한 뒤 다시 시작해 주세요.';
     const MSG_OFFLINE_SUBMIT = '서버와 연결할 수 없습니다.\n인터넷 연결을 확인한 뒤 다시 제출해 주세요.';
 
@@ -583,7 +583,7 @@
      * 서버에 시험이 없음 (BUSINESS_001).
      * 시험은 DB 에 있어 앱 재시작·배포 때도 남는다 (U21). 마감·만료로 정리됐거나 단어 데이터를 다시 넣은 경우 등이며 구분하지 않는다
      */
-    function isSessionGone(e) {
+    function isExamGone(e) {
         return e.code === 'BUSINESS_001';
     }
 
@@ -643,7 +643,7 @@
         tts.stop();
         const bar = el.timerBar;                    // 막대를 지금 위치에 멈춤
         bar.style.transition = 'none';
-        bar.style.transform = `scaleX(${state.pausedRemainMs / state.timeLimitMs})`;
+        bar.style.transform = `scaleX(${state.pausedRemainMs / state.timePerQuestionMs})`;
 
         showOverlay('시험을 그만둘까요?', '지금까지 푼 답은 사라집니다.', '계속 풀기', resume);
         el.overlayBack.textContent = '그만두기';

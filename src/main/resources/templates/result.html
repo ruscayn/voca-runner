@@ -17,7 +17,7 @@
         <section class="record" aria-label="시험 결과">
             <div class="record-head">
                 <span class="record-tag">FINISH</span>
-                <span class="result-level"><th:block th:text="${result.level()}">B1</th:block> · <th:block th:text="${result.levelGroup()}">Independent</th:block></span>
+                <span class="result-level"><th:block th:text="${result.level()}">B1</th:block> · <th:block th:text="${result.groupName()}">Independent</th:block></span>
             </div>
             <p class="record-score"><strong th:text="${result.score()}">82</strong><span>점</span></p>
             <div class="record-bar"><div class="record-bar-fill" th:style="|width: ${result.score()}%|"></div></div>
@@ -37,7 +37,7 @@
             </div>
         </section>
 
-        <p class="retention-note">이 결과는 제출 후 <th:block th:text="${result.retentionText()}">1시간</th:block> 동안만 볼 수 있어요 (<strong th:text="${availableUntil}">14:20</strong>까지)</p>
+        <p class="retention-note">이 결과는 제출 후 <th:block th:text="${result.retentionText()}">1시간</th:block> 동안만 볼 수 있어요 (<strong th:text="${retentionDeadline}">14:20</strong>까지)</p>
 
         <!-- 틀린 단어 -->
         <section class="review-section" th:unless="${#lists.isEmpty(result.wrongItems())}">

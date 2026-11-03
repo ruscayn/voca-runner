@@ -7,17 +7,17 @@ import java.util.UUID;
 /**
  * 시험 결과 (틀린 문제 목록 포함)
  *
- * @param availableUntil   결과를 볼 수 있는 마지막 시각 (제출 시각 + 보관 시간). 지나면 정리 작업이 지운다
- * @param retentionMinutes 결과 보관 시간 (분)
+ * @param retentionDeadline 보관 마감 = 결과를 볼 수 있는 마지막 시각 (제출 시각 + 보관 시간). 지나면 정리 작업이 지운다
+ * @param retentionMinutes  결과 보관 시간 (분)
  */
 public record ExamResultResponse(
-        UUID sessionId,
+        UUID examId,
         String level,
-        String levelGroup,
+        String groupName,
         int questionCount,
         int correctCount,
         int score,
-        Instant availableUntil,
+        Instant retentionDeadline,
         long retentionMinutes,
         List<WrongItem> wrongItems
 ) {

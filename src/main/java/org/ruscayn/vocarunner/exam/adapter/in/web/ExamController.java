@@ -80,7 +80,7 @@ public class ExamController {
         if (inProgress && examId.equals(token)) {
             httpSession.removeAttribute(ENTRY_TOKEN);
             httpSession.setAttribute(OPENED_EXAM, examId);
-            model.addAttribute("sessionId", examId);
+            model.addAttribute("examId", examId);
             return "test";
         }
 
@@ -111,7 +111,7 @@ public class ExamController {
         return examApplicationService.findResult(examId)
                 .map(result -> {
                     model.addAttribute("result", result);
-                    model.addAttribute("availableUntil", RETENTION_DEADLINE_FORMAT.format(result.availableUntil()));
+                    model.addAttribute("retentionDeadline", RETENTION_DEADLINE_FORMAT.format(result.retentionDeadline()));
                     return "result";
                 })
                 .orElse("redirect:/?notice=" + MainController.NOTICE_RESULT_EXPIRED);

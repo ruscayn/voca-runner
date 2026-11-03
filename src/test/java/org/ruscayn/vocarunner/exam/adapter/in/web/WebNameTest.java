@@ -107,7 +107,7 @@ class WebNameTest {
                     .andReturn().getResponse().getContentAsString();
 
             assertThat(readObject(json, "$").keySet()).containsExactlyInAnyOrder(
-                    "sessionId", "level", "levelGroup", "direction", "questionCount", "timeLimitSec",
+                    "examId", "level", "groupName", "direction", "questionCount", "timePerQuestionSec",
                     "allowedMinutes", "remainingSec", "questions");
             assertThat(readObject(json, "$.questions[0]").keySet())
                     .containsExactlyInAnyOrder("no", "prompt", "promptSub", "options");
@@ -152,7 +152,7 @@ class WebNameTest {
                     .andReturn().getResponse().getContentAsString();
 
             assertThat(readObject(json, "$").keySet())
-                    .containsExactlyInAnyOrder("sessionId", "questionCount", "correctCount", "score");
+                    .containsExactlyInAnyOrder("examId", "questionCount", "correctCount", "score");
         }
 
         @Test
@@ -165,8 +165,8 @@ class WebNameTest {
                     .andReturn().getResponse().getContentAsString();
 
             assertThat(readObject(json, "$").keySet()).containsExactlyInAnyOrder(
-                    "sessionId", "level", "levelGroup", "questionCount", "correctCount", "score",
-                    "availableUntil", "retentionMinutes", "wrongItems");
+                    "examId", "level", "groupName", "questionCount", "correctCount", "score",
+                    "retentionDeadline", "retentionMinutes", "wrongItems");
             assertThat(readObject(json, "$.wrongItems[0]").keySet()).containsExactlyInAnyOrder(
                     "no", "prompt", "promptSub", "selectedText", "answerText", "headword");
         }
@@ -192,7 +192,7 @@ class WebNameTest {
     class Page {
 
         @Test
-        @DisplayName("메인 : levelGroups · questionCount · timeLimitSec · allowedMinutes, 레벨 카드를 그린다")
+        @DisplayName("메인 : levelGroups · questionCount · timePerQuestionSec · allowedMinutes, 레벨 카드를 그린다")
         void main() throws Exception {
             given(levelApplicationService.getDetailLevelGroups()).willReturn(List.of(
                     new LevelGroupSummary("Independent", List.of(new LevelSummary(Level.B2, 1234, 500, 45)))));
@@ -200,7 +200,7 @@ class WebNameTest {
             mockMvc.perform(get("/"))
                     .andExpect(status().isOk())
                     .andExpect(view().name("main"))
-                    .andExpect(model().attributeExists("levelGroups", "questionCount", "timeLimitSec",
+                    .andExpect(model().attributeExists("levelGroups", "questionCount", "timePerQuestionSec",
                             "allowedMinutes"))
                     .andExpect(content().string(containsString(">Independent<")))
                     .andExpect(content().string(containsString("value=\"B2\"")))
@@ -220,7 +220,7 @@ class WebNameTest {
         }
 
         @Test
-        @DisplayName("시험 화면 : sessionId 를 data-session-id 로 그린다")
+        @DisplayName("시험 화면 : examId 를 data-exam-id 로 그린다")
         void exam() throws Exception {
             given(examApplicationService.start(eq(Level.A1), any())).willReturn(EXAM_ID);
             given(examApplicationService.isInProgress(EXAM_ID)).willReturn(true);
@@ -231,12 +231,12 @@ class WebNameTest {
             mockMvc.perform(get("/test/" + EXAM_ID).session(httpSession).cookie(DEVICE_COOKIE))
                     .andExpect(status().isOk())
                     .andExpect(view().name("test"))
-                    .andExpect(model().attribute("sessionId", EXAM_ID))
-                    .andExpect(content().string(containsString("data-session-id=\"" + EXAM_ID + "\"")));
+                    .andExpect(model().attribute("examId", EXAM_ID))
+                    .andExpect(content().string(containsString("data-exam-id=\"" + EXAM_ID + "\"")));
         }
 
         @Test
-        @DisplayName("결과 화면 : result · availableUntil, 템플릿 안 호출(오답 수 · 시간 초과 수 · 보관 시간 문구)을 그린다")
+        @DisplayName("결과 화면 : result · retentionDeadline, 템플릿 안 호출(오답 수 · 시간 초과 수 · 보관 시간 문구)을 그린다")
         void result() throws Exception {
             given(examApplicationService.findResult(EXAM_ID))
                     .willReturn(Optional.of(resultWithOneIncorrectAndOneTimeout()));
@@ -244,7 +244,7 @@ class WebNameTest {
             String html = mockMvc.perform(get("/test/" + EXAM_ID + "/result"))
                     .andExpect(status().isOk())
                     .andExpect(view().name("result"))
-                    .andExpect(model().attributeExists("result", "availableUntil"))
+                    .andExpect(model().attributeExists("result", "retentionDeadline"))
                     .andReturn().getResponse().getContentAsString();
 
             assertThat(html)
