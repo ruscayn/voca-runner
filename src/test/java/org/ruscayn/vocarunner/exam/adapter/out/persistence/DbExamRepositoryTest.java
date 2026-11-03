@@ -45,10 +45,10 @@ import static org.ruscayn.vocarunner.support.TestWords.incorrectOptionNo;
  */
 @DataJpaTest
 @Testcontainers
-@Import({DbTestSessionRepository.class, JpaConfig.class})
+@Import({DbExamRepository.class, JpaConfig.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
-@DisplayName("DbTestSessionRepository : 시험 저장 (PostgreSQL)")
-class DbTestSessionRepositoryTest {
+@DisplayName("DbExamRepository : 시험 저장 (PostgreSQL)")
+class DbExamRepositoryTest {
 
     @Container
     @ServiceConnection
@@ -61,10 +61,10 @@ class DbTestSessionRepositoryTest {
     private static final Duration UNDELIVERED = Duration.ofMinutes(5);
 
     @Autowired
-    private DbTestSessionRepository repository;
+    private DbExamRepository repository;
 
     @Autowired
-    private JpaTestSessionRepository jpa;
+    private JpaExamRepository jpa;
 
     @Autowired
     private PlatformTransactionManager transactionManager;
@@ -270,7 +270,7 @@ class DbTestSessionRepositoryTest {
     private boolean tryStartLock() {
         return Boolean.TRUE.equals(new TransactionTemplate(transactionManager).execute(status ->
                 jdbcTemplate.queryForObject("select pg_try_advisory_xact_lock(?)", Boolean.class,
-                        JpaTestSessionRepository.START_LOCK_KEY)));
+                        JpaExamRepository.START_LOCK_KEY)));
     }
 
 }

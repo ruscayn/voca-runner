@@ -10,7 +10,7 @@ import java.util.List;
  * @param promptSub 문제 아래 줄에 함께 표시할 형태 (EN_KO 의 headword_sub). 없으면 null
  * @param options   보기 1~4
  */
-public record TestQuestionView(int no, String prompt, String promptSub, List<Option> options) {
+public record ExamQuestionView(int no, String prompt, String promptSub, List<Option> options) {
 
     /** @param no 보기 번호 1~4, @param text 보기 내용 */
     public record Option(int no, String text) {

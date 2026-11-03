@@ -10,7 +10,7 @@ import java.util.UUID;
  * @param availableUntil   결과를 볼 수 있는 마지막 시각 (제출 시각 + 보관 시간). 지나면 정리 작업이 지운다
  * @param retentionMinutes 결과 보관 시간 (분)
  */
-public record TestResultResponse(
+public record ExamResultResponse(
         UUID sessionId,
         String level,
         String levelGroup,

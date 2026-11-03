@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
-import org.ruscayn.vocarunner.exam.application.service.TestApplicationService;
+import org.ruscayn.vocarunner.exam.application.service.ExamApplicationService;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.system.CapturedOutput;
@@ -35,9 +35,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * 시험 API 요청 형식 검사와 오류 응답.
  * 서비스는 가짜로 바꿔 요청이 서비스까지 가는지만 본다 (DB 없음).
  */
-@WebMvcTest(TestApiController.class)
-@DisplayName("TestApiController : 시험 API 요청 형식")
-class TestApiControllerTest {
+@WebMvcTest(ExamApiController.class)
+@DisplayName("ExamApiController : 시험 API 요청 형식")
+class ExamApiControllerTest {
 
     private static final UUID EXAM_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final String DEVICE_ID = "22222222-2222-2222-2222-222222222222";
@@ -48,7 +48,7 @@ class TestApiControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private TestApplicationService testApplicationService;
+    private ExamApplicationService examApplicationService;
 
     private ResultActions submit(MediaType contentType, String body) throws Exception {
         return mockMvc.perform(post(SUBMIT_URL).cookie(DEVICE_COOKIE).contentType(contentType).content(body));
@@ -66,7 +66,7 @@ class TestApiControllerTest {
                     """)
                     .andExpect(status().isOk());
 
-            verify(testApplicationService).submit(eq(EXAM_ID), eq(DEVICE_ID), any());
+            verify(examApplicationService).submit(eq(EXAM_ID), eq(DEVICE_ID), any());
         }
 
         @Test
@@ -76,7 +76,7 @@ class TestApiControllerTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("COMMON_002"));
 
-            verify(testApplicationService, never()).submit(any(), any(), any());
+            verify(examApplicationService, never()).submit(any(), any(), any());
         }
 
         @Test
@@ -93,7 +93,7 @@ class TestApiControllerTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("COMMON_002"));
 
-            verify(testApplicationService, never()).submit(any(), any(), any());
+            verify(examApplicationService, never()).submit(any(), any(), any());
         }
 
         @Test
@@ -105,13 +105,13 @@ class TestApiControllerTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("COMMON_002"));
 
-            verify(testApplicationService, never()).submit(any(), any(), any());
+            verify(examApplicationService, never()).submit(any(), any(), any());
         }
 
         @Test
         @DisplayName("동시에 두 번 제출해 늦은 쪽이 저장에서 충돌하면 500 이 아니라 400 진행 중인 시험이 아님 (U39)")
         void concurrentSubmit() throws Exception {
-            given(testApplicationService.submit(eq(EXAM_ID), eq(DEVICE_ID), any()))
+            given(examApplicationService.submit(eq(EXAM_ID), eq(DEVICE_ID), any()))
                     .willThrow(new ObjectOptimisticLockingFailureException(Exam.class, EXAM_ID));
 
             submit(MediaType.APPLICATION_JSON, """
@@ -130,7 +130,7 @@ class TestApiControllerTest {
                     .andExpect(status().isUnsupportedMediaType())
                     .andExpect(jsonPath("$.code").value("COMMON_005"));
 
-            verify(testApplicationService, never()).submit(any(), any(), any());
+            verify(examApplicationService, never()).submit(any(), any(), any());
         }
     }
 
@@ -142,7 +142,7 @@ class TestApiControllerTest {
         @Test
         @DisplayName("업무 오류(거절)는 스택 없이 WARN 한 줄로 남긴다")
         void businessExceptionIsWarnWithoutStack(CapturedOutput output) throws Exception {
-            given(testApplicationService.submit(eq(EXAM_ID), eq(DEVICE_ID), any()))
+            given(examApplicationService.submit(eq(EXAM_ID), eq(DEVICE_ID), any()))
                     .willThrow(new CustomException(ErrorCode.EXAM_EXPIRED));
 
             submit(MediaType.APPLICATION_JSON, """

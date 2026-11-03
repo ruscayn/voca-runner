@@ -2,11 +2,11 @@ package org.ruscayn.vocarunner.exam.adapter.in.web;
 
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
-import org.ruscayn.vocarunner.exam.application.port.in.TestQuestionsResponse;
-import org.ruscayn.vocarunner.exam.application.port.in.TestResultResponse;
-import org.ruscayn.vocarunner.exam.application.port.in.TestSubmitRequest;
-import org.ruscayn.vocarunner.exam.application.port.in.TestSubmitResponse;
-import org.ruscayn.vocarunner.exam.application.service.TestApplicationService;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResponse;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamResultResponse;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamSubmitRequest;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamSubmitResponse;
+import org.ruscayn.vocarunner.exam.application.service.ExamApplicationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,14 +20,14 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/tests")
 @RequiredArgsConstructor
-public class TestApiController {
+public class ExamApiController {
 
-    private final TestApplicationService testApplicationService;
+    private final ExamApplicationService examApplicationService;
 
     /** 문제 전체 (정답 제외). 시작한 기기만 */
     @GetMapping("/{examId}/questions")
-    public TestQuestionsResponse questions(@PathVariable UUID examId, HttpServletRequest httpRequest) {
-        return testApplicationService.getQuestions(examId, DeviceCookie.find(httpRequest));
+    public ExamQuestionsResponse questions(@PathVariable UUID examId, HttpServletRequest httpRequest) {
+        return examApplicationService.getQuestions(examId, DeviceCookie.find(httpRequest));
     }
 
     /**
@@ -36,10 +36,10 @@ public class TestApiController {
      * 먼저 저장한 쪽만 채점되고(@Version) 늦은 쪽은 저장할 때 충돌하므로, 이미 끝난 시험을 제출한 것과 같은 응답을 준다 (U39)
      */
     @PostMapping("/{examId}/submit")
-    public TestSubmitResponse submit(@PathVariable UUID examId,
-                                     @Valid @RequestBody TestSubmitRequest request, HttpServletRequest httpRequest) {
+    public ExamSubmitResponse submit(@PathVariable UUID examId,
+                                     @Valid @RequestBody ExamSubmitRequest request, HttpServletRequest httpRequest) {
         try {
-            return testApplicationService.submit(examId, DeviceCookie.find(httpRequest), request);
+            return examApplicationService.submit(examId, DeviceCookie.find(httpRequest), request);
         } catch (OptimisticLockingFailureException e) {
             throw new CustomException(ErrorCode.EXAM_NOT_IN_PROGRESS);
         }
@@ -47,14 +47,14 @@ public class TestApiController {
 
     /** 결과 (완료된 시험만) */
     @GetMapping("/{examId}/result")
-    public TestResultResponse result(@PathVariable UUID examId) {
-        return testApplicationService.getResult(examId);
+    public ExamResultResponse result(@PathVariable UUID examId) {
+        return examApplicationService.getResult(examId);
     }
 
     /** 중도 이탈 시 만료 (navigator.sendBeacon 용, 본문 없음). 시작한 기기만 (다른 기기면 무시) */
     @PostMapping("/{examId}/expire")
     public ResponseEntity<Void> abort(@PathVariable UUID examId, HttpServletRequest httpRequest) {
-        testApplicationService.abortExam(examId, DeviceCookie.find(httpRequest));
+        examApplicationService.abortExam(examId, DeviceCookie.find(httpRequest));
         return ResponseEntity.noContent().build();
     }
 

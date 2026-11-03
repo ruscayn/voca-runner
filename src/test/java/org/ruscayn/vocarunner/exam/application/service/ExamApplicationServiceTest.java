@@ -3,8 +3,8 @@ package org.ruscayn.vocarunner.exam.application.service;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.ruscayn.vocarunner.exam.application.port.in.TestSubmitRequest;
-import org.ruscayn.vocarunner.exam.application.port.out.TestSessionRepository;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamSubmitRequest;
+import org.ruscayn.vocarunner.exam.application.port.out.ExamRepository;
 import org.ruscayn.vocarunner.exam.domain.Direction;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.exam.domain.Exam;
@@ -35,14 +35,14 @@ import static org.ruscayn.vocarunner.support.TestWords.questions;
  * 저장소는 가짜, 트랜잭션은 커밋만 흉내 낸다 (DB 없음). 서비스의 @Transactional 대신 TransactionTemplate 으로 감싸 부른다
  */
 @ExtendWith(OutputCaptureExtension.class)
-@DisplayName("TestApplicationService : 제출 로그")
-class TestApplicationServiceTest {
+@DisplayName("ExamApplicationService : 제출 로그")
+class ExamApplicationServiceTest {
 
     private static final String DEVICE_ID = "22222222-2222-2222-2222-222222222222";
 
-    private final TestSessionRepository repository = mock(TestSessionRepository.class);
+    private final ExamRepository repository = mock(ExamRepository.class);
     // 제출에는 저장소만 쓴다
-    private final TestApplicationService service = new TestApplicationService(repository, null, null, null, null);
+    private final ExamApplicationService service = new ExamApplicationService(repository, null, null, null, null);
 
     private final Exam exam = Exam.start(Level.A1, Direction.EN_KO, 5, questions(2),
             new Examinee(DEVICE_ID, "10.0.0.1"), Instant.now(), Duration.ofMinutes(3));
@@ -66,7 +66,7 @@ class TestApplicationServiceTest {
 
     private void submitIn(PlatformTransactionManager transactionManager) {
         given(repository.findById(exam.getId())).willReturn(Optional.of(exam));
-        TestSubmitRequest request = new TestSubmitRequest(List.of(new TestSubmitRequest.Answer(1, answerOptionNo(1))));
+        ExamSubmitRequest request = new ExamSubmitRequest(List.of(new ExamSubmitRequest.Answer(1, answerOptionNo(1))));
         new TransactionTemplate(transactionManager)
                 .executeWithoutResult(tx -> service.submit(exam.getId(), DEVICE_ID, request));
     }

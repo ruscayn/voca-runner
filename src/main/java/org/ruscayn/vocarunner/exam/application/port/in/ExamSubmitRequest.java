@@ -13,7 +13,7 @@ import java.util.List;
  * @param answers 문제별 답. 시간 초과 문제는 selectedOptionNo 가 null 이거나 항목이 없어도 된다.
  *                항목 자체가 null 이면 형식 오류 (U44)
  */
-public record TestSubmitRequest(@NotNull List<@NotNull @Valid Answer> answers) {
+public record ExamSubmitRequest(@NotNull List<@NotNull @Valid Answer> answers) {
 
     public record Answer(
             @NotNull @Min(1) Integer questionNo,

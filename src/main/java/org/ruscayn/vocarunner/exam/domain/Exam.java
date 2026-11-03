@@ -234,7 +234,7 @@ public class Exam extends BaseEntity {
     }
 
     /**
-     * 지워도 되는지 (정리 작업의 삭제 조건과 같다. DbTestSessionRepository.deleteDisposable).
+     * 지워도 되는지 (정리 작업의 삭제 조건과 같다. DbExamRepository.deleteDisposable).
      * 진행 중 → 마감 시각 경과 또는 시작 후 문제를 받아 가지 않은 채 undeliveredTimeout 경과,
      * 완료 → 결과 보관 시간 경과, 무효 → 즉시
      *

@@ -1,6 +1,6 @@
 package org.ruscayn.vocarunner.exam.adapter.out.persistence;
 
-import org.ruscayn.vocarunner.exam.application.port.out.TestSessionRepository;
+import org.ruscayn.vocarunner.exam.application.port.out.ExamRepository;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.ExamStatus;
 import lombok.RequiredArgsConstructor;
@@ -19,9 +19,9 @@ import java.util.UUID;
  */
 @Repository
 @RequiredArgsConstructor
-public class DbTestSessionRepository implements TestSessionRepository {
+public class DbExamRepository implements ExamRepository {
 
-    private final JpaTestSessionRepository jpa;
+    private final JpaExamRepository jpa;
 
     @Override
     public void save(Exam exam) {
@@ -40,7 +40,7 @@ public class DbTestSessionRepository implements TestSessionRepository {
 
     @Override
     public void lockForStart() {
-        jpa.advisoryLock(JpaTestSessionRepository.START_LOCK_KEY);
+        jpa.advisoryLock(JpaExamRepository.START_LOCK_KEY);
     }
 
     @Override

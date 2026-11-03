@@ -11,8 +11,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/** test_session Spring Data 저장소. 도메인 저장소(TestSessionRepository) 구현에서만 쓴다 */
-public interface JpaTestSessionRepository extends JpaRepository<Exam, UUID> {
+/** test_session Spring Data 저장소. 도메인 저장소(ExamRepository) 구현에서만 쓴다 */
+public interface JpaExamRepository extends JpaRepository<Exam, UUID> {
 
     /** 시험 시작 잠금 키 (pg_advisory_xact_lock). 다른 용도의 잠금과 겹치지 않는 임의의 값 */
     long START_LOCK_KEY = 7_726_001L;

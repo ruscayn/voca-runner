@@ -17,11 +17,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MainController {
 
-    /** 진행 중인 시험 주소를 다른 브라우저·기기에서 연 경우 (TestController) */
+    /** 진행 중인 시험 주소를 다른 브라우저·기기에서 연 경우 (ExamController) */
     public static final String NOTICE_EXAM_IN_USE = "test-in-use";
-    /** 이미 끝났고 결과 보관 시간도 지난 시험 주소로 들어온 경우 (TestController) */
+    /** 이미 끝났고 결과 보관 시간도 지난 시험 주소로 들어온 경우 (ExamController) */
     public static final String NOTICE_EXAM_ENDED = "test-finished";
-    /** 결과 보관 시간이 지난 결과 주소로 들어온 경우 (TestController) */
+    /** 결과 보관 시간이 지난 결과 주소로 들어온 경우 (ExamController) */
     public static final String NOTICE_RESULT_EXPIRED = "result-expired";
 
     private final LevelApplicationService levelApplicationService;

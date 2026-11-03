@@ -2,12 +2,12 @@ package org.ruscayn.vocarunner.exam.application.service;
 
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
-import org.ruscayn.vocarunner.exam.application.port.in.TestQuestionView;
-import org.ruscayn.vocarunner.exam.application.port.in.TestQuestionsResponse;
-import org.ruscayn.vocarunner.exam.application.port.in.TestResultResponse;
-import org.ruscayn.vocarunner.exam.application.port.in.TestSubmitRequest;
-import org.ruscayn.vocarunner.exam.application.port.in.TestSubmitResponse;
-import org.ruscayn.vocarunner.exam.application.port.out.TestSessionRepository;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionView;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResponse;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamResultResponse;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamSubmitRequest;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamSubmitResponse;
+import org.ruscayn.vocarunner.exam.application.port.out.ExamRepository;
 import org.ruscayn.vocarunner.exam.domain.Direction;
 import org.ruscayn.vocarunner.exam.domain.Question;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
@@ -41,9 +41,9 @@ import java.util.stream.IntStream;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class TestApplicationService {
+public class ExamApplicationService {
 
-    private final TestSessionRepository testSessionRepository;
+    private final ExamRepository examRepository;
     private final QuestionGenerator questionGenerator;
     private final WordCatalog wordCatalog;
     private final ExamProperties examProperties;
@@ -70,13 +70,13 @@ public class TestApplicationService {
         Exam exam = Exam.start(level, Direction.EN_KO, Exam.DEFAULT_TIME_PER_QUESTION_SEC,
                 questions, examinee, now, examProperties.grace());
         transactionTemplate.executeWithoutResult(tx -> {
-            testSessionRepository.lockForStart();
+            examRepository.lockForStart();
             List<Exam> replaced = checkCapacity(examinee, Instant.now());
             replaced.forEach(old -> {
-                testSessionRepository.delete(old.getId());
+                examRepository.delete(old.getId());
                 log.info("시험 만료 (같은 기기에서 새 시험 시작) exam={}", old.getId());
             });
-            testSessionRepository.save(exam);
+            examRepository.save(exam);
         });
 
         log.info("시험 시작 exam={} level={} 문제={} 마감={} ({}ms)",
@@ -92,14 +92,14 @@ public class TestApplicationService {
      * @return 새 시험을 시작하면 종료할 같은 기기의 진행 중 시험
      */
     private List<Exam> checkCapacity(Examinee examinee, Instant now) {
-        List<Exam> byDevice = testSessionRepository.findInProgressByDevice(examinee.deviceId(), now);
-        int inProgress = testSessionRepository.countInProgress(now) - byDevice.size();
+        List<Exam> byDevice = examRepository.findInProgressByDevice(examinee.deviceId(), now);
+        int inProgress = examRepository.countInProgress(now) - byDevice.size();
         if (inProgress >= examProperties.maxInProgress()) {
             log.warn("시험 시작 거절 (전체 상한) 진행 중={} 상한={}", inProgress, examProperties.maxInProgress());
             throw new CustomException(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS);
         }
         long sameIp = byDevice.stream().filter(s -> examinee.clientIp().equals(s.getExaminee().clientIp())).count();
-        long byIp = testSessionRepository.countInProgressByIp(examinee.clientIp(), now) - sameIp;
+        long byIp = examRepository.countInProgressByIp(examinee.clientIp(), now) - sameIp;
         if (byIp >= examProperties.maxInProgressPerIp()) {
             log.warn("시험 시작 거절 (IP 상한) ip={} 진행 중={}", examinee.clientIp(), byIp);
             throw new CustomException(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS_PER_IP);
@@ -109,7 +109,7 @@ public class TestApplicationService {
 
     /** 시험 화면용 문제 (진행 중인 시험만, 정답 번호 제외). 시작한 기기만 */
     @Transactional
-    public TestQuestionsResponse getQuestions(UUID examId, String deviceId) {
+    public ExamQuestionsResponse getQuestions(UUID examId, String deviceId) {
         Exam exam = findStartedBy(examId, deviceId);
         Instant now = Instant.now();
         if (!exam.isInProgress(now)) {
@@ -119,12 +119,12 @@ public class TestApplicationService {
         exam.markQuestionsDelivered();
 
         Direction direction = exam.getDirection();
-        List<TestQuestionView> questions = new ArrayList<>(exam.getQuestionCount());
+        List<ExamQuestionView> questions = new ArrayList<>(exam.getQuestionCount());
         for (int no = 1; no <= exam.getQuestionCount(); no++) {
             questions.add(toView(exam, no, direction));
         }
 
-        return new TestQuestionsResponse(
+        return new ExamQuestionsResponse(
                 exam.getId(),
                 exam.getLevel().name(),
                 exam.getLevel().groupName(),
@@ -141,11 +141,11 @@ public class TestApplicationService {
      * 거절(예외)해도 마감 초과 삭제는 반영해야 하므로 업무 예외로는 되돌리지 않는다 (채점 전 검사에서 거절하면 바뀐 내용 없음)
      */
     @Transactional(noRollbackFor = CustomException.class)
-    public TestSubmitResponse submit(UUID examId, String deviceId, TestSubmitRequest request) {
+    public ExamSubmitResponse submit(UUID examId, String deviceId, ExamSubmitRequest request) {
         Exam exam = findStartedBy(examId, deviceId);
 
         Map<Integer, Integer> selectedByNo = new HashMap<>();  // null 값 허용 (시간 초과)
-        for (TestSubmitRequest.Answer answer : request.answers()) {
+        for (ExamSubmitRequest.Answer answer : request.answers()) {
             int no = answer.questionNo();
             if (no > exam.getQuestionCount()) {
                 throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "없는 문제 번호입니다: " + no);
@@ -160,7 +160,7 @@ public class TestApplicationService {
             exam.submit(selectedByNo, Instant.now());
         } catch (CustomException e) {
             if (e.getErrorCode() == ErrorCode.EXAM_EXPIRED) {
-                testSessionRepository.delete(examId);
+                examRepository.delete(examId);
                 log.info("시험 제출 거절 (마감 초과) exam={} 마감={}", examId, exam.getDeadline());
             }
             throw e;
@@ -170,14 +170,14 @@ public class TestApplicationService {
         afterCommit(() -> log.info("시험 제출 exam={} 맞힌 수={}/{} 점수={}",
                 exam.getId(), exam.getCorrectCount(), exam.getQuestionCount(), exam.getScore()));
 
-        return new TestSubmitResponse(
+        return new ExamSubmitResponse(
                 exam.getId(), exam.getQuestionCount(), exam.getCorrectCount(), exam.getScore());
     }
 
     /** 결과 (완료된 시험만). 없거나(보관 시간 경과 포함) 완료 전이면 empty */
     @Transactional(readOnly = true)
-    public Optional<TestResultResponse> findResult(UUID examId) {
-        return testSessionRepository.findById(examId)
+    public Optional<ExamResultResponse> findResult(UUID examId) {
+        return examRepository.findById(examId)
                 .filter(Exam::isCompleted)
                 .map(this::toResult);
     }
@@ -185,14 +185,14 @@ public class TestApplicationService {
     /** 제출을 마쳐 결과를 보관 중인지 (보관 시간이 지나 정리됐으면 false) */
     @Transactional(readOnly = true)
     public boolean hasResult(UUID examId) {
-        return testSessionRepository.findById(examId)
+        return examRepository.findById(examId)
                 .filter(Exam::isCompleted)
                 .isPresent();
     }
 
     /** 결과 (API) */
     @Transactional(readOnly = true)
-    public TestResultResponse getResult(UUID examId) {
+    public ExamResultResponse getResult(UUID examId) {
         Exam exam = find(examId);
         if (!exam.isCompleted()) {
             throw new CustomException(ErrorCode.EXAM_NOT_COMPLETED);
@@ -204,10 +204,10 @@ public class TestApplicationService {
     @Transactional
     public void abortExam(UUID examId, String deviceId) {
         Instant now = Instant.now();
-        testSessionRepository.findById(examId)
+        examRepository.findById(examId)
                 .filter(exam -> exam.isStartedBy(deviceId) && exam.isInProgress(now))
                 .ifPresent(exam -> {
-                    testSessionRepository.delete(examId);
+                    examRepository.delete(examId);
                     log.info("시험 만료 exam={}", examId);
                 });
     }
@@ -216,21 +216,21 @@ public class TestApplicationService {
     @Transactional(readOnly = true)
     public boolean isInProgress(UUID examId) {
         Instant now = Instant.now();
-        return testSessionRepository.findById(examId)
+        return examRepository.findById(examId)
                 .map(exam -> exam.isInProgress(now))
                 .orElse(false);
     }
 
-    private TestResultResponse toResult(Exam exam) {
+    private ExamResultResponse toResult(Exam exam) {
         Direction direction = exam.getDirection();
-        List<TestResultResponse.WrongItem> wrongItems = new ArrayList<>();
+        List<ExamResultResponse.WrongItem> wrongItems = new ArrayList<>();
         for (int no = 1; no <= exam.getQuestionCount(); no++) {
             if (exam.isCorrect(no)) {
                 continue;
             }
             CatalogWord answer = wordCatalog.get(exam.answerLevelWordId(no));
             Long selectedId = exam.selectedLevelWordId(no);
-            wrongItems.add(new TestResultResponse.WrongItem(
+            wrongItems.add(new ExamResultResponse.WrongItem(
                     no,
                     promptText(answer, direction),
                     promptSubText(answer, direction),
@@ -238,7 +238,7 @@ public class TestApplicationService {
                     optionText(answer, direction),
                     answer.headword()));
         }
-        return new TestResultResponse(
+        return new ExamResultResponse(
                 exam.getId(),
                 exam.getLevel().name(),
                 exam.getLevel().groupName(),
@@ -250,13 +250,13 @@ public class TestApplicationService {
                 wrongItems);
     }
 
-    private TestQuestionView toView(Exam exam, int no, Direction direction) {
+    private ExamQuestionView toView(Exam exam, int no, Direction direction) {
         List<Long> optionIds = exam.optionLevelWordIds(no);
-        List<TestQuestionView.Option> optionViews = IntStream.range(0, optionIds.size())
-                .mapToObj(i -> new TestQuestionView.Option(i + 1, optionText(wordCatalog.get(optionIds.get(i)), direction)))
+        List<ExamQuestionView.Option> optionViews = IntStream.range(0, optionIds.size())
+                .mapToObj(i -> new ExamQuestionView.Option(i + 1, optionText(wordCatalog.get(optionIds.get(i)), direction)))
                 .toList();
         CatalogWord answer = wordCatalog.get(exam.answerLevelWordId(no));
-        return new TestQuestionView(no, promptText(answer, direction), promptSubText(answer, direction), optionViews);
+        return new ExamQuestionView(no, promptText(answer, direction), promptSubText(answer, direction), optionViews);
     }
 
     private String promptText(CatalogWord answer, Direction direction) {
@@ -286,8 +286,8 @@ public class TestApplicationService {
     }
 
     private Exam find(UUID examId) {
-        return testSessionRepository.findById(examId)
-                .orElseThrow(TestApplicationService::notFound);
+        return examRepository.findById(examId)
+                .orElseThrow(ExamApplicationService::notFound);
     }
 
     private static CustomException notFound() {
