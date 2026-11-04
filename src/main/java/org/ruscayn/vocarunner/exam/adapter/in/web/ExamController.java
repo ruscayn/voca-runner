@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.common.WebAdapter;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamQuery;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
 import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
@@ -38,6 +39,7 @@ public class ExamController {
             DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of("Asia/Seoul"));
 
     private final ExamUseCase examUseCase;
+    private final ExamQuery examQuery;
     private final ClientIpProperties clientIpProperties;
 
     @PostMapping("/exam/start")
@@ -69,7 +71,7 @@ public class ExamController {
     @GetMapping("/exam/{examId}")
     public String exam(@PathVariable UUID examId, HttpServletRequest request,
                        Model model, RedirectAttributes redirect) {
-        if (!examUseCase.isInProgress(examId)) {
+        if (!examQuery.isInProgress(examId)) {
             return redirectEnded(examId);
         }
         if (EntryToken.use(request, examId)) {
@@ -80,7 +82,7 @@ public class ExamController {
     }
 
     private String redirectEnded(UUID examId) {
-        if (examUseCase.hasResult(examId)) {
+        if (examQuery.hasResult(examId)) {
             return "redirect:/exam/" + examId + "/result";
         }
         return "redirect:/?notice=" + MainController.NOTICE_EXAM_ENDED;
@@ -98,7 +100,7 @@ public class ExamController {
 
     @GetMapping("/exam/{examId}/result")
     public String result(@PathVariable UUID examId, Model model) {
-        return examUseCase.findResult(examId)
+        return examQuery.findResult(examId)
                 .map(result -> {
                     model.addAttribute("result", result);
                     model.addAttribute("retentionDeadline",

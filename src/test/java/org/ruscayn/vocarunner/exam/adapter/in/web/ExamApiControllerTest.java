@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamQuery;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +49,9 @@ class ExamApiControllerTest {
 
     @MockitoBean
     private ExamUseCase examUseCase;
+
+    @MockitoBean
+    private ExamQuery examQuery;
 
     private ResultActions submit(MediaType contentType, String body) throws Exception {
         return mockMvc.perform(post(SUBMIT_URL).cookie(DEVICE_COOKIE).contentType(contentType).content(body));

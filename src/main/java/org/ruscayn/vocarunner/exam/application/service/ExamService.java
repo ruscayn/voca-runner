@@ -2,14 +2,10 @@ package org.ruscayn.vocarunner.exam.application.service;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,10 +13,7 @@ import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.common.UseCase;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResult;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
-import org.ruscayn.vocarunner.exam.application.port.in.LevelGroupSummary;
-import org.ruscayn.vocarunner.exam.application.port.in.LevelSummary;
 import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamResult;
@@ -31,7 +24,6 @@ import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.exam.domain.Question;
 import org.ruscayn.vocarunner.exam.domain.QuestionGenerator;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
-import org.ruscayn.vocarunner.word.domain.Level;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -137,7 +129,7 @@ public class ExamService implements ExamUseCase {
 
     private List<ExamQuestionsResult.QuestionItem> toQuestionItems(Exam exam) {
         return IntStream.rangeClosed(1, exam.getQuestionCount())
-                .mapToObj(no -> toQuestionItem(exam, no, exam.getDirection()))
+                .mapToObj(no -> toQuestionItem(exam, no))
                 .toList();
     }
 
@@ -199,32 +191,6 @@ public class ExamService implements ExamUseCase {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Optional<ExamResult> findResult(UUID examId) {
-        return examPersistencePort.findById(examId)
-                .filter(Exam::isCompleted)
-                .map(this::toResult);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean hasResult(UUID examId) {
-        return examPersistencePort.findById(examId)
-                .filter(Exam::isCompleted)
-                .isPresent();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public ExamResult getResult(UUID examId) {
-        Exam exam = find(examId);
-        if (!exam.isCompleted()) {
-            throw new CustomException(ErrorCode.EXAM_NOT_COMPLETED);
-        }
-        return toResult(exam);
-    }
-
-    @Override
     @Transactional
     public void abortIfInProgress(UUID examId, String deviceId) {
         Instant now = Instant.now();
@@ -237,16 +203,7 @@ public class ExamService implements ExamUseCase {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public boolean isInProgress(UUID examId) {
-        Instant now = Instant.now();
-        return examPersistencePort.findById(examId)
-                .map(exam -> exam.isInProgress(now))
-                .orElse(false);
-    }
-
-    @Override
-    public int cleanup() {
+    public void cleanup() {
         Instant now = Instant.now();
         int removed = examPersistencePort.deleteDisposable(
                 now, examProperties.resultRetention(), examProperties.undeliveredTimeout());
@@ -254,78 +211,15 @@ public class ExamService implements ExamUseCase {
             log.info("시험 정리: {}개 삭제, 남은 {}개 (진행 중 {}개)",
                     removed, examPersistencePort.count(), examPersistencePort.countInProgress(now));
         }
-        return removed;
     }
 
-    private List<LevelSummary> getDetailLevels() {
-        return Arrays.stream(Level.values())
-                .filter(level -> !level.isGroup())
-                .map(this::toSummary)
-                .toList();
-    }
-
-    private LevelSummary toSummary(Level level) {
-        int wordCount = wordCatalog.countByLevel(level);
-        int questionCount = QuestionGenerator.questionCount(wordCount, examProperties.maxQuestionCount());
-        long allowedMinutes = Exam.allowedTime(
-                questionCount, Exam.DEFAULT_TIME_PER_QUESTION_SEC, examProperties.grace()).toMinutes();
-        return new LevelSummary(level, wordCount, questionCount, allowedMinutes);
-    }
-
-    @Override
-    public List<LevelGroupSummary> getDetailLevelGroups() {
-        Map<String, List<LevelSummary>> byGroup = getDetailLevels().stream()
-                .collect(Collectors.groupingBy(summary -> summary.level().groupName(),
-                        LinkedHashMap::new, Collectors.toList()));
-        return byGroup.entrySet().stream()
-                .map(entry -> new LevelGroupSummary(entry.getKey(), entry.getValue()))
-                .toList();
-    }
-
-    private ExamResult toResult(Exam exam) {
-        return new ExamResult(exam.getId(), exam.getLevel().name(), exam.getLevel().groupName(),
-                exam.getQuestionCount(), exam.getCorrectCount(), exam.getScore(),
-                exam.getSubmittedAt().plus(examProperties.resultRetention()),
-                examProperties.resultRetention().toMinutes(), toWrongItems(exam));
-    }
-
-    private List<ExamResult.WrongItem> toWrongItems(Exam exam) {
-        return IntStream.rangeClosed(1, exam.getQuestionCount())
-                .filter(no -> !exam.isCorrect(no))
-                .mapToObj(no -> toWrongItem(exam, no))
-                .toList();
-    }
-
-    private ExamResult.WrongItem toWrongItem(Exam exam, int no) {
-        Direction direction = exam.getDirection();
-        CatalogWord answer = wordCatalog.get(exam.answerLevelWordId(no));
-        Long selectedId = exam.selectedLevelWordId(no);
-        String selectedText = selectedId == null ? null : optionText(wordCatalog.get(selectedId), direction);
-        return new ExamResult.WrongItem(no, promptText(answer, direction), promptSubText(answer, direction),
-                selectedText, optionText(answer, direction), answer.headword());
-    }
-
-    private ExamQuestionsResult.QuestionItem toQuestionItem(Exam exam, int no, Direction direction) {
+    private ExamQuestionsResult.QuestionItem toQuestionItem(Exam exam, int no) {
         List<Long> optionIds = exam.optionLevelWordIds(no);
         List<ExamQuestionsResult.Option> options = IntStream.range(0, optionIds.size())
-                .mapToObj(i -> new ExamQuestionsResult.Option(i + 1,
-                        optionText(wordCatalog.get(optionIds.get(i)), direction)))
+                .mapToObj(i -> new ExamQuestionsResult.Option(i + 1, wordCatalog.get(optionIds.get(i)).optionText()))
                 .toList();
         CatalogWord answer = wordCatalog.get(exam.answerLevelWordId(no));
-        return new ExamQuestionsResult.QuestionItem(no, promptText(answer, direction),
-                promptSubText(answer, direction), options);
-    }
-
-    private String promptText(CatalogWord answer, Direction direction) {
-        return direction == Direction.EN_KO ? answer.headword() : answer.optionText();
-    }
-
-    private String promptSubText(CatalogWord answer, Direction direction) {
-        return direction == Direction.EN_KO ? answer.headwordSub() : null;
-    }
-
-    private String optionText(CatalogWord option, Direction direction) {
-        return direction == Direction.EN_KO ? option.optionText() : option.headword();
+        return new ExamQuestionsResult.QuestionItem(no, answer.headword(), answer.headwordSub(), options);
     }
 
     /** 다른 기기면 없는 시험과 같은 응답을 준다. 시험 id 가 새어도 다른 사람이 문제를 받아 가거나 대신 제출할 수 없게 */
@@ -333,18 +227,14 @@ public class ExamService implements ExamUseCase {
         Exam exam = find(examId);
         if (!exam.isStartedBy(deviceId)) {
             log.warn("다른 기기의 시험 요청 거절 exam={}", examId);
-            throw notFound();
+            throw new ExamNotFoundException();
         }
         return exam;
     }
 
     private Exam find(UUID examId) {
         return examPersistencePort.findById(examId)
-                .orElseThrow(ExamService::notFound);
-    }
-
-    private static CustomException notFound() {
-        return new CustomException(ErrorCode.ENTITY_NOT_FOUND, "시험을 찾을 수 없습니다. (종료되었거나 만료됨)");
+                .orElseThrow(ExamNotFoundException::new);
     }
 
     private static void afterCommit(Runnable action) {

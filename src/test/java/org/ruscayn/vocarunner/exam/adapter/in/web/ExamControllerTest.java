@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamQuery;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
 import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
 import org.ruscayn.vocarunner.word.domain.Level;
@@ -55,6 +56,9 @@ class ExamControllerTest {
 
     @MockitoBean
     private ExamUseCase examUseCase;
+
+    @MockitoBean
+    private ExamQuery examQuery;
 
     /** [시작]을 누른 브라우저 (시험 화면 입장 토큰을 받은 세션) */
     private MockHttpSession startTest() throws Exception {
@@ -128,7 +132,7 @@ class ExamControllerTest {
         @DisplayName("시작한 브라우저가 처음 들어오면 시험 화면을 보여 주고, 브라우저가 저장하지 않게 한다")
         void firstEntry() throws Exception {
             MockHttpSession httpSession = startTest();
-            given(examUseCase.isInProgress(EXAM_ID)).willReturn(true);
+            given(examQuery.isInProgress(EXAM_ID)).willReturn(true);
 
             mockMvc.perform(get("/exam/" + EXAM_ID).session(httpSession).cookie(DEVICE_COOKIE))
                     .andExpect(status().isOk())
@@ -140,7 +144,7 @@ class ExamControllerTest {
         @DisplayName("같은 브라우저가 다시 들어오면(새로고침) 시험을 끝내고 안내와 함께 메인으로")
         void reEntry() throws Exception {
             MockHttpSession httpSession = startTest();
-            given(examUseCase.isInProgress(EXAM_ID)).willReturn(true);
+            given(examQuery.isInProgress(EXAM_ID)).willReturn(true);
             mockMvc.perform(get("/exam/" + EXAM_ID).session(httpSession).cookie(DEVICE_COOKIE))
                     .andExpect(view().name("exam"));
 
@@ -153,7 +157,7 @@ class ExamControllerTest {
         @Test
         @DisplayName("다른 브라우저·기기가 진행 중 시험 주소를 열면 그쪽만 메인으로 보내고 시험은 그대로 둔다 (B2)")
         void otherBrowser() throws Exception {
-            given(examUseCase.isInProgress(EXAM_ID)).willReturn(true);
+            given(examQuery.isInProgress(EXAM_ID)).willReturn(true);
 
             MvcResult result = mockMvc.perform(get("/exam/" + EXAM_ID))
                     .andExpect(redirectedUrl("/?notice=" + MainController.NOTICE_EXAM_IN_USE))
@@ -167,8 +171,8 @@ class ExamControllerTest {
         @Test
         @DisplayName("이미 끝난 시험이고 결과를 보관 중이면 결과 화면으로 (결과 화면에서 뒤로 가기, B8)")
         void finishedWithResult() throws Exception {
-            given(examUseCase.isInProgress(EXAM_ID)).willReturn(false);
-            given(examUseCase.hasResult(EXAM_ID)).willReturn(true);
+            given(examQuery.isInProgress(EXAM_ID)).willReturn(false);
+            given(examQuery.hasResult(EXAM_ID)).willReturn(true);
 
             mockMvc.perform(get("/exam/" + EXAM_ID))
                     .andExpect(redirectedUrl("/exam/" + EXAM_ID + "/result"));
@@ -177,8 +181,8 @@ class ExamControllerTest {
         @Test
         @DisplayName("이미 끝났고 결과도 정리된 시험이면 안내와 함께 메인으로 (B8)")
         void finishedWithoutResult() throws Exception {
-            given(examUseCase.isInProgress(EXAM_ID)).willReturn(false);
-            given(examUseCase.hasResult(EXAM_ID)).willReturn(false);
+            given(examQuery.isInProgress(EXAM_ID)).willReturn(false);
+            given(examQuery.hasResult(EXAM_ID)).willReturn(false);
 
             mockMvc.perform(get("/exam/" + EXAM_ID))
                     .andExpect(redirectedUrl("/?notice=" + MainController.NOTICE_EXAM_ENDED));
@@ -201,7 +205,7 @@ class ExamControllerTest {
         @Test
         @DisplayName("결과 보관 시간이 지났으면 안내와 함께 메인으로 (U17)")
         void expired() throws Exception {
-            given(examUseCase.findResult(EXAM_ID)).willReturn(Optional.empty());
+            given(examQuery.findResult(EXAM_ID)).willReturn(Optional.empty());
 
             mockMvc.perform(get("/exam/" + EXAM_ID + "/result"))
                     .andExpect(redirectedUrl("/?notice=" + MainController.NOTICE_RESULT_EXPIRED));

@@ -29,6 +29,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamQuery;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResult;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
@@ -71,6 +72,9 @@ class WebNameTest {
 
     @MockitoBean
     private ExamUseCase examUseCase;
+
+    @MockitoBean
+    private ExamQuery examQuery;
 
     private static Map<String, Object> readObject(String json, String path) {
         return JsonPath.read(json, path);
@@ -153,7 +157,7 @@ class WebNameTest {
         @Test
         @DisplayName("결과 응답 : 시험 결과 · 틀린 항목 칸")
         void result() throws Exception {
-            given(examUseCase.getResult(EXAM_ID)).willReturn(resultWithOneIncorrectAndOneTimeout());
+            given(examQuery.getResult(EXAM_ID)).willReturn(resultWithOneIncorrectAndOneTimeout());
 
             String json = mockMvc.perform(get("/api/exams/" + EXAM_ID + "/result"))
                     .andExpect(status().isOk())
@@ -190,7 +194,7 @@ class WebNameTest {
         @Test
         @DisplayName("메인 : levelGroups · questionCount · timePerQuestionSec · allowedMinutes, 레벨 카드를 그린다")
         void main() throws Exception {
-            given(examUseCase.getDetailLevelGroups()).willReturn(List.of(
+            given(examQuery.getDetailLevelGroups()).willReturn(List.of(
                     new LevelGroupSummary("Independent", List.of(new LevelSummary(Level.B2, 1234, 500, 45)))));
 
             mockMvc.perform(get("/"))
@@ -207,7 +211,7 @@ class WebNameTest {
         @ValueSource(strings = {"exam-in-use", "exam-ended", "result-expired"})
         @DisplayName("메인 안내 코드 : 정해진 값이면 message 를 넣는다")
         void mainNotice(String notice) throws Exception {
-            given(examUseCase.getDetailLevelGroups()).willReturn(List.of(
+            given(examQuery.getDetailLevelGroups()).willReturn(List.of(
                     new LevelGroupSummary("Basic", List.of(new LevelSummary(Level.A1, 1234, 500, 45)))));
 
             mockMvc.perform(get("/").param("notice", notice))
@@ -219,7 +223,7 @@ class WebNameTest {
         @DisplayName("시험 화면 : examId 를 data-exam-id 로 그린다")
         void exam() throws Exception {
             given(examUseCase.start(any())).willReturn(EXAM_ID);
-            given(examUseCase.isInProgress(EXAM_ID)).willReturn(true);
+            given(examQuery.isInProgress(EXAM_ID)).willReturn(true);
             MockHttpSession httpSession = new MockHttpSession();
             mockMvc.perform(post("/exam/start").param("level", "A1").session(httpSession).cookie(DEVICE_COOKIE))
                     .andExpect(redirectedUrl("/exam/" + EXAM_ID));
@@ -234,7 +238,7 @@ class WebNameTest {
         @Test
         @DisplayName("결과 화면 : result · retentionDeadline, 템플릿 안 호출(오답 수 · 시간 초과 수 · 보관 시간 문구)을 그린다")
         void result() throws Exception {
-            given(examUseCase.findResult(EXAM_ID))
+            given(examQuery.findResult(EXAM_ID))
                     .willReturn(Optional.of(resultWithOneIncorrectAndOneTimeout()));
 
             String html = mockMvc.perform(get("/exam/" + EXAM_ID + "/result"))

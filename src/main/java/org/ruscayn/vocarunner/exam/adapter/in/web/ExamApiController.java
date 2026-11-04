@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.common.WebAdapter;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamQuery;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResult;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ExamApiController {
 
     private final ExamUseCase examUseCase;
+    private final ExamQuery examQuery;
 
     @GetMapping("/{examId}/questions")
     public ExamQuestionsResult questions(@PathVariable UUID examId, HttpServletRequest httpRequest) {
@@ -50,7 +52,7 @@ public class ExamApiController {
 
     @GetMapping("/{examId}/result")
     public ExamResult result(@PathVariable UUID examId) {
-        return examUseCase.getResult(examId);
+        return examQuery.getResult(examId);
     }
 
     /** navigator.sendBeacon 으로 보내므로 본문 없이 받는다 */
