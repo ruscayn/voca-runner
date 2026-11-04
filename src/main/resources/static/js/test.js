@@ -389,7 +389,7 @@
         // 키보드: 방금 누른 보기에 포커스가 남으면 Enter 한 번(길게 누르면 연속)에 다음 문제가 읽지도 않고 답 처리됨
         document.activeElement?.blur();
 
-        // 영어 단어가 문제일 때만 읽어준다 (KO_EN 은 추후). 화면이 가려져 있으면 읽지 않음
+        // 영어 단어가 문제일 때만 읽어준다. 화면이 가려져 있으면 읽지 않음
         if (state.direction === 'EN_KO' && !document.hidden) tts.speak(q.prompt);
 
         startQuestionBar();
