@@ -32,7 +32,7 @@ public class ExamApiController {
 
     @GetMapping("/{examId}/questions")
     public ExamQuestionsResult questions(@PathVariable UUID examId, HttpServletRequest httpRequest) {
-        return examUseCase.getQuestions(examId, DeviceCookie.find(httpRequest));
+        return examUseCase.deliverQuestions(examId, DeviceCookie.find(httpRequest));
     }
 
     /**

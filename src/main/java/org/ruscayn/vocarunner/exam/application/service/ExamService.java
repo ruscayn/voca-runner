@@ -108,7 +108,7 @@ public class ExamService implements ExamUseCase {
 
     @Override
     @Transactional
-    public ExamQuestionsResult getQuestions(UUID examId, String deviceId) {
+    public ExamQuestionsResult deliverQuestions(UUID examId, String deviceId) {
         Exam exam = findStartedBy(examId, deviceId);
         Instant now = Instant.now();
         if (!exam.isInProgress(now)) {

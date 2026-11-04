@@ -95,7 +95,7 @@ class WebNameTest {
         void questions() throws Exception {
             ExamQuestionsResult.QuestionItem question = new ExamQuestionsResult.QuestionItem(1, "abroad", "go abroad",
                     List.of(new ExamQuestionsResult.Option(1, "해외로"), new ExamQuestionsResult.Option(2, "국내에")));
-            given(examUseCase.getQuestions(EXAM_ID, DEVICE_ID)).willReturn(
+            given(examUseCase.deliverQuestions(EXAM_ID, DEVICE_ID)).willReturn(
                     new ExamQuestionsResult(EXAM_ID, "B1", "Independent", "EN_KO", 1, 5, 3, 170,
                             List.of(question)));
 
@@ -173,7 +173,7 @@ class WebNameTest {
         @Test
         @DisplayName("오류 응답 : code · message · path · timestamp, 오류 코드 값")
         void error() throws Exception {
-            given(examUseCase.getQuestions(EXAM_ID, DEVICE_ID))
+            given(examUseCase.deliverQuestions(EXAM_ID, DEVICE_ID))
                     .willThrow(new CustomException(ErrorCode.EXAM_NOT_IN_PROGRESS));
 
             String json = mockMvc.perform(get("/api/exams/" + EXAM_ID + "/questions").cookie(DEVICE_COOKIE))

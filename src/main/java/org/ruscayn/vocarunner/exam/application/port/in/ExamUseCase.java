@@ -6,7 +6,7 @@ public interface ExamUseCase {
 
     UUID start(StartExamCommand command);
 
-    ExamQuestionsResult getQuestions(UUID examId, String deviceId);
+    ExamQuestionsResult deliverQuestions(UUID examId, String deviceId);
 
     SubmitExamResult submit(SubmitExamCommand command);
 

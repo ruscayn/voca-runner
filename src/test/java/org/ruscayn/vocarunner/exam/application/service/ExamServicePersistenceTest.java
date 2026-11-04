@@ -237,7 +237,7 @@ class ExamServicePersistenceTest {
             UUID examId = start(DEVICE_ID, IP);
             Timestamp createdAt = (Timestamp) row(examId).get("created_at");
 
-            examUseCase.getQuestions(examId, DEVICE_ID);
+            examUseCase.deliverQuestions(examId, DEVICE_ID);
 
             Map<String, Object> row = row(examId);
             assertThat(row).containsEntry("questions_delivered", true)
@@ -250,9 +250,9 @@ class ExamServicePersistenceTest {
         @DisplayName("다시 받아도 바뀐 것이 없어 버전이 그대로다")
         void secondTimeNoUpdate() {
             UUID examId = start(DEVICE_ID, IP);
-            examUseCase.getQuestions(examId, DEVICE_ID);
+            examUseCase.deliverQuestions(examId, DEVICE_ID);
 
-            examUseCase.getQuestions(examId, DEVICE_ID);
+            examUseCase.deliverQuestions(examId, DEVICE_ID);
 
             assertThat(row(examId)).containsEntry("version", 1);
         }
@@ -262,7 +262,7 @@ class ExamServicePersistenceTest {
         void otherDevice() {
             UUID examId = start(DEVICE_ID, IP);
 
-            assertThatThrownBy(() -> examUseCase.getQuestions(examId, OTHER_DEVICE_ID))
+            assertThatThrownBy(() -> examUseCase.deliverQuestions(examId, OTHER_DEVICE_ID))
                     .isInstanceOfSatisfying(CustomException.class, errorCode(ErrorCode.ENTITY_NOT_FOUND));
             assertThat(row(examId)).containsEntry("questions_delivered", false).containsEntry("version", 0);
         }
@@ -277,7 +277,7 @@ class ExamServicePersistenceTest {
         @DisplayName("제출하면 완료로 바뀌고 고른 보기 · 맞힌 수 · 점수 · 제출 시각이 남는다 (못 고른 문항 = 0)")
         void completed() {
             UUID examId = start(DEVICE_ID, IP);
-            examUseCase.getQuestions(examId, DEVICE_ID);
+            examUseCase.deliverQuestions(examId, DEVICE_ID);
             Timestamp createdAt = (Timestamp) row(examId).get("created_at");
             int correct1 = answerOptionNo(examId, 1);
             int wrong2 = incorrectOptionNo(examId, 2);
@@ -432,7 +432,7 @@ class ExamServicePersistenceTest {
             UUID examId = start(DEVICE_ID, IP);
 
             Overlap late = Overlap.begin(transactionManager, () -> examUseCase.abortIfInProgress(examId, DEVICE_ID));
-            examUseCase.getQuestions(examId, DEVICE_ID);
+            examUseCase.deliverQuestions(examId, DEVICE_ID);
 
             assertThatThrownBy(late::commit).isInstanceOf(OptimisticLockingFailureException.class);
             assertThat(row(examId)).containsEntry("status", "IN_PROGRESS")
@@ -444,7 +444,7 @@ class ExamServicePersistenceTest {
         void questionsDeliveredAfterAbort() {
             UUID examId = start(DEVICE_ID, IP);
 
-            Overlap late = Overlap.begin(transactionManager, () -> examUseCase.getQuestions(examId, DEVICE_ID));
+            Overlap late = Overlap.begin(transactionManager, () -> examUseCase.deliverQuestions(examId, DEVICE_ID));
             examUseCase.abortIfInProgress(examId, DEVICE_ID);
 
             assertThatThrownBy(late::commit).isInstanceOf(OptimisticLockingFailureException.class);
