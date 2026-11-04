@@ -20,3 +20,6 @@ ij_java_names_count_to_use_import_on_demand = 999
 ij_java_imports_layout = $*,|,*
 # Javadoc(/** */)은 Reformat 이 건드리지 않음 — 켜 두면 한 줄 Javadoc 을 3줄로 펼치고, 문장마다 나눈 줄을 합쳐 120자에서 다시 끊음
 ij_java_doc_enable_formatting = false
+# 클래스 본문 처음과 끝에 빈 줄 한 줄 (구글 스타일은 있어도 없어도 되지만 섞이지 않게 하나로 정함)
+ij_java_blank_lines_after_class_header = 1
+ij_java_blank_lines_before_class_end = 1

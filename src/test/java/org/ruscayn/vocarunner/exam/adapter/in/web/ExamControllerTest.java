@@ -117,6 +117,7 @@ class ExamControllerTest {
             assertThat(commands.getAllValues()).extracting(command -> command.examinee().clientIp())
                     .containsExactly("198.51.100.10", "127.0.0.1");
         }
+
     }
 
     @Nested
@@ -190,6 +191,7 @@ class ExamControllerTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(view().name("error"));
         }
+
     }
 
     @Nested
@@ -204,6 +206,7 @@ class ExamControllerTest {
             mockMvc.perform(get("/test/" + EXAM_ID + "/result"))
                     .andExpect(redirectedUrl("/?notice=" + MainController.NOTICE_RESULT_EXPIRED));
         }
+
     }
 
 }

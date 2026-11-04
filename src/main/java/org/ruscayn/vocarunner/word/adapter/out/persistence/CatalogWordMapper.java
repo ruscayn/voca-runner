@@ -21,4 +21,5 @@ class CatalogWordMapper {
                 .map(meaning -> new WordExposureRules.Meaning(meaning.getSeq(), meaning.getMeaningKo()))
                 .toList();
     }
+
 }

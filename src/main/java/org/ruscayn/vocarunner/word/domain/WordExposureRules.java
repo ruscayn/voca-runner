@@ -53,6 +53,7 @@ public final class WordExposureRules {
                         .formatted(action, wordId, meaningSeq, level));
             }
         }
+
     }
 
     public record Meaning(int seq, String text) {

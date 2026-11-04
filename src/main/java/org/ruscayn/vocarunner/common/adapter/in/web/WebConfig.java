@@ -25,11 +25,13 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     static class NoStoreInterceptor implements HandlerInterceptor {
+
         @Override
         public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
             response.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
             return true;
         }
+
     }
 
 }

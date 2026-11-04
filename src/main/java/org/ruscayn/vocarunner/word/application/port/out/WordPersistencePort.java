@@ -9,4 +9,5 @@ public interface WordPersistencePort {
     List<CatalogWord> loadCatalogWords();
 
     Collection<List<Long>> loadConfusableGroups();
+
 }

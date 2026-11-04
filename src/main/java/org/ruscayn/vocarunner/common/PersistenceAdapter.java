@@ -17,4 +17,5 @@ public @interface PersistenceAdapter {
 
     @AliasFor(annotation = Repository.class)
     String value() default "";
+
 }

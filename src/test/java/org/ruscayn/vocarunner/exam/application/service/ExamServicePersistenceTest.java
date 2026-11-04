@@ -94,6 +94,7 @@ class ExamServicePersistenceTest {
             return new ExamProperties(QUESTION_COUNT, GRACE, Duration.ofHours(1), 20000, MAX_IN_PROGRESS_PER_IP,
                     Duration.ofMinutes(5));
         }
+
     }
 
     @Autowired
@@ -223,6 +224,7 @@ class ExamServicePersistenceTest {
                             errorCode(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS_PER_IP));
             assertThat(rowCount()).isEqualTo(MAX_IN_PROGRESS_PER_IP);
         }
+
     }
 
     @Nested
@@ -264,6 +266,7 @@ class ExamServicePersistenceTest {
                     .isInstanceOfSatisfying(CustomException.class, errorCode(ErrorCode.ENTITY_NOT_FOUND));
             assertThat(row(examId)).containsEntry("questions_delivered", false).containsEntry("version", 0);
         }
+
     }
 
     @Nested
@@ -342,6 +345,7 @@ class ExamServicePersistenceTest {
                     .containsEntry("correct_count", 2)
                     .containsEntry("version", 1);
         }
+
     }
 
     @Nested
@@ -378,6 +382,7 @@ class ExamServicePersistenceTest {
 
             assertThat(row(examId)).containsEntry("status", "COMPLETED");
         }
+
     }
 
     @Test
@@ -445,6 +450,7 @@ class ExamServicePersistenceTest {
             assertThatThrownBy(late::commit).isInstanceOf(OptimisticLockingFailureException.class);
             assertThat(exists(examId)).isFalse();
         }
+
     }
 
     /**
@@ -493,6 +499,7 @@ class ExamServicePersistenceTest {
                 throw new IllegalStateException(e);
             }
         }
+
     }
 
 }

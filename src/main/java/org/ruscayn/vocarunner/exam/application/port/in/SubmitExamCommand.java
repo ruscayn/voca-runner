@@ -26,4 +26,5 @@ public record SubmitExamCommand(
             @Min(1) @Max(4) Integer selectedOptionNo
     ) {
     }
+
 }

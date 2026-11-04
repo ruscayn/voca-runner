@@ -29,6 +29,7 @@ class ParameterStoreConfigTest {
 
     /** 가짜 Parameter Store: 받은 요청을 기록하고 정해 둔 값을 돌려준다 */
     static class FakeSsm implements SsmClient {
+
         final List<GetParametersByPathRequest> requests = new ArrayList<>();
 
         @Override
@@ -52,6 +53,7 @@ class ParameterStoreConfigTest {
         @Override
         public void close() {
         }
+
     }
 
     private static ConfigurableApplicationContext start(FakeSsm ssm, String... profiles) {

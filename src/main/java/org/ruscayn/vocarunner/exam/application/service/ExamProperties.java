@@ -17,4 +17,5 @@ public record ExamProperties(
                     "voca-runner.test.question-count 는 0(전체) 이상이어야 합니다: " + maxQuestionCount);
         }
     }
+
 }

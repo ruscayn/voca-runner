@@ -56,6 +56,7 @@ class ExamTest {
 
             assertThat(exam.getDeadline()).isEqualTo(NOW.plus(Duration.ofMinutes(45)));
         }
+
     }
 
     @Nested
@@ -116,6 +117,7 @@ class ExamTest {
             assertThatThrownBy(() -> exam.answerLevelWordId(0)).isInstanceOf(IllegalArgumentException.class);
             assertThatThrownBy(() -> exam.answerLevelWordId(4)).isInstanceOf(IllegalArgumentException.class);
         }
+
     }
 
     @Nested
@@ -251,6 +253,7 @@ class ExamTest {
                     .extracting(e -> ((CustomException) e).getErrorCode())
                     .isEqualTo(ErrorCode.EXAM_NOT_IN_PROGRESS);
         }
+
     }
 
     @Nested
@@ -279,6 +282,7 @@ class ExamTest {
             completed.expire();
             assertThat(completed.getStatus()).isEqualTo(ExamStatus.COMPLETED);
         }
+
     }
 
 }

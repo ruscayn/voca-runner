@@ -132,6 +132,7 @@ class ExamApiControllerTest {
 
             verify(examUseCase, never()).submit(any());
         }
+
     }
 
     @Nested
@@ -154,6 +155,7 @@ class ExamApiControllerTest {
             assertThat(output.getOut()).contains("WARN").contains("Business exception").contains("TEST_005")
                     .doesNotContain("ERROR").doesNotContain("\tat ");
         }
+
     }
 
 }

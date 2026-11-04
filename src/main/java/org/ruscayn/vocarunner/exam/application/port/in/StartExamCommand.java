@@ -15,4 +15,5 @@ public record StartExamCommand(
         this.examinee = examinee;
         SelfValidating.validate(this);
     }
+
 }

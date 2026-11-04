@@ -20,4 +20,5 @@ public final class SelfValidating {
             throw new ConstraintViolationException(violations);
         }
     }
+
 }

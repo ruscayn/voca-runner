@@ -41,4 +41,5 @@ class ExamConfigPropertiesTest {
         assertThat(properties.maxQuestionCount()).isEqualTo(500);
         assertThat(properties.grace()).isEqualTo(Duration.ofMinutes(3));
     }
+
 }

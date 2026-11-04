@@ -143,6 +143,7 @@ class ExamPersistenceAdapterTest {
         void notFound() {
             assertThat(repository.findById(UUID.randomUUID())).isEmpty();
         }
+
     }
 
     @Test
@@ -216,6 +217,7 @@ class ExamPersistenceAdapterTest {
             assertThat(repository.countInProgressByIp("10.0.0.1", NOW)).isEqualTo(2);
             assertThat(repository.countInProgressByIp("10.0.0.3", NOW)).isZero();
         }
+
     }
 
     @Test

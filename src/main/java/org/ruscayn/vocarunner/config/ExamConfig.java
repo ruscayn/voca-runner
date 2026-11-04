@@ -11,4 +11,5 @@ public class ExamConfig {
     public ExamProperties examProperties(ExamConfigProperties examConfigProperties) {
         return examConfigProperties.toExamProperties();
     }
+
 }

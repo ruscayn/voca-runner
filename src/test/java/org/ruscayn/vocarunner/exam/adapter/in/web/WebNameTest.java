@@ -180,6 +180,7 @@ class WebNameTest {
                     .containsExactlyInAnyOrder("code", "message", "path", "timestamp");
             assertThat((String) JsonPath.read(json, "$.code")).isEqualTo("TEST_002");
         }
+
     }
 
     @Nested
@@ -260,5 +261,7 @@ class WebNameTest {
                     .map(m -> m.group(1).trim())
                     .toList();
         }
+
     }
+
 }

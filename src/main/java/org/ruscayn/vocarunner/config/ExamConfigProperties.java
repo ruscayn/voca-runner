@@ -20,4 +20,5 @@ public record ExamConfigProperties(
         return new ExamProperties(maxQuestionCount, grace, resultRetention, maxInProgress, maxInProgressPerIp,
                 undeliveredTimeout);
     }
+
 }

@@ -25,4 +25,5 @@ public interface ExamUseCase {
     int cleanup();
 
     List<LevelGroupSummary> getDetailLevelGroups();
+
 }

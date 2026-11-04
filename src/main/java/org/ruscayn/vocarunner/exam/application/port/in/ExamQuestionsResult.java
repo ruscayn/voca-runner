@@ -23,4 +23,5 @@ public record ExamQuestionsResult(
 
     public record Option(int no, String text) {
     }
+
 }
