@@ -23,16 +23,23 @@ public class WordCatalogConfig {
         long begin = System.currentTimeMillis();
         InMemoryWordCatalog catalog = new InMemoryWordCatalog(wordPersistencePort.loadCatalogWords(),
                 wordPersistencePort.loadConfusableGroups());
+        logCatalogLoaded(catalog, System.currentTimeMillis() - begin);
+        return catalog;
+    }
 
-        String perLevel = Arrays.stream(Level.values())
+    private static void logCatalogLoaded(InMemoryWordCatalog catalog, long elapsedMs) {
+        log.info("단어 출제 목록 로딩 완료: 전체 {}행, 시험 제외 {}행, 레벨별 정답 가능 ({}), "
+                        + "헷갈리는 단어 묶음 {}개(단어 {}개) {}ms",
+                catalog.size(), catalog.excludedCount(), countByLevelText(catalog),
+                catalog.confusableGroupCount(), catalog.confusableWordCount(), elapsedMs);
+    }
+
+    /** 세부 레벨별 정답 가능 수 (예: "A1=995, A2=…") */
+    private static String countByLevelText(InMemoryWordCatalog catalog) {
+        return Arrays.stream(Level.values())
                 .filter(level -> !level.isGroup())
                 .map(level -> level + "=" + catalog.countByLevel(level))
                 .collect(Collectors.joining(", "));
-        log.info("단어 출제 목록 로딩 완료: 전체 {}행, 시험 제외 {}행, 레벨별 정답 가능 ({}), "
-                        + "헷갈리는 단어 묶음 {}개(단어 {}개) {}ms",
-                catalog.size(), catalog.excludedCount(), perLevel,
-                catalog.confusableGroupCount(), catalog.confusableWordCount(), System.currentTimeMillis() - begin);
-        return catalog;
     }
 
 }

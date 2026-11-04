@@ -24,6 +24,7 @@ public class InMemoryWordCatalog implements WordCatalog {
 
     /** 세부·묶음 레벨 모두 미리 계산 */
     private final Map<Level, List<CatalogWord>> answerPool;
+    /** 오답 보기 후보 = 정답 후보와 같은 목록 ({@link #toAnswerPool} 참고) */
     private final Map<Level, List<CatalogWord>> optionPool;
     private final Map<Long, CatalogWord> byId;
     /** word_id → 헷갈리는 단어 word_id (양방향). 묶음 DB 의 한 행을 양쪽 방향으로 펼친 것 */
@@ -41,40 +42,60 @@ public class InMemoryWordCatalog implements WordCatalog {
      * @param confusableGroups 헷갈리는 단어 묶음. 묶음 하나 = word_id 목록 (같은 묶음 단어는 보기로 함께 내지 않음)
      */
     public InMemoryWordCatalog(Collection<CatalogWord> words, Collection<? extends Collection<Long>> confusableGroups) {
-        Map<Long, CatalogWord> ids = new HashMap<>(words.size() * 2);
-        Map<Level, List<CatalogWord>> detail = new EnumMap<>(Level.class);
-        int excluded = 0;
-        for (CatalogWord word : words) {
-            if (ids.putIfAbsent(word.levelWordId(), word) != null) {
-                throw new IllegalArgumentException("level_word_id 중복: " + word.levelWordId());
-            }
-            detail.computeIfAbsent(word.level(), k -> new ArrayList<>()).add(word);
-            if (word.excluded()) {
-                excluded++;
-            }
-        }
-
-        Map<Level, List<CatalogWord>> answers = new EnumMap<>(Level.class);
-        Map<Level, List<CatalogWord>> options = new EnumMap<>(Level.class);
-        for (Level level : Level.values()) {
-            List<CatalogWord> all = new ArrayList<>();
-            for (Level detailLevel : level.detailLevels()) {
-                all.addAll(detail.getOrDefault(detailLevel, List.of()));
-            }
-            // 시험 제외를 먼저 빼고 중복 정리 (순서 중요)
-            // 정답 후보와 오답 보기 후보는 같은 목록 : 시험 제외 단어는 오답 보기로도 내지 않는다
-            // (너무 쉬운 오답이 되거나, supermarket·team 처럼 정답과 헷갈리는 오답이 되므로)
-            List<CatalogWord> answerable = lowestLevelPerWord(all.stream().filter(CatalogWord::isAnswerable).toList());
-            answers.put(level, answerable);
-            options.put(level, answerable);
-        }
-
-        this.answerPool = Collections.unmodifiableMap(answers);
-        this.optionPool = Collections.unmodifiableMap(options);
-        this.byId = Map.copyOf(ids);
+        this.byId = indexByLevelWordId(words);
+        this.answerPool = toAnswerPool(groupByDetailLevel(words));
+        this.optionPool = this.answerPool;
         this.confusableByWordId = toConfusableMap(confusableGroups);
-        this.excludedCount = excluded;
+        this.excludedCount = (int) words.stream().filter(CatalogWord::excluded).count();
         this.confusableGroupCount = confusableGroups.size();
+    }
+
+    /** level_word_id → 출제 목록 단어. 같은 아이디가 두 번 나오면 예외 */
+    private static Map<Long, CatalogWord> indexByLevelWordId(Collection<CatalogWord> words) {
+        Map<Long, CatalogWord> ids = new HashMap<>(words.size() * 2);
+        for (CatalogWord word : words) {
+            putUnique(ids, word);
+        }
+        return Map.copyOf(ids);
+    }
+
+    private static void putUnique(Map<Long, CatalogWord> ids, CatalogWord word) {
+        if (ids.putIfAbsent(word.levelWordId(), word) != null) {
+            throw new IllegalArgumentException("level_word_id 중복: " + word.levelWordId());
+        }
+    }
+
+    private static Map<Level, List<CatalogWord>> groupByDetailLevel(Collection<CatalogWord> words) {
+        Map<Level, List<CatalogWord>> byDetailLevel = new EnumMap<>(Level.class);
+        for (CatalogWord word : words) {
+            byDetailLevel.computeIfAbsent(word.level(), k -> new ArrayList<>()).add(word);
+        }
+        return byDetailLevel;
+    }
+
+    /**
+     * 세부 · 묶음 레벨마다 정답 후보. 시험 제외를 먼저 빼고 중복 정리 (순서 중요).
+     * 정답 후보와 오답 보기 후보는 같은 목록 : 시험 제외 단어는 오답 보기로도 내지 않는다
+     * (너무 쉬운 오답이 되거나, supermarket·team 처럼 정답과 헷갈리는 오답이 되므로)
+     */
+    private static Map<Level, List<CatalogWord>> toAnswerPool(Map<Level, List<CatalogWord>> byDetailLevel) {
+        Map<Level, List<CatalogWord>> pool = new EnumMap<>(Level.class);
+        for (Level level : Level.values()) {
+            List<CatalogWord> answerable = wordsIn(level, byDetailLevel).stream()
+                    .filter(CatalogWord::isAnswerable)
+                    .toList();
+            pool.put(level, lowestLevelPerWord(answerable));
+        }
+        return Collections.unmodifiableMap(pool);
+    }
+
+    /** 레벨의 단어 (묶음 레벨이면 그 안 세부 레벨 모두) */
+    private static List<CatalogWord> wordsIn(Level level, Map<Level, List<CatalogWord>> byDetailLevel) {
+        List<CatalogWord> words = new ArrayList<>();
+        for (Level detailLevel : level.detailLevels()) {
+            words.addAll(byDetailLevel.getOrDefault(detailLevel, List.of()));
+        }
+        return words;
     }
 
     /** 단어당 1행만 남긴다. 여러 레벨에 있으면 낮은 레벨. 처음 나온 순서 유지 */
@@ -94,17 +115,20 @@ public class InMemoryWordCatalog implements WordCatalog {
     private static Map<Long, Set<Long>> toConfusableMap(Collection<? extends Collection<Long>> groups) {
         Map<Long, Set<Long>> map = new HashMap<>();
         for (Collection<Long> group : groups) {
-            for (Long wordId : group) {
-                for (Long other : group) {
-                    if (!wordId.equals(other)) {
-                        map.computeIfAbsent(wordId, k -> new HashSet<>()).add(other);
-                    }
-                }
-            }
+            addConfusableWordIds(map, group);
         }
         Map<Long, Set<Long>> result = new HashMap<>(map.size() * 2);
         map.forEach((wordId, others) -> result.put(wordId, Set.copyOf(others)));
         return Map.copyOf(result);
+    }
+
+    /** 묶음 하나의 단어마다 같은 묶음의 다른 단어를 더한다 */
+    private static void addConfusableWordIds(Map<Long, Set<Long>> map, Collection<Long> group) {
+        for (Long wordId : group) {
+            group.stream()
+                    .filter(other -> !other.equals(wordId))
+                    .forEach(other -> map.computeIfAbsent(wordId, k -> new HashSet<>()).add(other));
+        }
     }
 
     @Override

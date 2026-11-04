@@ -15,6 +15,16 @@ public enum ExposureAction {
     EXCLUDE_LEVEL,
 
     /** 유지: 검토했지만 그대로 둔다 (검토 기록) */
-    KEEP
+    KEEP;
+
+    /** 이 처리가 가리킬 수 있는 대상인지 (뜻 순번 · 레벨, DB 의 ck_word_exposure_target 과 같은 규칙) */
+    public boolean isAllowed(Integer meaningSeq, Level level) {
+        return switch (this) {
+            case EXCLUDE_WORD -> meaningSeq == null && level == null;
+            case EXCLUDE_MEANING -> meaningSeq != null && level == null;
+            case EXCLUDE_LEVEL -> meaningSeq == null && level != null;
+            case KEEP -> meaningSeq == null || level == null;
+        };
+    }
 
 }

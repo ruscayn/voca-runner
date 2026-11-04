@@ -28,15 +28,18 @@ public final class WordExposureRules {
     private final Set<MeaningKey> excludedMeanings = new HashSet<>();
 
     public WordExposureRules(Collection<Rule> rules) {
-        for (Rule rule : rules) {
-            switch (rule.action()) {
-                case EXCLUDE_WORD -> excludedWords.add(rule.wordId());
-                case EXCLUDE_LEVEL -> excludedLevelWords.add(new LevelWordKey(rule.wordId(), rule.level()));
-                case EXCLUDE_MEANING -> excludedMeanings.add(new MeaningKey(rule.wordId(), rule.meaningSeq()));
-                case KEEP -> {
-                }
-                default -> throw new IllegalStateException("처리하지 않은 노출 판정: " + rule.action());
-            }
+        rules.stream()
+                .filter(rule -> rule.action() != ExposureAction.KEEP)   // 유지는 아무것도 하지 않음
+                .forEach(this::add);
+    }
+
+    /** 빼는 판정 한 줄을 처리에 맞는 모음에 넣는다 */
+    private void add(Rule rule) {
+        switch (rule.action()) {
+            case EXCLUDE_WORD -> excludedWords.add(rule.wordId());
+            case EXCLUDE_LEVEL -> excludedLevelWords.add(new LevelWordKey(rule.wordId(), rule.level()));
+            case EXCLUDE_MEANING -> excludedMeanings.add(new MeaningKey(rule.wordId(), rule.meaningSeq()));
+            default -> throw new IllegalStateException("처리하지 않은 노출 판정: " + rule.action());
         }
     }
 
@@ -73,13 +76,7 @@ public final class WordExposureRules {
             if (level != null && level.isGroup()) {
                 throw new IllegalArgumentException("세부 레벨만 가능합니다: " + level);
             }
-            boolean ok = switch (action) {
-                case EXCLUDE_WORD -> meaningSeq == null && level == null;
-                case EXCLUDE_MEANING -> meaningSeq != null && level == null;
-                case EXCLUDE_LEVEL -> meaningSeq == null && level != null;
-                case KEEP -> meaningSeq == null || level == null;
-            };
-            if (!ok) {
+            if (!action.isAllowed(meaningSeq, level)) {
                 throw new IllegalArgumentException("처리 %s 에 맞지 않는 대상: wordId=%d, meaningSeq=%s, level=%s"
                         .formatted(action, wordId, meaningSeq, level));
             }

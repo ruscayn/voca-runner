@@ -60,12 +60,12 @@ public class OriginVerifyFilter extends OncePerRequestFilter {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);   // 본문 없이 (오류 화면도 보여 주지 않음)
     }
 
-    /** 걸린 시간으로 값을 짐작하지 못하게 MessageDigest.isEqual 로 비교하고, 맞는 값을 찾아도 끝까지 비교 */
     private boolean matches(String value) {
-        if (value == null) {
-            return false;
-        }
-        byte[] given = value.getBytes(StandardCharsets.UTF_8);
+        return value != null && matchesAnySecret(value.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** 걸린 시간으로 값을 짐작하지 못하게 MessageDigest.isEqual 로 비교하고, 맞는 값을 찾아도 끝까지 비교 */
+    private boolean matchesAnySecret(byte[] given) {
         boolean ok = false;
         for (byte[] secret : secrets) {
             ok |= MessageDigest.isEqual(given, secret);
