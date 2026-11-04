@@ -4,10 +4,9 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import org.ruscayn.vocarunner.common.SelfValidating;
-
 import java.util.List;
 import java.util.UUID;
+import org.ruscayn.vocarunner.common.SelfValidating;
 
 /**
  * 시험 제출 입력. 만들 때 스스로 검증한다 (어기면 400 COMMON_002).

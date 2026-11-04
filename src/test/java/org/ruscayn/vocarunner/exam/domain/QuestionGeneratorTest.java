@@ -1,5 +1,16 @@
 package org.ruscayn.vocarunner.exam.domain;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.ruscayn.vocarunner.support.TestWords.excluded;
+import static org.ruscayn.vocarunner.support.TestWords.word;
+import static org.ruscayn.vocarunner.support.TestWords.words;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -9,18 +20,6 @@ import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
 import org.ruscayn.vocarunner.word.domain.InMemoryWordCatalog;
 import org.ruscayn.vocarunner.word.domain.Level;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.ruscayn.vocarunner.support.TestWords.excluded;
-import static org.ruscayn.vocarunner.support.TestWords.word;
-import static org.ruscayn.vocarunner.support.TestWords.words;
 
 @DisplayName("QuestionGenerator : 문항 생성 규칙")
 class QuestionGeneratorTest {

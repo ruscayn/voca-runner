@@ -1,17 +1,16 @@
 package org.ruscayn.vocarunner.exam.adapter.in.web;
 
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.ruscayn.vocarunner.common.WebAdapter;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
 import org.ruscayn.vocarunner.exam.application.port.in.LevelGroupSummary;
 import org.ruscayn.vocarunner.exam.application.port.in.LevelSummary;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
 import org.ruscayn.vocarunner.exam.domain.Exam;
-import org.ruscayn.vocarunner.common.WebAdapter;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-
-import java.util.List;
 
 /** 메인 화면 : 레벨 선택 + 시험 시작 */
 @WebAdapter

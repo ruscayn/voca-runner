@@ -1,20 +1,24 @@
 package org.ruscayn.vocarunner.exam.adapter.in.web;
 
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
+import org.ruscayn.vocarunner.common.WebAdapter;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResult;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamResult;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
-import org.ruscayn.vocarunner.common.WebAdapter;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.UUID;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /** 시험 REST API (화면 / 추후 앱 공용). 결과 외에는 시험을 시작한 기기(VR_DEVICE 쿠키)만 쓸 수 있다 */
 @WebAdapter

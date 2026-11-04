@@ -1,11 +1,10 @@
 package org.ruscayn.vocarunner.config;
 
+import java.time.Duration;
 import org.ruscayn.vocarunner.exam.application.service.ExamProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.boot.context.properties.bind.Name;
-
-import java.time.Duration;
 
 /**
  * 시험 설정 묶기 (application.yaml : voca-runner.test.*). 값의 뜻은 ExamProperties 참고.

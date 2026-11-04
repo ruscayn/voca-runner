@@ -1,15 +1,14 @@
 package org.ruscayn.vocarunner.word.domain;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.ruscayn.vocarunner.word.domain.WordExposureRules.Applied;
 import org.ruscayn.vocarunner.word.domain.WordExposureRules.Meaning;
 import org.ruscayn.vocarunner.word.domain.WordExposureRules.Rule;
-
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("WordExposureRules : 단어 노출 적용")
 class WordExposureRulesTest {

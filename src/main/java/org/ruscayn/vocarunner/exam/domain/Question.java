@@ -1,8 +1,7 @@
 package org.ruscayn.vocarunner.exam.domain;
 
-import org.ruscayn.vocarunner.word.domain.CatalogWord;
-
 import java.util.List;
+import org.ruscayn.vocarunner.word.domain.CatalogWord;
 
 /**
  * 생성된 문제 1개. options 는 화면에 보여줄 순서(섞인 순서)이며 answer 를 정확히 1번 포함한다.

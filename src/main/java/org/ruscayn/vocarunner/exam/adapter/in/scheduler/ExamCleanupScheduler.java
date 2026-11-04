@@ -1,7 +1,7 @@
 package org.ruscayn.vocarunner.exam.adapter.in.scheduler;
 
-import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
 import lombok.RequiredArgsConstructor;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 

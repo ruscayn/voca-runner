@@ -1,8 +1,7 @@
 package org.ruscayn.vocarunner.common.adapter.in.web;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-
 import java.util.List;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * CloudFront 비밀 헤더 검사 (application.yaml : voca-runner.origin-verify.*, AWS 설계.md 7-1)

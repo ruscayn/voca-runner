@@ -1,7 +1,11 @@
 package org.ruscayn.vocarunner.word.domain;
 
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * 단어 노출 규칙 : 단어 노출(word_exposure)을 적용하는 규칙.

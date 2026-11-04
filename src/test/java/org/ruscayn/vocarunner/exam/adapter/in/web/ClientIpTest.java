@@ -1,12 +1,12 @@
 package org.ruscayn.vocarunner.exam.adapter.in.web;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.mock.web.MockHttpServletRequest;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("ClientIp : 사용자 IP (CloudFront 헤더)")
 class ClientIpTest {

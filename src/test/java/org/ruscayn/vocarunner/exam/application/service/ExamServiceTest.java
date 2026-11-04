@@ -1,13 +1,24 @@
 package org.ruscayn.vocarunner.exam.application.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.ruscayn.vocarunner.support.TestWords.answerOptionNo;
+import static org.ruscayn.vocarunner.support.TestWords.questions;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
 import org.ruscayn.vocarunner.exam.domain.Direction;
-import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.exam.domain.Exam;
+import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
@@ -17,18 +28,6 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.AbstractPlatformTransactionManager;
 import org.springframework.transaction.support.DefaultTransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.ruscayn.vocarunner.support.TestWords.answerOptionNo;
-import static org.ruscayn.vocarunner.support.TestWords.questions;
 
 /**
  * 시험 제출 로그.

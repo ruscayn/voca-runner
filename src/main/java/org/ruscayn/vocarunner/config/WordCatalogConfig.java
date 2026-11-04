@@ -1,15 +1,14 @@
 package org.ruscayn.vocarunner.config;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.ruscayn.vocarunner.word.application.port.out.WordPersistencePort;
 import org.ruscayn.vocarunner.word.domain.InMemoryWordCatalog;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
 /**
  * 단어 출제 목록 등록. 서버 시작 시 DB 에서 1번 읽어 메모리에 올린다.

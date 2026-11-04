@@ -1,15 +1,24 @@
 package org.ruscayn.vocarunner.word.adapter.out.persistence;
 
-import org.ruscayn.vocarunner.common.adapter.out.persistence.BaseEntity;
-import org.ruscayn.vocarunner.word.domain.Level;
-import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.ruscayn.vocarunner.common.adapter.out.persistence.BaseEntity;
+import org.ruscayn.vocarunner.word.domain.Level;
 
 /**
  * 레벨 단어 (level_word) = 한 단어의 한 세부 레벨. 한 레벨에 같은 단어는 1번.

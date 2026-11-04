@@ -1,32 +1,5 @@
 package org.ruscayn.vocarunner.exam.application.service;
 
-import org.ruscayn.vocarunner.common.CustomException;
-import org.ruscayn.vocarunner.common.ErrorCode;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResult;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
-import org.ruscayn.vocarunner.exam.application.port.in.LevelGroupSummary;
-import org.ruscayn.vocarunner.exam.application.port.in.LevelSummary;
-import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
-import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
-import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamResult;
-import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
-import org.ruscayn.vocarunner.exam.domain.Direction;
-import org.ruscayn.vocarunner.exam.domain.Question;
-import org.ruscayn.vocarunner.exam.domain.Examinee;
-import org.ruscayn.vocarunner.exam.domain.QuestionGenerator;
-import org.ruscayn.vocarunner.exam.domain.Exam;
-import org.ruscayn.vocarunner.word.domain.CatalogWord;
-import org.ruscayn.vocarunner.word.domain.Level;
-import org.ruscayn.vocarunner.word.domain.WordCatalog;
-import org.ruscayn.vocarunner.common.UseCase;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.transaction.support.TransactionTemplate;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -39,6 +12,32 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.ruscayn.vocarunner.common.CustomException;
+import org.ruscayn.vocarunner.common.ErrorCode;
+import org.ruscayn.vocarunner.common.UseCase;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResult;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
+import org.ruscayn.vocarunner.exam.application.port.in.LevelGroupSummary;
+import org.ruscayn.vocarunner.exam.application.port.in.LevelSummary;
+import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
+import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
+import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamResult;
+import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
+import org.ruscayn.vocarunner.exam.domain.Direction;
+import org.ruscayn.vocarunner.exam.domain.Exam;
+import org.ruscayn.vocarunner.exam.domain.Examinee;
+import org.ruscayn.vocarunner.exam.domain.Question;
+import org.ruscayn.vocarunner.exam.domain.QuestionGenerator;
+import org.ruscayn.vocarunner.word.domain.CatalogWord;
+import org.ruscayn.vocarunner.word.domain.Level;
+import org.ruscayn.vocarunner.word.domain.WordCatalog;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * 시험 기능 서비스 (들어오는 포트 ExamUseCase 구현) : 시험 시작·문제·제출·결과·중단·정리, 메인 화면의 레벨 요약.

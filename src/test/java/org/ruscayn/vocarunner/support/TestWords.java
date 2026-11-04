@@ -1,11 +1,10 @@
 package org.ruscayn.vocarunner.support;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.ruscayn.vocarunner.exam.domain.Question;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
 import org.ruscayn.vocarunner.word.domain.Level;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /** 테스트용 단어·문항 만들기 도구 */
 public final class TestWords {

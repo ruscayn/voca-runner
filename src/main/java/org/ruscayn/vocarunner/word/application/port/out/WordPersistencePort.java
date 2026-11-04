@@ -1,9 +1,8 @@
 package org.ruscayn.vocarunner.word.application.port.out;
 
-import org.ruscayn.vocarunner.word.domain.CatalogWord;
-
 import java.util.Collection;
 import java.util.List;
+import org.ruscayn.vocarunner.word.domain.CatalogWord;
 
 /**
  * 단어 쪽 DB로 나가는 포트. 앱 시작 때 단어 출제 목록을 만들려고 한 번 읽는다.

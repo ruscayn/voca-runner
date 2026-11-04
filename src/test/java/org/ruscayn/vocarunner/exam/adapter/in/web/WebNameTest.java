@@ -1,38 +1,5 @@
 package org.ruscayn.vocarunner.exam.adapter.in.web;
 
-import com.jayway.jsonpath.JsonPath;
-import jakarta.servlet.http.Cookie;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.ArgumentCaptor;
-import org.ruscayn.vocarunner.common.CustomException;
-import org.ruscayn.vocarunner.common.ErrorCode;
-import org.ruscayn.vocarunner.exam.application.port.in.LevelGroupSummary;
-import org.ruscayn.vocarunner.exam.application.port.in.LevelSummary;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResult;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
-import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
-import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamResult;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
-import org.ruscayn.vocarunner.word.domain.Level;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpSession;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.regex.Pattern;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
@@ -45,6 +12,38 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+
+import com.jayway.jsonpath.JsonPath;
+import jakarta.servlet.http.Cookie;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.regex.Pattern;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
+import org.ruscayn.vocarunner.common.CustomException;
+import org.ruscayn.vocarunner.common.ErrorCode;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResult;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
+import org.ruscayn.vocarunner.exam.application.port.in.LevelGroupSummary;
+import org.ruscayn.vocarunner.exam.application.port.in.LevelSummary;
+import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
+import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamResult;
+import org.ruscayn.vocarunner.word.domain.Level;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 /**
  * 바깥 이름 고정 (안전망). 코드 이름을 바꿀 때 컴파일러가 잡지 못하는 이름이 바뀌면 실패한다.

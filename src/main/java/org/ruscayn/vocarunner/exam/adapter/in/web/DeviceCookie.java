@@ -3,11 +3,10 @@ package org.ruscayn.vocarunner.exam.adapter.in.web;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
-
 import java.time.Duration;
 import java.util.UUID;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 
 /**
  * 기기 구분 쿠키 (VR_DEVICE, 무작위 값).

@@ -1,17 +1,16 @@
 package org.ruscayn.vocarunner.exam.domain;
 
-import org.ruscayn.vocarunner.common.CustomException;
-import org.ruscayn.vocarunner.common.ErrorCode;
-import org.ruscayn.vocarunner.word.domain.Level;
-import lombok.AccessLevel;
-import lombok.Getter;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Getter;
+import org.ruscayn.vocarunner.common.CustomException;
+import org.ruscayn.vocarunner.common.ErrorCode;
+import org.ruscayn.vocarunner.word.domain.Level;
 
 /**
  * 시험 1회 (정답지·고른 보기·채점 결과).

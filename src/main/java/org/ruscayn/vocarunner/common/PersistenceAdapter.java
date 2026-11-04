@@ -1,13 +1,12 @@
 package org.ruscayn.vocarunner.common;
 
-import org.springframework.core.annotation.AliasFor;
-import org.springframework.stereotype.Repository;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.springframework.core.annotation.AliasFor;
+import org.springframework.stereotype.Repository;
 
 /**
  * 영속성 어댑터(나가는 포트 …PersistencePort 를 DB 로 구현)라는 표시.

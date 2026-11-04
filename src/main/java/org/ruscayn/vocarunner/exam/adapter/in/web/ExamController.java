@@ -1,16 +1,19 @@
 package org.ruscayn.vocarunner.exam.adapter.in.web;
 
-import org.ruscayn.vocarunner.common.CustomException;
-import org.ruscayn.vocarunner.common.ErrorCode;
-import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
-import org.ruscayn.vocarunner.exam.domain.Examinee;
-import org.ruscayn.vocarunner.word.domain.Level;
-import org.ruscayn.vocarunner.common.WebAdapter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.ruscayn.vocarunner.common.CustomException;
+import org.ruscayn.vocarunner.common.ErrorCode;
+import org.ruscayn.vocarunner.common.WebAdapter;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
+import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
+import org.ruscayn.vocarunner.exam.domain.Examinee;
+import org.ruscayn.vocarunner.word.domain.Level;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,10 +21,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.UUID;
 
 /**
  * 시험 화면.

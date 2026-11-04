@@ -1,14 +1,13 @@
 package org.ruscayn.vocarunner.exam.adapter.out.persistence;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 import org.ruscayn.vocarunner.exam.domain.ExamStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
 
 /** test_session Spring Data 저장소. 나가는 포트(ExamPersistencePort)를 구현한 ExamPersistenceAdapter 에서만 쓴다 */
 public interface SpringDataExamRepository extends JpaRepository<ExamJpaEntity, UUID> {

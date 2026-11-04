@@ -1,11 +1,9 @@
 package org.ruscayn.vocarunner.common.adapter.in.web;
 
-import org.ruscayn.vocarunner.common.ErrorCode;
-
+import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Getter;
-
-import java.time.LocalDateTime;
+import org.ruscayn.vocarunner.common.ErrorCode;
 
 @Getter
 @Builder

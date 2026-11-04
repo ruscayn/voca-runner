@@ -1,17 +1,23 @@
 package org.ruscayn.vocarunner.word.adapter.out.persistence;
 
-import org.ruscayn.vocarunner.common.adapter.out.persistence.BaseEntity;
-import org.ruscayn.vocarunner.word.domain.ExposureAction;
-import org.ruscayn.vocarunner.word.domain.Level;
-import org.ruscayn.vocarunner.word.domain.WordExposureRules;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.time.LocalDate;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-
-import java.time.LocalDate;
+import org.ruscayn.vocarunner.common.adapter.out.persistence.BaseEntity;
+import org.ruscayn.vocarunner.word.domain.ExposureAction;
+import org.ruscayn.vocarunner.word.domain.Level;
+import org.ruscayn.vocarunner.word.domain.WordExposureRules;
 
 /**
  * 단어 노출 - 지금 판정 (word_exposure). 데이터는 CSV 로 적재하며 앱에서는 조회만 한다.

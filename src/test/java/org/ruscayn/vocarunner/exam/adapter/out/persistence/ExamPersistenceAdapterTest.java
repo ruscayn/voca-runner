@@ -1,14 +1,26 @@
 package org.ruscayn.vocarunner.exam.adapter.out.persistence;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.ruscayn.vocarunner.support.TestWords.answerOptionNo;
+import static org.ruscayn.vocarunner.support.TestWords.incorrectOptionNo;
+import static org.ruscayn.vocarunner.support.TestWords.questions;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.ruscayn.vocarunner.common.adapter.out.persistence.JpaConfig;
 import org.ruscayn.vocarunner.exam.domain.Direction;
-import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.ExamStatus;
+import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -23,19 +35,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.ruscayn.vocarunner.support.TestWords.answerOptionNo;
-import static org.ruscayn.vocarunner.support.TestWords.questions;
-import static org.ruscayn.vocarunner.support.TestWords.incorrectOptionNo;
 
 /**
  * 시험 저장소를 실제 PostgreSQL 로 확인한다 (U21).

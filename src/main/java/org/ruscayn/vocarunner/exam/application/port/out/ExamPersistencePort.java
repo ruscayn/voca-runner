@@ -1,12 +1,11 @@
 package org.ruscayn.vocarunner.exam.application.port.out;
 
-import org.ruscayn.vocarunner.exam.domain.Exam;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.ruscayn.vocarunner.exam.domain.Exam;
 
 /**
  * 진행 중·결과 보관 중인 시험 저장소 (test_session).

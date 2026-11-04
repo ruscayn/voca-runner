@@ -1,18 +1,17 @@
 package org.ruscayn.vocarunner.exam.adapter.out.persistence;
 
-import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
-import org.ruscayn.vocarunner.exam.domain.Exam;
-import org.ruscayn.vocarunner.exam.domain.ExamStatus;
-import org.ruscayn.vocarunner.common.PersistenceAdapter;
-import lombok.RequiredArgsConstructor;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.ruscayn.vocarunner.common.PersistenceAdapter;
+import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
+import org.ruscayn.vocarunner.exam.domain.Exam;
+import org.ruscayn.vocarunner.exam.domain.ExamStatus;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 시험 저장소 (PostgreSQL test_session).

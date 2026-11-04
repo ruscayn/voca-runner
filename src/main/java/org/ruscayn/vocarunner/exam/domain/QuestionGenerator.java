@@ -1,15 +1,20 @@
 package org.ruscayn.vocarunner.exam.domain;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Supplier;
+import java.util.random.RandomGenerator;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
-
-import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Supplier;
-import java.util.random.RandomGenerator;
 
 /**
  * 문항 생성기 : 시험 문항을 만드는 도메인 서비스. 단어는 WordCatalog(메모리)에서만 가져온다.

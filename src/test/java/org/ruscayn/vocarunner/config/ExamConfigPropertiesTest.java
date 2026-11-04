@@ -1,15 +1,14 @@
 package org.ruscayn.vocarunner.config;
 
-import org.ruscayn.vocarunner.exam.application.service.ExamProperties;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.context.properties.bind.Binder;
-import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
 import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.ruscayn.vocarunner.exam.application.service.ExamProperties;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 
 /**
  * 시험 설정 묶기. 자바 이름(maxQuestionCount)과 설정 이름(question-count)이 달라 @Name 으로 묶은 것을 확인한다.

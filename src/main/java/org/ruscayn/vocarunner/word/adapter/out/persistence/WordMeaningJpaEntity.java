@@ -1,12 +1,20 @@
 package org.ruscayn.vocarunner.word.adapter.out.persistence;
 
-import org.ruscayn.vocarunner.common.adapter.out.persistence.BaseEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import org.ruscayn.vocarunner.common.adapter.out.persistence.BaseEntity;
 
 /**
  * 단어의 한국어 뜻 (word_meaning). 단어당 최대 5개, seq 1~5.

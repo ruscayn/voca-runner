@@ -1,5 +1,9 @@
 package org.ruscayn.vocarunner.common.adapter.in.web;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -9,11 +13,6 @@ import org.springframework.boot.context.properties.source.MapConfigurationProper
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-
-import java.util.List;
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("OriginVerifyFilter : CloudFront 비밀 헤더 검사")
 class OriginVerifyFilterTest {

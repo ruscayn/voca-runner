@@ -1,9 +1,17 @@
 package org.ruscayn.vocarunner.word.domain;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
-
-import java.util.*;
 
 /**
  * 메모리에 둔 단어 출제 목록.

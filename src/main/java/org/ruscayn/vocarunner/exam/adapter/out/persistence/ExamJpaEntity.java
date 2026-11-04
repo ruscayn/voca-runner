@@ -7,6 +7,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import java.time.Instant;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,9 +20,6 @@ import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.ExamStatus;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.word.domain.Level;
-
-import java.time.Instant;
-import java.util.UUID;
 
 /**
  * 시험 1회의 DB 저장용 클래스 = test_session 1행. 도메인 Exam 과는 from · toDomain 으로 오간다.
