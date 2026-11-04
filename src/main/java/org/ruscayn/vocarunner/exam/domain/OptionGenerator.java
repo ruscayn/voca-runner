@@ -20,7 +20,7 @@ import org.ruscayn.vocarunner.word.domain.WordCatalog;
  *   <li>헷갈리는 단어 묶음에 함께 속한 단어는 같은 문항의 보기로 내지 않는다 (예: sir 문항에 teacher. 오답끼리도)</li>
  * </ul>
  */
-class OptionPicker {
+class OptionGenerator {
 
     private static final int INCORRECT_OPTION_COUNT = Question.OPTION_COUNT - 1;
     private static final int RANDOM_TRY_LIMIT = 200;
@@ -29,7 +29,7 @@ class OptionPicker {
     private final Map<Level, List<CatalogWord>> optionPoolByLevel;
     private final RandomGenerator random;
 
-    OptionPicker(WordCatalog wordCatalog, List<CatalogWord> optionPool, RandomGenerator random) {
+    OptionGenerator(WordCatalog wordCatalog, List<CatalogWord> optionPool, RandomGenerator random) {
         this.wordCatalog = wordCatalog;
         this.optionPoolByLevel = groupByDetailLevel(optionPool);
         this.random = random;
@@ -43,7 +43,7 @@ class OptionPicker {
         return byLevel;
     }
 
-    List<CatalogWord> pick(CatalogWord answer) {
+    List<CatalogWord> generate(CatalogWord answer) {
         List<CatalogWord> sameLevel = optionPoolByLevel.getOrDefault(answer.level(), List.of());
         List<CatalogWord> options = new ArrayList<>(Question.OPTION_COUNT);
         options.add(answer);

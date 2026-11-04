@@ -13,7 +13,7 @@ import org.ruscayn.vocarunner.word.domain.Level;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
 
 /**
- * 출제 규칙 (보기 규칙은 {@link OptionPicker})
+ * 출제 규칙 (보기 규칙은 {@link OptionGenerator})
  * <ul>
  *   <li>한 시험에서 같은 단어는 한 번만</li>
  *   <li>묶음 레벨은 소속 세부 레벨 단어를 함께 쓰고, 두 레벨에 모두 있는 단어는 낮은 레벨(뜻)을 쓴다</li>
@@ -39,9 +39,9 @@ public class QuestionGenerator {
         List<CatalogWord> answerPool = wordCatalog.findAnswerPool(level);
         int count = requireQuestionCount(level, answerPool.size(), maxCount);
         RandomGenerator random = randomSupplier.get();
-        OptionPicker optionPicker = new OptionPicker(wordCatalog, wordCatalog.findOptionPool(level), random);
+        OptionGenerator optionGenerator = new OptionGenerator(wordCatalog, wordCatalog.findOptionPool(level), random);
         return shuffled(answerPool, random).subList(0, count).stream()
-                .map(answer -> new Question(answer, optionPicker.pick(answer)))
+                .map(answer -> new Question(answer, optionGenerator.generate(answer)))
                 .toList();
     }
 
