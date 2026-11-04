@@ -84,7 +84,7 @@ class ExamServicePersistenceTest {
         /** A1 단어 20개 (뜻이 모두 다름) */
         @Bean
         WordCatalog wordCatalog() {
-            return new InMemoryWordCatalog(TestWords.words(Level.A1, 1, 20));
+            return new InMemoryWordCatalog(TestWords.words(Level.A1, 1, 20), List.of());
         }
 
         /** 문항 4개, IP당 최대 진행 중 2개. 나머지는 기본값 */

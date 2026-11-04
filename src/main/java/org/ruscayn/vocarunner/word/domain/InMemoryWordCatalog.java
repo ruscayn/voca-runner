@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,23 +15,13 @@ import org.ruscayn.vocarunner.common.ErrorCode;
 public class InMemoryWordCatalog implements WordCatalog {
 
     private final Map<Level, List<CatalogWord>> answerPool;
-    private final Map<Level, List<CatalogWord>> optionPool;
     private final Map<Long, CatalogWord> byId;
-    private final Map<Long, Set<Long>> confusableByWordId;
-    private final int excludedCount;
-    private final int confusableGroupCount;
-
-    public InMemoryWordCatalog(Collection<CatalogWord> words) {
-        this(words, List.of());
-    }
+    private final ConfusableGroups confusableGroups;
 
     public InMemoryWordCatalog(Collection<CatalogWord> words, Collection<? extends Collection<Long>> confusableGroups) {
         this.byId = indexByLevelWordId(words);
         this.answerPool = toAnswerPool(groupByDetailLevel(words));
-        this.optionPool = this.answerPool;
-        this.confusableByWordId = toConfusableMap(confusableGroups);
-        this.excludedCount = (int) words.stream().filter(CatalogWord::excluded).count();
-        this.confusableGroupCount = confusableGroups.size();
+        this.confusableGroups = new ConfusableGroups(confusableGroups);
     }
 
     private static Map<Long, CatalogWord> indexByLevelWordId(Collection<CatalogWord> words) {
@@ -90,24 +79,6 @@ public class InMemoryWordCatalog implements WordCatalog {
         return List.copyOf(byWord.values());
     }
 
-    private static Map<Long, Set<Long>> toConfusableMap(Collection<? extends Collection<Long>> groups) {
-        Map<Long, Set<Long>> map = new HashMap<>();
-        for (Collection<Long> group : groups) {
-            addConfusableWordIds(map, group);
-        }
-        Map<Long, Set<Long>> result = new HashMap<>(map.size() * 2);
-        map.forEach((wordId, others) -> result.put(wordId, Set.copyOf(others)));
-        return Map.copyOf(result);
-    }
-
-    private static void addConfusableWordIds(Map<Long, Set<Long>> map, Collection<Long> group) {
-        for (Long wordId : group) {
-            group.stream()
-                    .filter(other -> !other.equals(wordId))
-                    .forEach(other -> map.computeIfAbsent(wordId, k -> new HashSet<>()).add(other));
-        }
-    }
-
     @Override
     public List<CatalogWord> findAnswerPool(Level level) {
         return answerPool.get(level);
@@ -115,7 +86,7 @@ public class InMemoryWordCatalog implements WordCatalog {
 
     @Override
     public List<CatalogWord> findOptionPool(Level level) {
-        return optionPool.get(level);
+        return answerPool.get(level);
     }
 
     @Override
@@ -134,7 +105,7 @@ public class InMemoryWordCatalog implements WordCatalog {
 
     @Override
     public Set<Long> findConfusableWordIds(long wordId) {
-        return confusableByWordId.getOrDefault(wordId, Set.of());
+        return confusableGroups.confusableWordIds(wordId);
     }
 
     public int size() {
@@ -142,15 +113,11 @@ public class InMemoryWordCatalog implements WordCatalog {
     }
 
     public int excludedCount() {
-        return excludedCount;
+        return (int) byId.values().stream().filter(CatalogWord::excluded).count();
     }
 
-    public int confusableGroupCount() {
-        return confusableGroupCount;
-    }
-
-    public int confusableWordCount() {
-        return confusableByWordId.size();
+    public ConfusableGroups confusableGroups() {
+        return confusableGroups;
     }
 
 }

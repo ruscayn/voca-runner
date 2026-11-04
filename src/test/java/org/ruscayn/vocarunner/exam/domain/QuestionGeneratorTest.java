@@ -26,7 +26,7 @@ class QuestionGeneratorTest {
 
     private static List<Question> generate(List<CatalogWord> catalogWords, long seed, Level level, int maxCount) {
         return new QuestionGenerator(() -> new Random(seed))
-                .generate(new InMemoryWordCatalog(catalogWords), level, maxCount);
+                .generate(new InMemoryWordCatalog(catalogWords, List.of()), level, maxCount);
     }
 
     /** 모든 문제에 공통으로 지켜야 하는 규칙 */
@@ -191,7 +191,7 @@ class QuestionGeneratorTest {
             catalog.add(excluded(id, id, Level.A1));
         }
 
-        assertThat(new InMemoryWordCatalog(catalog).countByLevel(Level.A1)).isEqualTo(10);
+        assertThat(new InMemoryWordCatalog(catalog, List.of()).countByLevel(Level.A1)).isEqualTo(10);
 
         List<Question> questions = generate(catalog, 1, Level.A1, 11);
 
@@ -224,7 +224,7 @@ class QuestionGeneratorTest {
         catalog.add(word(901, 900, Level.A2, "A2뜻900"));
 
         // 정답 후보 = A1 30 + A2 30 + word 900(A2) = 61
-        assertThat(new InMemoryWordCatalog(catalog).countByLevel(Level.A)).isEqualTo(61);
+        assertThat(new InMemoryWordCatalog(catalog, List.of()).countByLevel(Level.A)).isEqualTo(61);
 
         List<Question> questions = generate(catalog, seed, Level.A, 61);
 
@@ -244,7 +244,7 @@ class QuestionGeneratorTest {
             catalog.add(word(500 + wordId, wordId, Level.B2, "B2뜻" + wordId));
         }
 
-        InMemoryWordCatalog wordCatalog = new InMemoryWordCatalog(catalog);
+        InMemoryWordCatalog wordCatalog = new InMemoryWordCatalog(catalog, List.of());
 
         assertThat(wordCatalog.countByLevel(Level.B1)).isEqualTo(10);
         assertThat(wordCatalog.countByLevel(Level.B2)).isEqualTo(8);
@@ -367,8 +367,8 @@ class QuestionGeneratorTest {
         assertThat(wordCatalog.findConfusableWordIds(3L)).containsExactly(1L);
         assertThat(wordCatalog.findConfusableWordIds(5L)).containsExactlyInAnyOrder(4L, 6L);
         assertThat(wordCatalog.findConfusableWordIds(7L)).isEmpty();
-        assertThat(wordCatalog.confusableGroupCount()).isEqualTo(3);
-        assertThat(wordCatalog.confusableWordCount()).isEqualTo(6);
+        assertThat(wordCatalog.confusableGroups().groupCount()).isEqualTo(3);
+        assertThat(wordCatalog.confusableGroups().wordCount()).isEqualTo(6);
     }
 
     @Test
