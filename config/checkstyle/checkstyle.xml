@@ -15,6 +15,9 @@
       - Javadoc 형식 검사 모두 뺌 (2026-11-04 결정: 주석은 한국어로 자유롭게, Reformat 도 Javadoc 을 건드리지 않음)
       - 텍스트 블록 모양 검사(TextBlockGoogleStyleFormatting) 뺌 (2026-11-04 결정: 여는 """ 를 새 줄에 두라는
         구글 최신판 규칙. 우테코 문서 · IntelliJ Reformat 에 없고, @Query(""" 같은 흔한 모양을 막음)
+      - 메서드 · 생성자 길이 10줄 이하 (MethodLength, 2026-11-04 결정: 선언 줄 · 괄호 · 빈 줄 · 주석 모두 셈. 테스트는 제외.
+        매개변수를 필드에 옮겨 담기만 하는 생성자는 그 위에 CHECKSTYLE.SUPPRESS 주석으로 예외)
+      - 들여쓰기 한 단계 (MatchXpath NestedBlock) · else 는 한 번까지 (MatchXpath ElseIf) 를 더함 (2026-11-04 결정, 테스트는 제외)
     위반이 하나라도 있으면 빌드 실패 (build.gradle 의 maxWarnings = 0)
  -->
 
@@ -27,6 +30,20 @@
   <property name="fileExtensions" value="java, properties, xml"/>
 
   <module name="SuppressWarningsFilter"/>
+
+  <!-- 메서드 크기 · 들여쓰기 한 단계 · else if 규칙은 main 만 (테스트 제외, 2026-11-04 결정) -->
+  <module name="SuppressionSingleFilter">
+    <property name="checks" value="MethodLength"/>
+    <property name="files" value="[\\/]src[\\/]test[\\/]"/>
+  </module>
+  <module name="SuppressionSingleFilter">
+    <property name="id" value="NestedBlock"/>
+    <property name="files" value="[\\/]src[\\/]test[\\/]"/>
+  </module>
+  <module name="SuppressionSingleFilter">
+    <property name="id" value="ElseIf"/>
+    <property name="files" value="[\\/]src[\\/]test[\\/]"/>
+  </module>
 
   <!-- https://checkstyle.org/filters/suppressionfilter.html -->
   <module name="SuppressionFilter">
@@ -418,6 +435,39 @@
     </module>
     <module name="EmptyCatchBlock">
       <property name="commentFormat" value="\w+"/>
+    </module>
+    <!--
+      들여쓰기는 한 단계만 (2026-11-04 결정): 메서드 · 생성자 안에서 중괄호 블록(if · for · while · switch · try ·
+      catch · 람다 { } 등) 안에 또 중괄호 블록을 두지 않는다. 안쪽은 메서드로 분리.
+      같은 메서드 안의 블록끼리만 비교 (익명 클래스 안 메서드는 따로 셈), else 블록 · else if 는 if 와 같은 단계
+    -->
+    <module name="MatchXpath">
+      <property name="id" value="NestedBlock"/>
+      <property name="query" value="//*[self::SLIST[not(parent::METHOD_DEF or parent::CTOR_DEF
+          or parent::COMPACT_CTOR_DEF or parent::STATIC_INIT or parent::INSTANCE_INIT or parent::CASE_GROUP)]
+          or self::LITERAL_SWITCH]
+        [some $outer in ancestor::*[self::SLIST[not(parent::METHOD_DEF or parent::CTOR_DEF
+              or parent::COMPACT_CTOR_DEF or parent::STATIC_INIT or parent::INSTANCE_INIT
+              or parent::CASE_GROUP)] or self::LITERAL_SWITCH]
+         satisfies count($outer/ancestor::*[self::METHOD_DEF or self::CTOR_DEF or self::COMPACT_CTOR_DEF
+              or self::STATIC_INIT or self::INSTANCE_INIT])
+           = count(ancestor::*[self::METHOD_DEF or self::CTOR_DEF or self::COMPACT_CTOR_DEF
+              or self::STATIC_INIT or self::INSTANCE_INIT])]"/>
+      <message key="matchxpath.match" value="중괄호 블록 안에 또 블록이 있습니다 (들여쓰기는 한 단계만). 안쪽을 메서드로 분리하세요"/>
+    </module>
+    <!--
+      else 는 한 번까지 (2026-11-04 결정): if-else · if-else if 는 괜찮고, 그 뒤로 else 를 잇지 않는다
+      (if-else if-else, if-else if-else if …). 되도록 if (…) { … return } 을 나열한다
+    -->
+    <module name="MatchXpath">
+      <property name="id" value="ElseIf"/>
+      <property name="query" value="//LITERAL_ELSE/LITERAL_IF/LITERAL_ELSE"/>
+      <message key="matchxpath.match" value="else 를 두 번 잇지 않습니다 (if-else · if-else if 까지). 조건마다 if 안에서 바로 return 하는 꼴로 나열하세요"/>
+    </module>
+    <module name="MethodLength">
+      <property name="max" value="10"/>
+      <property name="countEmpty" value="true"/>
+      <property name="tokens" value="METHOD_DEF, CTOR_DEF, COMPACT_CTOR_DEF"/>
     </module>
     <module name="CommentsIndentation">
       <property name="tokens" value="SINGLE_LINE_COMMENT, BLOCK_COMMENT_BEGIN"/>
