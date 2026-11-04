@@ -1,13 +1,9 @@
 package org.ruscayn.vocarunner.exam.application.service;
 
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.ruscayn.vocarunner.common.CustomException;
@@ -15,13 +11,9 @@ import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.common.UseCase;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamQuery;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
-import org.ruscayn.vocarunner.exam.application.port.in.LevelGroupSummary;
-import org.ruscayn.vocarunner.exam.application.port.in.LevelSummary;
 import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
 import org.ruscayn.vocarunner.exam.domain.Exam;
-import org.ruscayn.vocarunner.exam.domain.QuestionGenerator;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
-import org.ruscayn.vocarunner.word.domain.Level;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,31 +58,6 @@ public class ExamQueryService implements ExamQuery {
         return examPersistencePort.findById(examId)
                 .map(exam -> exam.isInProgress(now))
                 .orElse(false);
-    }
-
-    @Override
-    public List<LevelGroupSummary> getDetailLevelGroups() {
-        Map<String, List<LevelSummary>> byGroup = getDetailLevels().stream()
-                .collect(Collectors.groupingBy(summary -> summary.level().groupName(),
-                        LinkedHashMap::new, Collectors.toList()));
-        return byGroup.entrySet().stream()
-                .map(entry -> new LevelGroupSummary(entry.getKey(), entry.getValue()))
-                .toList();
-    }
-
-    private List<LevelSummary> getDetailLevels() {
-        return Arrays.stream(Level.values())
-                .filter(level -> !level.isGroup())
-                .map(this::toSummary)
-                .toList();
-    }
-
-    private LevelSummary toSummary(Level level) {
-        int wordCount = wordCatalog.countByLevel(level);
-        int questionCount = QuestionGenerator.questionCount(wordCount, examProperties.maxQuestionCount());
-        long allowedMinutes = Exam.allowedTime(
-                questionCount, Exam.DEFAULT_TIME_PER_QUESTION_SEC, examProperties.grace()).toMinutes();
-        return new LevelSummary(level, wordCount, questionCount, allowedMinutes);
     }
 
     private ExamResult toResult(Exam exam) {

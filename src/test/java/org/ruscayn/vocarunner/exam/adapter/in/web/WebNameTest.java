@@ -29,12 +29,13 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamLevelOverview;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamLevelOverviewGroup;
+import org.ruscayn.vocarunner.exam.application.port.in.ExamLevelOverviewQuery;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamQuery;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResult;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
-import org.ruscayn.vocarunner.exam.application.port.in.LevelGroupSummary;
-import org.ruscayn.vocarunner.exam.application.port.in.LevelSummary;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamResult;
 import org.ruscayn.vocarunner.word.domain.Level;
@@ -75,6 +76,9 @@ class WebNameTest {
 
     @MockitoBean
     private ExamQuery examQuery;
+
+    @MockitoBean
+    private ExamLevelOverviewQuery examLevelOverviewQuery;
 
     private static Map<String, Object> readObject(String json, String path) {
         return JsonPath.read(json, path);
@@ -194,8 +198,9 @@ class WebNameTest {
         @Test
         @DisplayName("메인 : levelGroups · questionCount · timePerQuestionSec · allowedMinutes, 레벨 카드를 그린다")
         void main() throws Exception {
-            given(examQuery.getDetailLevelGroups()).willReturn(List.of(
-                    new LevelGroupSummary("Independent", List.of(new LevelSummary(Level.B2, 1234, 500, 45)))));
+            given(examLevelOverviewQuery.getExamLevelOverviews()).willReturn(List.of(
+                    new ExamLevelOverviewGroup("Independent",
+                            List.of(new ExamLevelOverview(Level.B2, 1234, 500, 45)))));
 
             mockMvc.perform(get("/"))
                     .andExpect(status().isOk())
@@ -211,8 +216,8 @@ class WebNameTest {
         @ValueSource(strings = {"exam-in-use", "exam-ended", "result-expired"})
         @DisplayName("메인 안내 코드 : 정해진 값이면 message 를 넣는다")
         void mainNotice(String notice) throws Exception {
-            given(examQuery.getDetailLevelGroups()).willReturn(List.of(
-                    new LevelGroupSummary("Basic", List.of(new LevelSummary(Level.A1, 1234, 500, 45)))));
+            given(examLevelOverviewQuery.getExamLevelOverviews()).willReturn(List.of(
+                    new ExamLevelOverviewGroup("Basic", List.of(new ExamLevelOverview(Level.A1, 1234, 500, 45)))));
 
             mockMvc.perform(get("/").param("notice", notice))
                     .andExpect(status().isOk())
