@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
- * 시험 화면은 시작 직후 한 번만 열 수 있다 (시작할 때 세션에 1회용 입장 토큰을 넣고, 화면을 열 때 꺼내 지운다).
+ * 시험 화면은 시작 직후 한 번만 열 수 있다 ({@link EntryToken}).
  * <ul>
  *   <li>같은 브라우저가 다시 들어오면(새로고침 · 재접속) 시험을 중단하고 메인으로</li>
  *   <li>다른 브라우저 · 기기 · 링크 미리보기 봇이 주소를 열면 그쪽만 안내와 함께 메인으로, 시험은 그대로</li>
@@ -33,9 +33,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 @RequiredArgsConstructor
 public class ExamController {
-
-    private static final String ENTRY_TOKEN = "TEST_ENTRY_TOKEN";
-    private static final String LAST_OPENED_EXAM_ID = "TEST_OPENED";
 
     private static final DateTimeFormatter RETENTION_DEADLINE_FORMAT =
             DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of("Asia/Seoul"));
@@ -48,7 +45,7 @@ public class ExamController {
                         HttpServletRequest request, HttpServletResponse response, RedirectAttributes redirect) {
         try {
             UUID examId = examUseCase.start(new StartExamCommand(level, toExaminee(request, response)));
-            httpSession.setAttribute(ENTRY_TOKEN, examId);
+            EntryToken.issue(httpSession, examId);
             return "redirect:/test/" + examId;
         } catch (CustomException e) {
             return redirectToMainIfTooMany(e, redirect);
@@ -69,21 +66,17 @@ public class ExamController {
         return "redirect:/";
     }
 
-    /**
-     * 세션을 새로 만들지 않는다. 쿠키 없는 요청(다른 기기 · 링크 미리보기 봇)에 세션을 만들면
-     * redirect 주소에 ;jsessionid 가 붙어 404 원시 JSON 이 보인다
-     */
     @GetMapping("/test/{examId}")
     public String exam(@PathVariable UUID examId, HttpServletRequest request,
                        Model model, RedirectAttributes redirect) {
         if (!examUseCase.isInProgress(examId)) {
             return redirectEnded(examId);
         }
-        HttpSession httpSession = request.getSession(false);
-        if (examId.equals(attribute(httpSession, ENTRY_TOKEN))) {
-            return openFirstEntry(examId, httpSession, model);
+        if (EntryToken.use(request, examId)) {
+            model.addAttribute("examId", examId);
+            return "test";
         }
-        return redirectReentry(examId, httpSession, request, redirect);
+        return redirectReentry(examId, request, redirect);
     }
 
     private String redirectEnded(UUID examId) {
@@ -93,26 +86,14 @@ public class ExamController {
         return "redirect:/?notice=" + MainController.NOTICE_EXAM_ENDED;
     }
 
-    private static String openFirstEntry(UUID examId, HttpSession httpSession, Model model) {
-        httpSession.removeAttribute(ENTRY_TOKEN);
-        httpSession.setAttribute(LAST_OPENED_EXAM_ID, examId);
-        model.addAttribute("examId", examId);
-        return "test";
-    }
-
     /** 세션이 없을 수 있어(다른 브라우저 · 봇) 안내는 flash 대신 주소 파라미터로 한다 */
-    private String redirectReentry(UUID examId, HttpSession httpSession, HttpServletRequest request,
-                                   RedirectAttributes redirect) {
-        if (!examId.equals(attribute(httpSession, LAST_OPENED_EXAM_ID))) {
+    private String redirectReentry(UUID examId, HttpServletRequest request, RedirectAttributes redirect) {
+        if (!EntryToken.isLastOpened(request, examId)) {
             return "redirect:/?notice=" + MainController.NOTICE_EXAM_IN_USE;
         }
         examUseCase.abortIfInProgress(examId, DeviceCookie.find(request));
         redirect.addFlashAttribute("message", "시험이 종료되었습니다. 처음부터 다시 시작해 주세요.");
         return "redirect:/";
-    }
-
-    private static Object attribute(HttpSession httpSession, String name) {
-        return httpSession == null ? null : httpSession.getAttribute(name);
     }
 
     @GetMapping("/test/{examId}/result")
