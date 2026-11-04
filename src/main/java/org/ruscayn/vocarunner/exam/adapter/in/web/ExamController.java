@@ -70,7 +70,7 @@ public class ExamController {
     }
 
     @GetMapping("/test/{examId}")
-    public String test(@PathVariable UUID examId, HttpServletRequest request,
+    public String exam(@PathVariable UUID examId, HttpServletRequest request,
                        Model model, RedirectAttributes redirect) {
         // 세션을 새로 만들지 않는다. 쿠키 없는 요청(다른 기기·링크 미리보기 봇)에 세션을 만들면
         // redirect 주소에 ;jsessionid 가 붙어 404 원시 JSON 이 보인다 (B9)
