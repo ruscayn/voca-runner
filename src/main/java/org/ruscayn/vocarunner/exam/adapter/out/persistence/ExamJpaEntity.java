@@ -15,10 +15,12 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.ruscayn.vocarunner.common.adapter.out.persistence.BaseEntity;
+import org.ruscayn.vocarunner.exam.domain.AnswerKey;
 import org.ruscayn.vocarunner.exam.domain.Direction;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.ExamStatus;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
+import org.ruscayn.vocarunner.exam.domain.SelectedOptions;
 import org.ruscayn.vocarunner.word.domain.Level;
 
 /** 문항을 행으로 나누지 않고 배열로 한 행에 둔다 (500문항 기준 약 10KB) */
@@ -110,14 +112,14 @@ public class ExamJpaEntity extends BaseEntity {
 
     private void copyQuestions(Exam exam) {
         this.questionCount = exam.getQuestionCount();
-        this.optionIds = exam.getOptionIds();
-        this.answerOptionNo = exam.getAnswerOptionNo();
+        this.optionIds = exam.getAnswerKey().toOptionIdArray();
+        this.answerOptionNo = exam.getAnswerKey().toAnswerOptionNoArray();
     }
 
     void copyChangedState(Exam exam) {
         this.status = exam.getStatus();
         this.questionsDelivered = exam.isQuestionsDelivered();
-        this.selectedOptionNo = exam.getSelectedOptionNo();
+        this.selectedOptionNo = exam.getSelectedOptions().toSelectedOptionNoArray();
         this.correctCount = exam.getCorrectCount();
         this.score = exam.getScore();
         this.submittedAt = exam.getSubmittedAt();
@@ -125,7 +127,7 @@ public class ExamJpaEntity extends BaseEntity {
 
     Exam toDomain() {
         return Exam.withId(id, level, direction, timePerQuestionSec, new Examinee(deviceId, clientIp),
-                startedAt, deadline, optionIds, answerOptionNo, selectedOptionNo,
+                startedAt, deadline, AnswerKey.of(optionIds, answerOptionNo), SelectedOptions.of(selectedOptionNo),
                 status, questionsDelivered, correctCount, score, submittedAt, version);
     }
 

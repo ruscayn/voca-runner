@@ -19,6 +19,13 @@ public record Question(CatalogWord answer, List<CatalogWord> options) {
         options = List.copyOf(options);
     }
 
+    static int index(int no, int questionCount) {
+        if (no < 1 || no > questionCount) {
+            throw new IllegalArgumentException("문제 번호 범위 밖: " + no);
+        }
+        return no - 1;
+    }
+
     public int answerOptionNo() {
         return IntStream.range(0, options.size())
                 .filter(i -> options.get(i).levelWordId() == answer.levelWordId())

@@ -2,25 +2,15 @@ package org.ruscayn.vocarunner.exam.domain;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.IntStream;
-import lombok.AccessLevel;
 import lombok.Getter;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.word.domain.Level;
 
-/**
- * 문항은 배열로 보관한다.
- * <ul>
- *   <li>optionIds : 보기 level_word_id. 문항 n(1부터)의 보기 i(1~4) = optionIds[(n-1)*4 + (i-1)]</li>
- *   <li>answerOptionNo : 정답 보기 번호 1~4</li>
- *   <li>selectedOptionNo : 고른 보기 번호 1~4, 0 = 미입력(시간 초과)</li>
- * </ul>
- */
 @Getter
 public class Exam {
 
@@ -28,62 +18,36 @@ public class Exam {
     public static final int MIN_TIME_PER_QUESTION_SEC = 5;
     public static final int MAX_TIME_PER_QUESTION_SEC = 10;
 
-    private static final int OPTION_COUNT = Question.OPTION_COUNT;
-
     private final UUID id;
     private final Level level;
     private final Direction direction;
-    private final int questionCount;
     private final int timePerQuestionSec;
-
-    @Getter(AccessLevel.NONE)
-    private final String deviceId;
-
-    @Getter(AccessLevel.NONE)
-    private final String clientIp;
-
+    private final Examinee examinee;
     private final Instant startedAt;
-
     private final Instant deadline;
-
-    @Getter(AccessLevel.NONE)
-    private final int[] optionIds;
-
-    @Getter(AccessLevel.NONE)
-    private final byte[] answerOptionNo;
-
-    @Getter(AccessLevel.NONE)
-    private final byte[] selectedOptionNo;
-
+    private final AnswerKey answerKey;
+    private SelectedOptions selectedOptions;
     private ExamStatus status;
-
     private boolean questionsDelivered;
-
     private Integer correctCount;
-
     private Integer score;
-
     private Instant submittedAt;
-
     private final Integer version;
 
-    // CHECKSTYLE.SUPPRESS: MethodLength — 매개변수를 필드에 옮겨 담기만 함 (매개변수 줄이기는 클래스 단계에서)
+    // CHECKSTYLE.SUPPRESS: MethodLength — 매개변수를 필드에 옮겨 담기만 함
     private Exam(UUID id, Level level, Direction direction, int timePerQuestionSec, Examinee examinee,
-                 Instant startedAt, Instant deadline, int[] optionIds, byte[] answerOptionNo, byte[] selectedOptionNo,
+                 Instant startedAt, Instant deadline, AnswerKey answerKey, SelectedOptions selectedOptions,
                  ExamStatus status, boolean questionsDelivered, Integer correctCount, Integer score,
                  Instant submittedAt, Integer version) {
         this.id = id;
         this.level = level;
         this.direction = direction;
-        this.questionCount = answerOptionNo.length;
         this.timePerQuestionSec = timePerQuestionSec;
-        this.deviceId = examinee.deviceId();
-        this.clientIp = examinee.clientIp();
+        this.examinee = examinee;
         this.startedAt = startedAt;
         this.deadline = deadline;
-        this.optionIds = optionIds;
-        this.answerOptionNo = answerOptionNo;
-        this.selectedOptionNo = selectedOptionNo;
+        this.answerKey = answerKey;
+        this.selectedOptions = selectedOptions;
         this.status = status;
         this.questionsDelivered = questionsDelivered;
         this.correctCount = correctCount;
@@ -100,7 +64,7 @@ public class Exam {
         int count = questions.size();
         return new Exam(UUID.randomUUID(), level, direction, timePerQuestionSec, examinee,
                 now, now.plus(allowedTime(count, timePerQuestionSec, grace)),
-                toOptionIds(questions), toAnswerOptionNo(questions), new byte[count],
+                AnswerKey.from(questions), SelectedOptions.none(count),
                 ExamStatus.IN_PROGRESS, false, null, null, null, null);
     }
 
@@ -117,33 +81,15 @@ public class Exam {
         }
     }
 
-    private static int[] toOptionIds(List<Question> questions) {
-        return questions.stream()
-                .flatMap(question -> question.options().stream())
-                .mapToInt(option -> Math.toIntExact(option.levelWordId()))
-                .toArray();
-    }
-
-    private static byte[] toAnswerOptionNo(List<Question> questions) {
-        byte[] answerOptionNo = new byte[questions.size()];
-        for (int q = 0; q < questions.size(); q++) {
-            answerOptionNo[q] = (byte) questions.get(q).answerOptionNo();
-        }
-        return answerOptionNo;
-    }
-
     public static Exam withId(UUID id, Level level, Direction direction, int timePerQuestionSec, Examinee examinee,
-                              Instant startedAt, Instant deadline,
-                              int[] optionIds, byte[] answerOptionNo, byte[] selectedOptionNo,
+                              Instant startedAt, Instant deadline, AnswerKey answerKey, SelectedOptions selectedOptions,
                               ExamStatus status, boolean questionsDelivered, Integer correctCount, Integer score,
                               Instant submittedAt, Integer version) {
-        int count = answerOptionNo.length;
-        if (optionIds.length != count * OPTION_COUNT || selectedOptionNo.length != count) {
+        if (selectedOptions.questionCount() != answerKey.questionCount()) {
             throw new IllegalArgumentException("문항 배열 길이가 맞지 않습니다: exam=" + id);
         }
         return new Exam(id, level, direction, timePerQuestionSec, examinee, startedAt, deadline,
-                optionIds.clone(), answerOptionNo.clone(), selectedOptionNo.clone(),
-                status, questionsDelivered, correctCount, score, submittedAt, version);
+                answerKey, selectedOptions, status, questionsDelivered, correctCount, score, submittedAt, version);
     }
 
     /**
@@ -155,12 +101,10 @@ public class Exam {
         return Duration.ofMinutes(Math.ceilDiv(seconds, 60));
     }
 
-    /** 보기 번호 검사를 먼저 모두 마친 뒤 기록한다 (거절할 때 일부만 바뀐 채 남지 않게) */
     public void submit(Map<Integer, Integer> selectedByQuestionNo, Instant now) {
         requireInProgress();
         expireIfPastDeadline(now);
-        selectedByQuestionNo.forEach(Exam::requireValidOption);
-        recordSelected(selectedByQuestionNo);
+        this.selectedOptions = SelectedOptions.record(selectedByQuestionNo, getQuestionCount());
         this.correctCount = countCorrect();
         this.score = toScore(correctCount);
         this.submittedAt = now;
@@ -174,27 +118,13 @@ public class Exam {
         }
     }
 
-    private static void requireValidOption(Integer no, Integer selected) {
-        if (selected != null && (selected < 1 || selected > OPTION_COUNT)) {
-            throw new CustomException(ErrorCode.EXAM_INVALID_OPTION,
-                    "문제 " + no + "의 보기 번호가 올바르지 않습니다: " + selected);
-        }
-    }
-
-    private void recordSelected(Map<Integer, Integer> selectedByQuestionNo) {
-        for (int q = 0; q < questionCount; q++) {
-            Integer selected = selectedByQuestionNo.get(q + 1);
-            selectedOptionNo[q] = selected == null ? 0 : selected.byteValue();
-        }
-    }
-
     private int countCorrect() {
-        return (int) IntStream.rangeClosed(1, questionCount).filter(this::isCorrect).count();
+        return (int) IntStream.rangeClosed(1, getQuestionCount()).filter(this::isCorrect).count();
     }
 
     /** 반올림이 아니라 버림 : 틀린 문제가 있으면 100점이 되지 않게 (반올림이면 997문항 중 995개를 맞혀도 100점) */
     private int toScore(int correct) {
-        return correct * 100 / questionCount;
+        return correct * 100 / getQuestionCount();
     }
 
     public void markQuestionsDelivered() {
@@ -207,13 +137,13 @@ public class Exam {
         }
     }
 
-    public Examinee getExaminee() {
-        return new Examinee(deviceId, clientIp);
+    public int getQuestionCount() {
+        return answerKey.questionCount();
     }
 
     /** 문제 받기 · 제출 · 중단은 시험을 시작한 기기만 할 수 있다 */
     public boolean isStartedBy(String deviceId) {
-        return this.deviceId.equals(deviceId);
+        return examinee.deviceId().equals(deviceId);
     }
 
     public boolean isInProgress(Instant now) {
@@ -224,48 +154,23 @@ public class Exam {
         return status == ExamStatus.COMPLETED;
     }
 
-    public int[] getOptionIds() {
-        return optionIds.clone();
-    }
-
-    public byte[] getAnswerOptionNo() {
-        return answerOptionNo.clone();
-    }
-
-    public byte[] getSelectedOptionNo() {
-        return selectedOptionNo.clone();
-    }
-
     public long answerLevelWordId(int no) {
-        int q = index(no);
-        return optionIds[q * OPTION_COUNT + answerOptionNo[q] - 1];
+        return answerKey.answerLevelWordId(no);
     }
 
     public List<Long> optionLevelWordIds(int no) {
-        int q = index(no);
-        List<Long> ids = new ArrayList<>(OPTION_COUNT);
-        for (int i = 0; i < OPTION_COUNT; i++) {
-            ids.add((long) optionIds[q * OPTION_COUNT + i]);
-        }
-        return ids;
+        return answerKey.optionLevelWordIds(no);
     }
 
     public Long selectedLevelWordId(int no) {
-        int q = index(no);
-        int selected = selectedOptionNo[q];
-        return selected == 0 ? null : (long) optionIds[q * OPTION_COUNT + selected - 1];
+        if (!selectedOptions.isSelected(no)) {
+            return null;
+        }
+        return answerKey.optionLevelWordId(no, selectedOptions.optionNo(no));
     }
 
     public boolean isCorrect(int no) {
-        int q = index(no);
-        return selectedOptionNo[q] != 0 && selectedOptionNo[q] == answerOptionNo[q];
-    }
-
-    private int index(int no) {
-        if (no < 1 || no > questionCount) {
-            throw new IllegalArgumentException("문제 번호 범위 밖: " + no);
-        }
-        return no - 1;
+        return selectedOptions.isSelected(no) && answerKey.isAnswer(no, selectedOptions.optionNo(no));
     }
 
     private void requireInProgress() {
