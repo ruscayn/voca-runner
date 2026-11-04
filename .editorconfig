@@ -1,0 +1,19 @@
+# 우아한테크코스 자바 스타일 (구글 자바 스타일 + 들여쓰기 4칸 · 이어쓰기 8칸 · 120자)
+# https://github.com/woowacourse/woowacourse-docs/tree/main/styleguide/java
+# IntelliJ 스킴 intellij-java-wooteco-style.xml(WootecoStyle)과 같은 값
+root = true
+
+[*.java]
+charset = utf-8
+indent_style = space
+indent_size = 4
+tab_width = 4
+max_line_length = 120
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# IntelliJ 전용: 이어쓰기 8칸, import 를 * 로 묶지 않음, static import 먼저 → 빈 줄 → 나머지
+ij_continuation_indent_size = 8
+ij_java_class_count_to_use_import_on_demand = 999
+ij_java_names_count_to_use_import_on_demand = 999
+ij_java_imports_layout = $*,|,*
