@@ -2,7 +2,6 @@ package org.ruscayn.vocarunner.exam.application.service;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -69,29 +68,39 @@ public class ExamService implements ExamUseCase {
      */
     @Override
     public UUID start(StartExamCommand command) {
-        Level level = command.level();
-        Examinee examinee = command.examinee();
         long begin = System.currentTimeMillis();
         Instant now = Instant.now();
-        checkCapacity(examinee, now);
-
-        List<Question> questions = questionGenerator.generate(wordCatalog, level, examProperties.maxQuestionCount());
-        Exam exam = Exam.start(level, Direction.EN_KO, Exam.DEFAULT_TIME_PER_QUESTION_SEC,
-                questions, examinee, now, examProperties.grace());
-        transactionTemplate.executeWithoutResult(tx -> {
-            examPersistencePort.lockForStart();
-            List<Exam> replaced = checkCapacity(examinee, Instant.now());
-            replaced.forEach(old -> {
-                examPersistencePort.delete(old.getId());
-                log.info("시험 중단 (같은 기기에서 새 시험 시작) exam={}", old.getId());
-            });
-            examPersistencePort.save(exam);
-        });
-
-        log.info("시험 시작 exam={} level={} 문제={} 마감={} ({}ms)",
-                exam.getId(), level, exam.getQuestionCount(), exam.getDeadline(),
-                System.currentTimeMillis() - begin);
+        checkCapacity(command.examinee(), now);
+        Exam exam = newExam(command, now);
+        transactionTemplate.executeWithoutResult(tx -> saveReplacingOld(exam));
+        logStarted(exam, begin);
         return exam.getId();
+    }
+
+    /** 문항을 만들어 새 시험으로 (문항 생성은 시간이 걸려 잠금 밖에서). 1단계는 EN_KO 고정 */
+    private Exam newExam(StartExamCommand command, Instant now) {
+        List<Question> questions = questionGenerator.generate(wordCatalog, command.level(),
+                examProperties.maxQuestionCount());
+        return Exam.start(command.level(), Direction.EN_KO, Exam.DEFAULT_TIME_PER_QUESTION_SEC,
+                questions, command.examinee(), now, examProperties.grace());
+    }
+
+    /** 시험 시작 잠금 → 다시 수용량 확인 → 같은 기기의 이전 시험 중단 → 저장 (한 트랜잭션 안) */
+    private void saveReplacingOld(Exam exam) {
+        examPersistencePort.lockForStart();
+        checkCapacity(exam.getExaminee(), Instant.now()).forEach(this::deleteReplaced);
+        examPersistencePort.save(exam);
+    }
+
+    private void deleteReplaced(Exam old) {
+        examPersistencePort.delete(old.getId());
+        log.info("시험 중단 (같은 기기에서 새 시험 시작) exam={}", old.getId());
+    }
+
+    private static void logStarted(Exam exam, long begin) {
+        log.info("시험 시작 exam={} level={} 문제={} 마감={} ({}ms)",
+                exam.getId(), exam.getLevel(), exam.getQuestionCount(), exam.getDeadline(),
+                System.currentTimeMillis() - begin);
     }
 
     /**
@@ -102,18 +111,25 @@ public class ExamService implements ExamUseCase {
      */
     private List<Exam> checkCapacity(Examinee examinee, Instant now) {
         List<Exam> byDevice = examPersistencePort.findInProgressByDevice(examinee.deviceId(), now);
-        int inProgress = examPersistencePort.countInProgress(now) - byDevice.size();
+        requireBelowMaxInProgress(examPersistencePort.countInProgress(now) - byDevice.size());
+        long sameIp = byDevice.stream().filter(s -> examinee.clientIp().equals(s.getExaminee().clientIp())).count();
+        long byIp = examPersistencePort.countInProgressByIp(examinee.clientIp(), now) - sameIp;
+        requireBelowMaxInProgressPerIp(examinee.clientIp(), byIp);
+        return byDevice;
+    }
+
+    private void requireBelowMaxInProgress(int inProgress) {
         if (inProgress >= examProperties.maxInProgress()) {
             log.warn("시험 시작 거절 (최대 진행 중) 진행 중={} 최대={}", inProgress, examProperties.maxInProgress());
             throw new CustomException(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS);
         }
-        long sameIp = byDevice.stream().filter(s -> examinee.clientIp().equals(s.getExaminee().clientIp())).count();
-        long byIp = examPersistencePort.countInProgressByIp(examinee.clientIp(), now) - sameIp;
+    }
+
+    private void requireBelowMaxInProgressPerIp(String clientIp, long byIp) {
         if (byIp >= examProperties.maxInProgressPerIp()) {
-            log.warn("시험 시작 거절 (IP당 최대 진행 중) ip={} 진행 중={}", examinee.clientIp(), byIp);
+            log.warn("시험 시작 거절 (IP당 최대 진행 중) ip={} 진행 중={}", clientIp, byIp);
             throw new CustomException(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS_PER_IP);
         }
-        return byDevice;
     }
 
     /** 시험 화면용 문제 (진행 중인 시험만, 정답 번호 제외). 시작한 기기만 */
@@ -127,24 +143,21 @@ public class ExamService implements ExamUseCase {
         }
         exam.markQuestionsDelivered();
         examPersistencePort.save(exam);
+        return toQuestionsResult(exam, now);
+    }
 
-        Direction direction = exam.getDirection();
-        List<ExamQuestionsResult.QuestionItem> questions = new ArrayList<>(exam.getQuestionCount());
-        for (int no = 1; no <= exam.getQuestionCount(); no++) {
-            questions.add(toQuestionItem(exam, no, direction));
-        }
-
+    private ExamQuestionsResult toQuestionsResult(Exam exam, Instant now) {
         long remainingSec = Math.max(0, Duration.between(now, exam.getDeadline()).toSeconds());
-        return new ExamQuestionsResult(
-                exam.getId(),
-                exam.getLevel().name(),
-                exam.getLevel().groupName(),
-                direction.name(),
-                exam.getQuestionCount(),
-                exam.getTimePerQuestionSec(),
-                Duration.between(exam.getStartedAt(), exam.getDeadline()).toMinutes(),
-                remainingSec,
-                questions);
+        return new ExamQuestionsResult(exam.getId(), exam.getLevel().name(), exam.getLevel().groupName(),
+                exam.getDirection().name(), exam.getQuestionCount(), exam.getTimePerQuestionSec(),
+                Duration.between(exam.getStartedAt(), exam.getDeadline()).toMinutes(), remainingSec,
+                toQuestionItems(exam));
+    }
+
+    private List<ExamQuestionsResult.QuestionItem> toQuestionItems(Exam exam) {
+        return IntStream.rangeClosed(1, exam.getQuestionCount())
+                .mapToObj(no -> toQuestionItem(exam, no, exam.getDirection()))
+                .toList();
     }
 
     /**
@@ -154,38 +167,59 @@ public class ExamService implements ExamUseCase {
     @Override
     @Transactional(noRollbackFor = CustomException.class)
     public SubmitExamResult submit(SubmitExamCommand command) {
-        UUID examId = command.examId();
-        Exam exam = findStartedBy(examId, command.deviceId());
+        Exam exam = findStartedBy(command.examId(), command.deviceId());
+        Map<Integer, Integer> selectedByNo = toSelectedByNo(command.answers(), exam.getQuestionCount());
+        submitOrDeleteIfExpired(exam, selectedByNo);
+        examPersistencePort.save(exam);
+        logSubmittedAfterCommit(exam);
+        return new SubmitExamResult(exam.getId(), exam.getQuestionCount(), exam.getCorrectCount(), exam.getScore());
+    }
 
-        Map<Integer, Integer> selectedByNo = new HashMap<>();  // null 값 허용 (시간 초과)
-        for (SubmitExamCommand.Answer answer : command.answers()) {
-            int no = answer.questionNo();
-            if (no > exam.getQuestionCount()) {
-                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "없는 문제 번호입니다: " + no);
-            }
-            if (selectedByNo.containsKey(no)) {
-                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "중복된 문제 번호입니다: " + no);
-            }
-            selectedByNo.put(no, answer.selectedOptionNo());
+    /** 문제 번호 → 고른 보기 번호 (null 값 허용 = 시간 초과). 없는 번호 · 중복 번호면 거절 */
+    private static Map<Integer, Integer> toSelectedByNo(List<SubmitExamCommand.Answer> answers, int questionCount) {
+        Map<Integer, Integer> selectedByNo = new HashMap<>();
+        for (SubmitExamCommand.Answer answer : answers) {
+            putAnswer(selectedByNo, answer, questionCount);
         }
+        return selectedByNo;
+    }
 
+    private static void putAnswer(Map<Integer, Integer> selectedByNo, SubmitExamCommand.Answer answer,
+                                  int questionCount) {
+        int no = answer.questionNo();
+        if (no > questionCount) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "없는 문제 번호입니다: " + no);
+        }
+        if (selectedByNo.containsKey(no)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "중복된 문제 번호입니다: " + no);
+        }
+        selectedByNo.put(no, answer.selectedOptionNo());
+    }
+
+    /** 채점. 마감이 지나 거절되면 시험을 지우고 거절을 그대로 던진다 (submit 은 업무 예외로 되돌리지 않아 삭제가 반영됨) */
+    private void submitOrDeleteIfExpired(Exam exam, Map<Integer, Integer> selectedByNo) {
         try {
             exam.submit(selectedByNo, Instant.now());
         } catch (CustomException e) {
-            if (e.getErrorCode() == ErrorCode.EXAM_EXPIRED) {
-                examPersistencePort.delete(examId);
-                log.info("시험 제출 거절 (마감 초과) exam={} 마감={}", examId, exam.getDeadline());
-            }
+            deleteIfExpired(exam, e);
             throw e;
         }
-        examPersistencePort.save(exam);
-        // 같은 시험을 동시에 두 번 제출하면 늦은 쪽은 커밋할 때 저장 충돌(@Version)로 되돌려지므로
-        // 저장이 끝난 뒤에 남긴다. 실제로 채점·저장된 제출만 로그에 한 줄 (U39)
+    }
+
+    private void deleteIfExpired(Exam exam, CustomException e) {
+        if (e.getErrorCode() == ErrorCode.EXAM_EXPIRED) {
+            examPersistencePort.delete(exam.getId());
+            log.info("시험 제출 거절 (마감 초과) exam={} 마감={}", exam.getId(), exam.getDeadline());
+        }
+    }
+
+    /**
+     * 같은 시험을 동시에 두 번 제출하면 늦은 쪽은 커밋할 때 저장 충돌(@Version)로 되돌려지므로
+     * 저장이 끝난 뒤에 남긴다. 실제로 채점·저장된 제출만 로그에 한 줄 (U39)
+     */
+    private static void logSubmittedAfterCommit(Exam exam) {
         afterCommit(() -> log.info("시험 제출 exam={} 맞힌 수={}/{} 점수={}",
                 exam.getId(), exam.getCorrectCount(), exam.getQuestionCount(), exam.getScore()));
-
-        return new SubmitExamResult(
-                exam.getId(), exam.getQuestionCount(), exam.getCorrectCount(), exam.getScore());
     }
 
     /** 결과 (완료된 시험만). 없거나(보관 시간 경과 포함) 완료 전이면 empty */
@@ -284,32 +318,27 @@ public class ExamService implements ExamUseCase {
     }
 
     private ExamResult toResult(Exam exam) {
-        Direction direction = exam.getDirection();
-        List<ExamResult.WrongItem> wrongItems = new ArrayList<>();
-        for (int no = 1; no <= exam.getQuestionCount(); no++) {
-            if (exam.isCorrect(no)) {
-                continue;
-            }
-            CatalogWord answer = wordCatalog.get(exam.answerLevelWordId(no));
-            Long selectedId = exam.selectedLevelWordId(no);
-            wrongItems.add(new ExamResult.WrongItem(
-                    no,
-                    promptText(answer, direction),
-                    promptSubText(answer, direction),
-                    selectedId == null ? null : optionText(wordCatalog.get(selectedId), direction),
-                    optionText(answer, direction),
-                    answer.headword()));
-        }
-        return new ExamResult(
-                exam.getId(),
-                exam.getLevel().name(),
-                exam.getLevel().groupName(),
-                exam.getQuestionCount(),
-                exam.getCorrectCount(),
-                exam.getScore(),
+        return new ExamResult(exam.getId(), exam.getLevel().name(), exam.getLevel().groupName(),
+                exam.getQuestionCount(), exam.getCorrectCount(), exam.getScore(),
                 exam.getSubmittedAt().plus(examProperties.resultRetention()),
-                examProperties.resultRetention().toMinutes(),
-                wrongItems);
+                examProperties.resultRetention().toMinutes(), toWrongItems(exam));
+    }
+
+    /** 틀린 문항 (오답 · 시간 초과 · 미응답) */
+    private List<ExamResult.WrongItem> toWrongItems(Exam exam) {
+        return IntStream.rangeClosed(1, exam.getQuestionCount())
+                .filter(no -> !exam.isCorrect(no))
+                .mapToObj(no -> toWrongItem(exam, no))
+                .toList();
+    }
+
+    private ExamResult.WrongItem toWrongItem(Exam exam, int no) {
+        Direction direction = exam.getDirection();
+        CatalogWord answer = wordCatalog.get(exam.answerLevelWordId(no));
+        Long selectedId = exam.selectedLevelWordId(no);
+        String selectedText = selectedId == null ? null : optionText(wordCatalog.get(selectedId), direction);
+        return new ExamResult.WrongItem(no, promptText(answer, direction), promptSubText(answer, direction),
+                selectedText, optionText(answer, direction), answer.headword());
     }
 
     private ExamQuestionsResult.QuestionItem toQuestionItem(Exam exam, int no, Direction direction) {
