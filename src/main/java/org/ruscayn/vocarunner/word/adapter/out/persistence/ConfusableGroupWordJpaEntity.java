@@ -21,6 +21,7 @@ public class ConfusableGroupWordJpaEntity {
     public record Id(
             @Column(name = "confusable_group_id") Long groupId,
             @Column(name = "word_id") Long wordId) implements Serializable {
+
     }
 
 }

@@ -25,6 +25,7 @@ class ParameterStoreConfigTest {
 
     @Configuration(proxyBeanMethods = false)
     static class NoBeans {
+
     }
 
     /** 가짜 Parameter Store: 받은 요청을 기록하고 정해 둔 값을 돌려준다 */

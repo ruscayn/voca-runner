@@ -19,9 +19,11 @@ public record ExamQuestionsResult(
 ) {
 
     public record QuestionItem(int no, String prompt, String promptSub, List<Option> options) {
+
     }
 
     public record Option(int no, String text) {
+
     }
 
 }

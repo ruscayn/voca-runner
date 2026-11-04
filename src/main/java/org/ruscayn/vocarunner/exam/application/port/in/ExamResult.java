@@ -30,6 +30,7 @@ public record ExamResult(
 
     public record WrongItem(int no, String prompt, String promptSub, String selectedText, String answerText,
                             String headword) {
+
     }
 
 }

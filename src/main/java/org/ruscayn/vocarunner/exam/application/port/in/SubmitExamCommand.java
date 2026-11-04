@@ -25,6 +25,7 @@ public record SubmitExamCommand(
             @NotNull @Min(1) Integer questionNo,
             @Min(1) @Max(4) Integer selectedOptionNo
     ) {
+
     }
 
 }

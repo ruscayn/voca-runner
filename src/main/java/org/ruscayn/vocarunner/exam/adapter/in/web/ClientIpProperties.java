@@ -4,4 +4,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "voca-runner.client-ip")
 public record ClientIpProperties(String header) {
+
 }

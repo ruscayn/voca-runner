@@ -4,4 +4,5 @@ import java.util.List;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
 
 public record SubmitExamRequest(List<SubmitExamCommand.Answer> answers) {
+
 }

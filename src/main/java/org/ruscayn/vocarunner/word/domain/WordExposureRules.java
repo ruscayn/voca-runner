@@ -57,15 +57,19 @@ public final class WordExposureRules {
     }
 
     public record Meaning(int seq, String text) {
+
     }
 
     public record Applied(List<String> optionMeanings, boolean excluded) {
+
     }
 
     private record LevelWordKey(long wordId, Level level) {
+
     }
 
     private record MeaningKey(long wordId, int seq) {
+
     }
 
 }

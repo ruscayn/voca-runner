@@ -8,4 +8,5 @@ public record SubmitExamResult(
         int correctCount,
         int score
 ) {
+
 }

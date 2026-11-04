@@ -5,4 +5,5 @@ package org.ruscayn.vocarunner.exam.domain;
  * @param clientIp 접속 IP. 쿠키를 지워 가며 시험을 계속 만드는 것을 IP당 최대 진행 중으로 막는다
  */
 public record Examinee(String deviceId, String clientIp) {
+
 }
