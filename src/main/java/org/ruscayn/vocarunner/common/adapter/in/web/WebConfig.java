@@ -15,8 +15,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    private static final String EXAM_SCREEN = "/test/*";
-    private static final String EXAM_API = "/api/tests/**";
+    private static final String EXAM_SCREEN = "/exam/*";
+    private static final String EXAM_API = "/api/exams/**";
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {

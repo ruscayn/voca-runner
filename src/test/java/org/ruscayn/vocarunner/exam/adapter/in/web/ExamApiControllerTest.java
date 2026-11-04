@@ -41,7 +41,7 @@ class ExamApiControllerTest {
     private static final UUID EXAM_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final String DEVICE_ID = "22222222-2222-2222-2222-222222222222";
     private static final Cookie DEVICE_COOKIE = new Cookie("VR_DEVICE", DEVICE_ID);
-    private static final String SUBMIT_URL = "/api/tests/" + EXAM_ID + "/submit";
+    private static final String SUBMIT_URL = "/api/exams/" + EXAM_ID + "/submit";
 
     @Autowired
     private MockMvc mockMvc;
@@ -54,7 +54,7 @@ class ExamApiControllerTest {
     }
 
     @Nested
-    @DisplayName("제출 (/api/tests/{id}/submit)")
+    @DisplayName("제출 (/api/exams/{id}/submit)")
     class Submit {
 
         @Test
@@ -118,7 +118,7 @@ class ExamApiControllerTest {
                     {"answers": [{"questionNo": 1, "selectedOptionNo": 2}]}
                     """)
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.code").value("TEST_002"));
+                    .andExpect(jsonPath("$.code").value("EXAM_002"));
         }
 
         @Test
@@ -150,9 +150,9 @@ class ExamApiControllerTest {
                     {"answers": []}
                     """)
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.code").value("TEST_005"));
+                    .andExpect(jsonPath("$.code").value("EXAM_005"));
 
-            assertThat(output.getOut()).contains("WARN").contains("Business exception").contains("TEST_005")
+            assertThat(output.getOut()).contains("WARN").contains("Business exception").contains("EXAM_005")
                     .doesNotContain("ERROR").doesNotContain("\tat ");
         }
 

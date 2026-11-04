@@ -20,7 +20,7 @@ class ExamConfigPropertiesTest {
     /** 설정 파일 값을 묶어 서비스가 받는 순수 값까지 만든다 */
     private static ExamProperties bind(Map<String, String> values) {
         return new Binder(new MapConfigurationPropertySource(values))
-                .bind("voca-runner.test", ExamConfigProperties.class)
+                .bind("voca-runner.exam", ExamConfigProperties.class)
                 .get()
                 .toExamProperties();
     }
@@ -28,7 +28,7 @@ class ExamConfigPropertiesTest {
     @Test
     @DisplayName("question-count 를 최대 문항 수로 읽는다")
     void maxQuestionCount() {
-        ExamProperties properties = bind(Map.of("voca-runner.test.question-count", "300"));
+        ExamProperties properties = bind(Map.of("voca-runner.exam.question-count", "300"));
 
         assertThat(properties.maxQuestionCount()).isEqualTo(300);
     }
@@ -36,7 +36,7 @@ class ExamConfigPropertiesTest {
     @Test
     @DisplayName("값이 없으면 기본값 (최대 문항 수 500, 여유 3분)")
     void defaults() {
-        ExamProperties properties = bind(Map.of("voca-runner.test.grace", "3m"));
+        ExamProperties properties = bind(Map.of("voca-runner.exam.grace", "3m"));
 
         assertThat(properties.maxQuestionCount()).isEqualTo(500);
         assertThat(properties.grace()).isEqualTo(Duration.ofMinutes(3));

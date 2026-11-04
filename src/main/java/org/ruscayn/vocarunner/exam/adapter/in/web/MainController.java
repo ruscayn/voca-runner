@@ -18,8 +18,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequiredArgsConstructor
 public class MainController {
 
-    public static final String NOTICE_EXAM_IN_USE = "test-in-use";
-    public static final String NOTICE_EXAM_ENDED = "test-finished";
+    public static final String NOTICE_EXAM_IN_USE = "exam-in-use";
+    public static final String NOTICE_EXAM_ENDED = "exam-ended";
     public static final String NOTICE_RESULT_EXPIRED = "result-expired";
 
     private static final Map<String, String> NOTICE_MESSAGES = Map.of(

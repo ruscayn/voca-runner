@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.boot.context.properties.bind.Name;
 
-@ConfigurationProperties(prefix = "voca-runner.test")
+@ConfigurationProperties(prefix = "voca-runner.exam")
 public record ExamConfigProperties(
         @Name("question-count") @DefaultValue("500") int maxQuestionCount,
         @DefaultValue("3m") Duration grace,

@@ -11,7 +11,7 @@ public class ExamCleanupScheduler {
 
     private final ExamUseCase examUseCase;
 
-    @Scheduled(fixedDelayString = "${voca-runner.test.cleanup-interval:1m}")
+    @Scheduled(fixedDelayString = "${voca-runner.exam.cleanup-interval:1m}")
     public void cleanup() {
         examUseCase.cleanup();
     }

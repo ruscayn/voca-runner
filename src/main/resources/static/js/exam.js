@@ -20,17 +20,17 @@
     const INPUT_LOCK_MS = 350;   // 직전 탭(실수로 두 번 누름 150~300ms)이 다음 문제로 넘어가 눌리는 것 방지
     const CLOCK_TICK_MS = 100;   // 시간 확인 주기
     const URGENT_SEC = 60;       // 남은 전체 시간이 이 값 이하이면 빨간색
-    const STAGE_SIZE = 100;      // 진행 색 한 단계 = 100문제 (test.css --stage, 5단계)
-    const RUN_MS = 1000;         // 사람이 한 번 뛰는 시간 = 달리기 한 바퀴 (test.css rn-thigh 등과 같게)
+    const STAGE_SIZE = 100;      // 진행 색 한 단계 = 100문제 (exam.css --stage, 5단계)
+    const RUN_MS = 1000;         // 사람이 한 번 뛰는 시간 = 달리기 한 바퀴 (exam.css rn-thigh 등과 같게)
     const PROMPT_MAX_PX = 52;    // 문제 단어 글자 크기 (긴 단어는 폭에 맞춰 줄임)
     const PROMPT_MIN_PX = 28;
     const PROMPT_MAX_LINES = 2;  // 띄어쓰기 있는 구는 2줄까지 허용
-    const PROMPT_SUB_MAX_PX = 24;  // 아래 줄(함께 표시할 형태) 글자 크기 (test.css .prompt-sub)
+    const PROMPT_SUB_MAX_PX = 24;  // 아래 줄(함께 표시할 형태) 글자 크기 (exam.css .prompt-sub)
     const PROMPT_SUB_GAP_PX = 8;   // 아래 줄은 단어보다 이만큼 작게. 단어가 32px 아래로 줄면 아래 줄도 같이 줄어 28px일 때 20px
 
-    const app = document.getElementById('test-app');
+    const app = document.getElementById('exam-app');
     const examId = app.dataset.examId;
-    const api = (path) => `/api/tests/${examId}${path}`;
+    const api = (path) => `/api/exams/${examId}${path}`;
     const $ = (id) => document.getElementById(id);
 
     const el = {
@@ -248,7 +248,7 @@
         state.status = 'ABORTED';
         stopClock();
         soundCheck.stop();
-        navigator.sendBeacon(api('/expire'));
+        navigator.sendBeacon(api('/abort'));
         goMain();
     }
 
@@ -337,7 +337,7 @@
         state.status = 'ABORTED';
         stopClock();
         tts.stop();
-        navigator.sendBeacon(api('/expire'));
+        navigator.sendBeacon(api('/abort'));
         showOverlay('시험이 무효 처리되었습니다', '제한 시간 안에 제출하지 않아\n시험이 무효 처리되었습니다.', '확인', goMain);
     }
 
@@ -490,7 +490,7 @@
             }
             // 서버에 남은 시험이 동시 진행 개수를 차지하지 않게 만료 요청.
             // 연결이 끊겨 못 보내면 서버가 '문제를 받아 가지 않은 시험'으로 몇 분 뒤 정리한다
-            navigator.sendBeacon(api('/expire'));
+            navigator.sendBeacon(api('/abort'));
             showOverlay('시험을 시작할 수 없습니다', isNetworkError(e) ? MSG_OFFLINE_LOAD : e.message, '확인', goMain);
         }
     }
@@ -510,7 +510,7 @@
         } catch (e) {
             // 이미 채점된 시험 : 앞 제출이 서버에 저장된 뒤 응답만 끊겨(와이파이↔LTE 전환 등) [다시 제출]을 누른 경우.
             // 거절 안내 대신 저장된 결과를 보여준다 (U48)
-            if (e.code === 'TEST_002' && await hasResult()) {
+            if (e.code === 'EXAM_002' && await hasResult()) {
                 goResult();
                 return;
             }
@@ -522,7 +522,7 @@
                     showOverlay('시험이 종료되었습니다', MSG_EXAM_GONE, '확인', goMain);
                     return;
                 }
-                const title = e.code === 'TEST_005' ? '시험이 무효 처리되었습니다' : '제출할 수 없습니다';
+                const title = e.code === 'EXAM_005' ? '시험이 무효 처리되었습니다' : '제출할 수 없습니다';
                 showOverlay(title, e.message, '확인', goMain);
                 return;
             }
@@ -537,7 +537,7 @@
     function goResult() {
         state.status = 'DONE';
         stopClock();
-        location.replace(`/test/${examId}/result`);
+        location.replace(`/exam/${examId}/result`);
     }
 
     /** 채점이 끝나 결과가 저장돼 있는지 */
@@ -571,7 +571,7 @@
         if (state.status !== 'RUNNING' || !state.submitFailed) return;
         state.status = 'ABORTED';
         stopClock();
-        navigator.sendBeacon(api('/expire'));
+        navigator.sendBeacon(api('/abort'));
         goMain();
     }
 
@@ -621,7 +621,7 @@
         state.status = 'ABORTED';
         stopClock();
         tts.stop();
-        navigator.sendBeacon(api('/expire'));
+        navigator.sendBeacon(api('/abort'));
         showOverlay('시험이 종료되었습니다', '시험 중에 이전 화면으로 이동해\n시험이 종료되었습니다.', '확인', goMain);
     }
 
@@ -667,7 +667,7 @@
         if (state.status !== 'PAUSED') return;
         state.status = 'ABORTED';
         stopClock();
-        navigator.sendBeacon(api('/expire'));
+        navigator.sendBeacon(api('/abort'));
         goMain();
     }
 

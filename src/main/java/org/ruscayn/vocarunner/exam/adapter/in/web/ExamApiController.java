@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @WebAdapter
 @RestController
-@RequestMapping("/api/tests")
+@RequestMapping("/api/exams")
 @RequiredArgsConstructor
 public class ExamApiController {
 
@@ -54,7 +54,7 @@ public class ExamApiController {
     }
 
     /** navigator.sendBeacon 으로 보내므로 본문 없이 받는다 */
-    @PostMapping("/{examId}/expire")
+    @PostMapping("/{examId}/abort")
     public ResponseEntity<Void> abort(@PathVariable UUID examId, HttpServletRequest httpRequest) {
         examUseCase.abortIfInProgress(examId, DeviceCookie.find(httpRequest));
         return ResponseEntity.noContent().build();

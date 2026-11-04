@@ -14,7 +14,7 @@ public record ExamProperties(
     public ExamProperties {
         if (maxQuestionCount < 0) {
             throw new IllegalArgumentException(
-                    "voca-runner.test.question-count 는 0(전체) 이상이어야 합니다: " + maxQuestionCount);
+                    "voca-runner.exam.question-count 는 0(전체) 이상이어야 합니다: " + maxQuestionCount);
         }
     }
 

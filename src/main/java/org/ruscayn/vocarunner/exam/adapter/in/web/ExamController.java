@@ -40,13 +40,13 @@ public class ExamController {
     private final ExamUseCase examUseCase;
     private final ClientIpProperties clientIpProperties;
 
-    @PostMapping("/test/start")
+    @PostMapping("/exam/start")
     public String start(@RequestParam Level level, HttpSession httpSession,
                         HttpServletRequest request, HttpServletResponse response, RedirectAttributes redirect) {
         try {
             UUID examId = examUseCase.start(new StartExamCommand(level, toExaminee(request, response)));
             EntryToken.issue(httpSession, examId);
-            return "redirect:/test/" + examId;
+            return "redirect:/exam/" + examId;
         } catch (CustomException e) {
             return redirectToMainIfTooMany(e, redirect);
         }
@@ -66,7 +66,7 @@ public class ExamController {
         return "redirect:/";
     }
 
-    @GetMapping("/test/{examId}")
+    @GetMapping("/exam/{examId}")
     public String exam(@PathVariable UUID examId, HttpServletRequest request,
                        Model model, RedirectAttributes redirect) {
         if (!examUseCase.isInProgress(examId)) {
@@ -74,14 +74,14 @@ public class ExamController {
         }
         if (EntryToken.use(request, examId)) {
             model.addAttribute("examId", examId);
-            return "test";
+            return "exam";
         }
         return redirectReentry(examId, request, redirect);
     }
 
     private String redirectEnded(UUID examId) {
         if (examUseCase.hasResult(examId)) {
-            return "redirect:/test/" + examId + "/result";
+            return "redirect:/exam/" + examId + "/result";
         }
         return "redirect:/?notice=" + MainController.NOTICE_EXAM_ENDED;
     }
@@ -96,7 +96,7 @@ public class ExamController {
         return "redirect:/";
     }
 
-    @GetMapping("/test/{examId}/result")
+    @GetMapping("/exam/{examId}/result")
     public String result(@PathVariable UUID examId, Model model) {
         return examUseCase.findResult(examId)
                 .map(result -> {

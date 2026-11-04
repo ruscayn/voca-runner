@@ -48,7 +48,7 @@ import org.springframework.test.web.servlet.MockMvc;
 /**
  * 바깥 이름 고정 (안전망). 코드 이름을 바꿀 때 컴파일러가 잡지 못하는 이름이 바뀌면 실패한다.
  * <ul>
- *   <li>API JSON 칸 이름 : 화면 스크립트(test.js)가 읽는 응답 · 보내는 제출 본문 · 오류 응답</li>
+ *   <li>API JSON 칸 이름 : 화면 스크립트(exam.js)가 읽는 응답 · 보내는 제출 본문 · 오류 응답</li>
  *   <li>화면 모델 이름 : 템플릿이 쓰는 이름 (메인 · 시험 화면 · 결과 화면)</li>
  *   <li>템플릿 안 메서드 호출 : 화면을 실제로 그려서 확인 (예: 결과 화면의 오답 수 · 보관 시간 문구)</li>
  * </ul>
@@ -95,7 +95,7 @@ class WebNameTest {
                     new ExamQuestionsResult(EXAM_ID, "B1", "Independent", "EN_KO", 1, 5, 3, 170,
                             List.of(question)));
 
-            String json = mockMvc.perform(get("/api/tests/" + EXAM_ID + "/questions").cookie(DEVICE_COOKIE))
+            String json = mockMvc.perform(get("/api/exams/" + EXAM_ID + "/questions").cookie(DEVICE_COOKIE))
                     .andExpect(status().isOk())
                     .andReturn().getResponse().getContentAsString();
 
@@ -114,7 +114,7 @@ class WebNameTest {
             given(examUseCase.submit(any()))
                     .willReturn(new SubmitExamResult(EXAM_ID, 2, 1, 50));
 
-            mockMvc.perform(post("/api/tests/" + EXAM_ID + "/submit").cookie(DEVICE_COOKIE)
+            mockMvc.perform(post("/api/exams/" + EXAM_ID + "/submit").cookie(DEVICE_COOKIE)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""
                                     {"answers": [{"questionNo": 1, "selectedOptionNo": 2}, {"questionNo": 2}]}
@@ -138,7 +138,7 @@ class WebNameTest {
             given(examUseCase.submit(any()))
                     .willReturn(new SubmitExamResult(EXAM_ID, 2, 1, 50));
 
-            String json = mockMvc.perform(post("/api/tests/" + EXAM_ID + "/submit").cookie(DEVICE_COOKIE)
+            String json = mockMvc.perform(post("/api/exams/" + EXAM_ID + "/submit").cookie(DEVICE_COOKIE)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""
                                     {"answers": [{"questionNo": 1, "selectedOptionNo": 2}]}
@@ -155,7 +155,7 @@ class WebNameTest {
         void result() throws Exception {
             given(examUseCase.getResult(EXAM_ID)).willReturn(resultWithOneIncorrectAndOneTimeout());
 
-            String json = mockMvc.perform(get("/api/tests/" + EXAM_ID + "/result"))
+            String json = mockMvc.perform(get("/api/exams/" + EXAM_ID + "/result"))
                     .andExpect(status().isOk())
                     .andReturn().getResponse().getContentAsString();
 
@@ -172,13 +172,13 @@ class WebNameTest {
             given(examUseCase.getQuestions(EXAM_ID, DEVICE_ID))
                     .willThrow(new CustomException(ErrorCode.EXAM_NOT_IN_PROGRESS));
 
-            String json = mockMvc.perform(get("/api/tests/" + EXAM_ID + "/questions").cookie(DEVICE_COOKIE))
+            String json = mockMvc.perform(get("/api/exams/" + EXAM_ID + "/questions").cookie(DEVICE_COOKIE))
                     .andExpect(status().isBadRequest())
                     .andReturn().getResponse().getContentAsString();
 
             assertThat(readObject(json, "$").keySet())
                     .containsExactlyInAnyOrder("code", "message", "path", "timestamp");
-            assertThat((String) JsonPath.read(json, "$.code")).isEqualTo("TEST_002");
+            assertThat((String) JsonPath.read(json, "$.code")).isEqualTo("EXAM_002");
         }
 
     }
@@ -204,7 +204,7 @@ class WebNameTest {
         }
 
         @ParameterizedTest
-        @ValueSource(strings = {"test-in-use", "test-finished", "result-expired"})
+        @ValueSource(strings = {"exam-in-use", "exam-ended", "result-expired"})
         @DisplayName("메인 안내 코드 : 정해진 값이면 message 를 넣는다")
         void mainNotice(String notice) throws Exception {
             given(examUseCase.getDetailLevelGroups()).willReturn(List.of(
@@ -221,12 +221,12 @@ class WebNameTest {
             given(examUseCase.start(any())).willReturn(EXAM_ID);
             given(examUseCase.isInProgress(EXAM_ID)).willReturn(true);
             MockHttpSession httpSession = new MockHttpSession();
-            mockMvc.perform(post("/test/start").param("level", "A1").session(httpSession).cookie(DEVICE_COOKIE))
-                    .andExpect(redirectedUrl("/test/" + EXAM_ID));
+            mockMvc.perform(post("/exam/start").param("level", "A1").session(httpSession).cookie(DEVICE_COOKIE))
+                    .andExpect(redirectedUrl("/exam/" + EXAM_ID));
 
-            mockMvc.perform(get("/test/" + EXAM_ID).session(httpSession).cookie(DEVICE_COOKIE))
+            mockMvc.perform(get("/exam/" + EXAM_ID).session(httpSession).cookie(DEVICE_COOKIE))
                     .andExpect(status().isOk())
-                    .andExpect(view().name("test"))
+                    .andExpect(view().name("exam"))
                     .andExpect(model().attribute("examId", EXAM_ID))
                     .andExpect(content().string(containsString("data-exam-id=\"" + EXAM_ID + "\"")));
         }
@@ -237,7 +237,7 @@ class WebNameTest {
             given(examUseCase.findResult(EXAM_ID))
                     .willReturn(Optional.of(resultWithOneIncorrectAndOneTimeout()));
 
-            String html = mockMvc.perform(get("/test/" + EXAM_ID + "/result"))
+            String html = mockMvc.perform(get("/exam/" + EXAM_ID + "/result"))
                     .andExpect(status().isOk())
                     .andExpect(view().name("result"))
                     .andExpect(model().attributeExists("result", "retentionDeadline"))

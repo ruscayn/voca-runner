@@ -60,8 +60,8 @@ class ExamControllerTest {
     private MockHttpSession startTest() throws Exception {
         given(examUseCase.start(argThat(command -> command.level() == Level.A1))).willReturn(EXAM_ID);
         MockHttpSession httpSession = new MockHttpSession();
-        mockMvc.perform(post("/test/start").param("level", "A1").session(httpSession).cookie(DEVICE_COOKIE))
-                .andExpect(redirectedUrl("/test/" + EXAM_ID));
+        mockMvc.perform(post("/exam/start").param("level", "A1").session(httpSession).cookie(DEVICE_COOKIE))
+                .andExpect(redirectedUrl("/exam/" + EXAM_ID));
         return httpSession;
     }
 
@@ -74,9 +74,9 @@ class ExamControllerTest {
         void redirectsToTest() throws Exception {
             given(examUseCase.start(argThat(command -> command.level() == Level.A1))).willReturn(EXAM_ID);
 
-            mockMvc.perform(post("/test/start").param("level", "A1"))
+            mockMvc.perform(post("/exam/start").param("level", "A1"))
                     .andExpect(status().is3xxRedirection())
-                    .andExpect(redirectedUrl("/test/" + EXAM_ID))
+                    .andExpect(redirectedUrl("/exam/" + EXAM_ID))
                     .andExpect(cookie().exists("VR_DEVICE"));
         }
 
@@ -86,7 +86,7 @@ class ExamControllerTest {
             given(examUseCase.start(argThat(command -> command.level() == Level.A1)))
                     .willThrow(new CustomException(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS));
 
-            mockMvc.perform(post("/test/start").param("level", "A1"))
+            mockMvc.perform(post("/exam/start").param("level", "A1"))
                     .andExpect(redirectedUrl("/"))
                     .andExpect(flash().attribute("message", ErrorCode.EXAM_TOO_MANY_IN_PROGRESS.getMessage()));
         }
@@ -97,7 +97,7 @@ class ExamControllerTest {
             given(examUseCase.start(argThat(command -> command.level() == Level.A1)))
                     .willThrow(new CustomException(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS_PER_IP));
 
-            mockMvc.perform(post("/test/start").param("level", "A1"))
+            mockMvc.perform(post("/exam/start").param("level", "A1"))
                     .andExpect(redirectedUrl("/"))
                     .andExpect(flash().attribute("message",
                             ErrorCode.EXAM_TOO_MANY_IN_PROGRESS_PER_IP.getMessage()));
@@ -108,9 +108,9 @@ class ExamControllerTest {
         void clientIp() throws Exception {
             given(examUseCase.start(argThat(command -> command.level() == Level.A1))).willReturn(EXAM_ID);
 
-            mockMvc.perform(post("/test/start").param("level", "A1")
+            mockMvc.perform(post("/exam/start").param("level", "A1")
                     .header("CloudFront-Viewer-Address", "198.51.100.10:46532"));
-            mockMvc.perform(post("/test/start").param("level", "A1"));
+            mockMvc.perform(post("/exam/start").param("level", "A1"));
 
             ArgumentCaptor<StartExamCommand> commands = ArgumentCaptor.forClass(StartExamCommand.class);
             verify(examUseCase, times(2)).start(commands.capture());
@@ -121,7 +121,7 @@ class ExamControllerTest {
     }
 
     @Nested
-    @DisplayName("시험 화면 (/test/{id})")
+    @DisplayName("시험 화면 (/exam/{id})")
     class ExamPage {
 
         @Test
@@ -130,9 +130,9 @@ class ExamControllerTest {
             MockHttpSession httpSession = startTest();
             given(examUseCase.isInProgress(EXAM_ID)).willReturn(true);
 
-            mockMvc.perform(get("/test/" + EXAM_ID).session(httpSession).cookie(DEVICE_COOKIE))
+            mockMvc.perform(get("/exam/" + EXAM_ID).session(httpSession).cookie(DEVICE_COOKIE))
                     .andExpect(status().isOk())
-                    .andExpect(view().name("test"))
+                    .andExpect(view().name("exam"))
                     .andExpect(header().string("Cache-Control", "no-store"));
         }
 
@@ -141,10 +141,10 @@ class ExamControllerTest {
         void reEntry() throws Exception {
             MockHttpSession httpSession = startTest();
             given(examUseCase.isInProgress(EXAM_ID)).willReturn(true);
-            mockMvc.perform(get("/test/" + EXAM_ID).session(httpSession).cookie(DEVICE_COOKIE))
-                    .andExpect(view().name("test"));
+            mockMvc.perform(get("/exam/" + EXAM_ID).session(httpSession).cookie(DEVICE_COOKIE))
+                    .andExpect(view().name("exam"));
 
-            mockMvc.perform(get("/test/" + EXAM_ID).session(httpSession).cookie(DEVICE_COOKIE))
+            mockMvc.perform(get("/exam/" + EXAM_ID).session(httpSession).cookie(DEVICE_COOKIE))
                     .andExpect(redirectedUrl("/"))
                     .andExpect(flash().attribute("message", "시험이 종료되었습니다. 처음부터 다시 시작해 주세요."));
             verify(examUseCase).abortIfInProgress(EXAM_ID, DEVICE_ID);
@@ -155,7 +155,7 @@ class ExamControllerTest {
         void otherBrowser() throws Exception {
             given(examUseCase.isInProgress(EXAM_ID)).willReturn(true);
 
-            MvcResult result = mockMvc.perform(get("/test/" + EXAM_ID))
+            MvcResult result = mockMvc.perform(get("/exam/" + EXAM_ID))
                     .andExpect(redirectedUrl("/?notice=" + MainController.NOTICE_EXAM_IN_USE))
                     .andReturn();
 
@@ -170,8 +170,8 @@ class ExamControllerTest {
             given(examUseCase.isInProgress(EXAM_ID)).willReturn(false);
             given(examUseCase.hasResult(EXAM_ID)).willReturn(true);
 
-            mockMvc.perform(get("/test/" + EXAM_ID))
-                    .andExpect(redirectedUrl("/test/" + EXAM_ID + "/result"));
+            mockMvc.perform(get("/exam/" + EXAM_ID))
+                    .andExpect(redirectedUrl("/exam/" + EXAM_ID + "/result"));
         }
 
         @Test
@@ -180,14 +180,14 @@ class ExamControllerTest {
             given(examUseCase.isInProgress(EXAM_ID)).willReturn(false);
             given(examUseCase.hasResult(EXAM_ID)).willReturn(false);
 
-            mockMvc.perform(get("/test/" + EXAM_ID))
+            mockMvc.perform(get("/exam/" + EXAM_ID))
                     .andExpect(redirectedUrl("/?notice=" + MainController.NOTICE_EXAM_ENDED));
         }
 
         @Test
         @DisplayName("시험 id 가 올바르지 않으면 한국어 오류 화면 (B4)")
         void invalidId() throws Exception {
-            mockMvc.perform(get("/test/abc"))
+            mockMvc.perform(get("/exam/abc"))
                     .andExpect(status().isBadRequest())
                     .andExpect(view().name("error"));
         }
@@ -195,7 +195,7 @@ class ExamControllerTest {
     }
 
     @Nested
-    @DisplayName("결과 화면 (/test/{id}/result)")
+    @DisplayName("결과 화면 (/exam/{id}/result)")
     class ResultPage {
 
         @Test
@@ -203,7 +203,7 @@ class ExamControllerTest {
         void expired() throws Exception {
             given(examUseCase.findResult(EXAM_ID)).willReturn(Optional.empty());
 
-            mockMvc.perform(get("/test/" + EXAM_ID + "/result"))
+            mockMvc.perform(get("/exam/" + EXAM_ID + "/result"))
                     .andExpect(redirectedUrl("/?notice=" + MainController.NOTICE_RESULT_EXPIRED));
         }
 

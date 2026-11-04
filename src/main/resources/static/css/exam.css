@@ -6,23 +6,23 @@
    ========================================================= */
 
 /* 시험 화면 글자는 길게 눌러도 선택되지 않게 : 번역·찾아보기 메뉴로 뜻을 보거나, 실수로 눌러 메뉴가 화면을 가리지 않게 (U26) */
-.test-page {
+.exam-page {
     user-select: none;
     -webkit-user-select: none;
     -webkit-touch-callout: none;
 }
 
 /* ---------- 단계 색 (P5) ----------
-   100문제마다 한 단계 : 에메랄드 → 사파이어 → 인디고 → 자수정 → 금 (test.js 가 #test-app 에 data-stage 1~5).
+   100문제마다 한 단계 : 에메랄드 → 사파이어 → 인디고 → 자수정 → 금 (exam.js 가 #exam-app 에 data-stage 1~5).
    진행 길·사람·깃발·진행 숫자·5초 막대·남은 초가 같은 색 */
-.test-page .app { --stage: #10A85F; --stage-bar: var(--stage); }
-.test-page .app[data-stage="2"] { --stage: #2563EB; }
-.test-page .app[data-stage="3"] { --stage: #4F46E5; }
-.test-page .app[data-stage="4"] { --stage: #9333EA; }
-.test-page .app[data-stage="5"] { --stage: #E9A916; --stage-bar: linear-gradient(to right, #F0B21E, #FFD54A); }
+.exam-page .app { --stage: #10A85F; --stage-bar: var(--stage); }
+.exam-page .app[data-stage="2"] { --stage: #2563EB; }
+.exam-page .app[data-stage="3"] { --stage: #4F46E5; }
+.exam-page .app[data-stage="4"] { --stage: #9333EA; }
+.exam-page .app[data-stage="5"] { --stage: #E9A916; --stage-bar: linear-gradient(to right, #F0B21E, #FFD54A); }
 
 /* ---------- 상단 ---------- */
-.test-status {
+.exam-status {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -63,7 +63,7 @@
 .remain-pill.urgent { color: var(--danger); background: var(--danger-soft); border-color: var(--danger-line); }
 .remain-pill.urgent svg { color: var(--danger); }
 
-/* 진행 길 : 회색 = 지나온 길, 색 막대 = 결승선까지 남은 길. --p = 푼 비율 0~1 (test.js).
+/* 진행 길 : 회색 = 지나온 길, 색 막대 = 결승선까지 남은 길. --p = 푼 비율 0~1 (exam.js).
    사람(24px)과 남은 길 사이 6px, 깃발 자리 18px */
 .run-lane {
     --p: 0;
@@ -98,7 +98,7 @@
 .run-flag { position: absolute; right: 0; top: 3px; width: 14px; height: 18px; }
 
 /* 사람 : 멈춰 있을 때는 로고처럼 팔다리를 벌린 달리기 자세 = 달리기 한 바퀴의 첫 장면.
-   .is-running 이면 한 바퀴(1초)씩 뛰고, 한 바퀴가 끝날 때 멈추므로 자세가 끊기지 않는다 (test.js runStep) */
+   .is-running 이면 한 바퀴(1초)씩 뛰고, 한 바퀴가 끝날 때 멈추므로 자세가 끊기지 않는다 (exam.js runStep) */
 .runner-fig g { transform-box: view-box; }
 .rn-thigh { transform-origin: 11px 16.5px; }
 .rn-shin { transform-origin: 11px 22px; }
@@ -225,14 +225,14 @@
 }
 
 /* ---------- 단어 ---------- */
-.test-content {
+.exam-content {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 12px;
 }
-/* 글자 크기는 test.js(fitPrompt)가 폭에 맞춰 52px → 28px 사이로 줄인다. 단어 중간 줄바꿈은 최소 크기에서도 넘칠 때만 */
+/* 글자 크기는 exam.js(fitPrompt)가 폭에 맞춰 52px → 28px 사이로 줄인다. 단어 중간 줄바꿈은 최소 크기에서도 넘칠 때만 */
 .prompt {
     width: 100%;
     margin: 0;
@@ -245,7 +245,7 @@
     overflow-wrap: normal;
 }
 .prompt.prompt-break { overflow-wrap: anywhere; }
-/* 함께 표시할 형태 (예: for the sake of / for one's sake). 단어가 32px 아래로 줄면 test.js(fitPrompt)가 같이 줄인다 */
+/* 함께 표시할 형태 (예: for the sake of / for one's sake). 단어가 32px 아래로 줄면 exam.js(fitPrompt)가 같이 줄인다 */
 .prompt-sub {
     margin: 0;
     font-family: var(--font-en);
@@ -436,22 +436,22 @@
 
 /* ---------- 낮은 화면 (가로 화면, 큰 글자) : 단어와 보기 4개가 스크롤 없이 보이게 ---------- */
 @media (max-height: 540px) {
-    .test-header { padding-top: 8px; }
-    .test-status { margin-bottom: 8px; }
+    .exam-header { padding-top: 8px; }
+    .exam-status { margin-bottom: 8px; }
     .progress-text strong { font-size: 24px; }
     .progress-total { font-size: 15px; }
     .remain-pill { padding: 5px 12px; }
     .remain-time { font-size: 17px; }
-    .test-content { gap: 6px; padding-bottom: 8px; }
+    .exam-content { gap: 6px; padding-bottom: 8px; }
     .q-timer-sec #timer-sec { font-size: 22px; }
     .options { gap: 8px; }
     .option-btn { min-height: 48px; padding: 8px 14px; font-size: 16px; }
-    .test-footer { padding-top: 8px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+    .exam-footer { padding-top: 8px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
     .level-caption { display: none; }
 }
 
 /* 가로 화면 : 화면 폭을 넓게 쓰고 보기를 2×2 로 */
 @media (max-height: 540px) and (min-aspect-ratio: 1/1) {
-    .test-page { --app-max-width: 760px; }
+    .exam-page { --app-max-width: 760px; }
     .options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

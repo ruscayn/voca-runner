@@ -2,16 +2,16 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <th:block th:replace="~{fragments/common :: commonHead}"></th:block>
-    <link rel="stylesheet" th:href="@{/css/test.css}">
+    <link rel="stylesheet" th:href="@{/css/exam.css}">
     <title>시험 - VocaRunner</title>
 </head>
-<body class="test-page">
-<div class="app" id="test-app" th:attr="data-exam-id=${examId}">
+<body class="exam-page">
+<div class="app" id="exam-app" th:attr="data-exam-id=${examId}">
 
-    <!-- 처음에는 뒤 화면을 막아 두고 "문제 불러오는 중..." 안내를 보인다. 느린 인터넷에서 test.js 가 늦게 실행돼도
-         빈 보기 버튼·0 / 0 이 먼저 보이지 않게 (U20). 문제를 받으면 test.js 가 안내를 바꾸고 막은 것을 푼다 -->
-    <header class="app-header test-header" inert>
-        <div class="test-status">
+    <!-- 처음에는 뒤 화면을 막아 두고 "문제 불러오는 중..." 안내를 보인다. 느린 인터넷에서 exam.js 가 늦게 실행돼도
+         빈 보기 버튼·0 / 0 이 먼저 보이지 않게 (U20). 문제를 받으면 exam.js 가 안내를 바꾸고 막은 것을 푼다 -->
+    <header class="app-header exam-header" inert>
+        <div class="exam-status">
             <p class="progress-text" aria-live="off">
                 <strong id="current-no">0</strong><span class="progress-total">/ <span id="total-count">0</span></span>
             </p>
@@ -21,7 +21,7 @@
             </div>
         </div>
         <!-- 진행 길 (P5) : 사람이 왼쪽에서 밀고 들어가며 결승선까지 남은 길(색 막대)이 줄어든다.
-             색은 100문제마다 한 단계 (test.css --stage). 사람은 답을 고르면 한 걸음 뛴다 (test.js runStep) -->
+             색은 100문제마다 한 단계 (exam.css --stage). 사람은 답을 고르면 한 걸음 뛴다 (exam.js runStep) -->
         <div class="run-lane" id="run-lane" aria-hidden="true">
             <div class="run-track"></div>
             <div class="run-rest"></div>
@@ -44,7 +44,7 @@
         </div>
     </header>
 
-    <main class="app-content test-content" inert>
+    <main class="app-content exam-content" inert>
         <p class="prompt" id="prompt" lang="en"></p>
         <p class="prompt-sub" id="prompt-sub" lang="en" hidden></p>
     </main>
@@ -54,7 +54,7 @@
         <p class="q-timer-sec"><span id="timer-sec">5</span><span class="q-timer-unit">초</span></p>
     </div>
 
-    <footer class="app-footer test-footer" inert>
+    <footer class="app-footer exam-footer" inert>
         <div class="options" id="options">
             <button type="button" class="option-btn" data-no="1"><span class="option-no">1</span><span class="option-text"></span></button>
             <button type="button" class="option-btn" data-no="2"><span class="option-no">2</span><span class="option-text"></span></button>
@@ -98,8 +98,8 @@
                             <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10.5" r="7.5" stroke="currentColor" stroke-width="1.6"/><path d="M10 6.5 V10.5 L12.5 12.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
                             <span><strong><span id="ready-min-text">45</span>분</strong> 안에 제출하지 않으면 무효 처리됩니다.</span>
                         </li>
-                        <!-- 발음이 되는 브라우저에서만 보임 (U22, test.js tts.available).
-                             [소리 확인] : 영어를 30초 동안 읽어 그동안 휴대폰 볼륨을 맞추게 한다 (U51, test.js soundCheck) -->
+                        <!-- 발음이 되는 브라우저에서만 보임 (U22, exam.js tts.available).
+                             [소리 확인] : 영어를 30초 동안 읽어 그동안 휴대폰 볼륨을 맞추게 한다 (U51, exam.js soundCheck) -->
                         <li id="ready-sound" hidden>
                             <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 8 H6 L10 4.5 V15.5 L6 12 H3 Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 7.5 C14.3 8.8 14.3 11.2 13 12.5 M15.5 5.5 C18 8 18 12 15.5 14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
                             <div class="sound-check">
@@ -119,6 +119,6 @@
     </div>
 
 </div>
-<script th:src="@{/js/test.js}"></script>
+<script th:src="@{/js/exam.js}"></script>
 </body>
 </html>

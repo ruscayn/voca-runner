@@ -7,8 +7,8 @@ import java.util.UUID;
 /** 시험 화면을 시작 직후 한 번만 열게 하는 1회용 값. 시작할 때 세션에 넣고, 시험 화면을 처음 열 때 쓰고 지운다 */
 final class EntryToken {
 
-    private static final String ENTRY_TOKEN = "TEST_ENTRY_TOKEN";
-    private static final String LAST_OPENED_EXAM_ID = "TEST_OPENED";
+    private static final String ENTRY_TOKEN = "ENTRY_TOKEN";
+    private static final String LAST_OPENED_EXAM_ID = "LAST_OPENED_EXAM_ID";
 
     private EntryToken() {
     }
