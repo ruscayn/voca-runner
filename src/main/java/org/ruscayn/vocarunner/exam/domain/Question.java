@@ -1,6 +1,7 @@
 package org.ruscayn.vocarunner.exam.domain;
 
 import java.util.List;
+import java.util.stream.IntStream;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
 
 /**
@@ -23,12 +24,10 @@ public record Question(CatalogWord answer, List<CatalogWord> options) {
 
     /** 정답 보기 번호 1~4 */
     public int answerOptionNo() {
-        for (int i = 0; i < options.size(); i++) {
-            if (options.get(i).levelWordId() == answer.levelWordId()) {
-                return i + 1;
-            }
-        }
-        throw new IllegalStateException();
+        return IntStream.range(0, options.size())
+                .filter(i -> options.get(i).levelWordId() == answer.levelWordId())
+                .findFirst()
+                .orElseThrow(IllegalStateException::new) + 1;
     }
 
 }

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.IntStream;
 import lombok.AccessLevel;
 import lombok.Getter;
 import org.ruscayn.vocarunner.common.CustomException;
@@ -77,6 +78,7 @@ public class Exam {
     /** 낙관적 잠금 번호. DB 가 저장할 때마다 올린다. null 이면 아직 저장 전 */
     private final Integer version;
 
+    // CHECKSTYLE.SUPPRESS: MethodLength — 매개변수를 필드에 옮겨 담기만 함 (매개변수 줄이기는 클래스 단계에서)
     private Exam(UUID id, Level level, Direction direction, int timePerQuestionSec, Examinee examinee,
                  Instant startedAt, Instant deadline, int[] optionIds, byte[] answerOptionNo, byte[] selectedOptionNo,
                  ExamStatus status, boolean questionsDelivered, Integer correctCount, Integer score,
@@ -105,27 +107,42 @@ public class Exam {
     public static Exam start(Level level, Direction direction, int timePerQuestionSec,
                              List<Question> questions, Examinee examinee,
                              Instant now, Duration grace) {
+        requireQuestions(questions);
+        requireTimePerQuestion(timePerQuestionSec);
+        int count = questions.size();
+        return new Exam(UUID.randomUUID(), level, direction, timePerQuestionSec, examinee,
+                now, now.plus(allowedTime(count, timePerQuestionSec, grace)),
+                toOptionIds(questions), toAnswerOptionNo(questions), new byte[count],
+                ExamStatus.IN_PROGRESS, false, null, null, null, null);
+    }
+
+    private static void requireQuestions(List<Question> questions) {
         if (questions.isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "문제 수는 1 이상이어야 합니다.");
         }
+    }
+
+    private static void requireTimePerQuestion(int timePerQuestionSec) {
         if (timePerQuestionSec < MIN_TIME_PER_QUESTION_SEC || timePerQuestionSec > MAX_TIME_PER_QUESTION_SEC) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE,
                     "문항당 시간은 " + MIN_TIME_PER_QUESTION_SEC + "~" + MAX_TIME_PER_QUESTION_SEC + "초여야 합니다.");
         }
-        int count = questions.size();
-        int[] optionIds = new int[count * OPTION_COUNT];
-        byte[] answerOptionNo = new byte[count];
-        for (int q = 0; q < count; q++) {
-            Question question = questions.get(q);
-            for (int i = 0; i < OPTION_COUNT; i++) {
-                optionIds[q * OPTION_COUNT + i] = Math.toIntExact(question.options().get(i).levelWordId());
-            }
-            answerOptionNo[q] = (byte) question.answerOptionNo();
+    }
+
+    /** 문항마다 보기 4개를 차례로 이어 붙인다. 문항 n 의 보기 i = optionIds[(n-1)*4 + (i-1)] */
+    private static int[] toOptionIds(List<Question> questions) {
+        return questions.stream()
+                .flatMap(question -> question.options().stream())
+                .mapToInt(option -> Math.toIntExact(option.levelWordId()))
+                .toArray();
+    }
+
+    private static byte[] toAnswerOptionNo(List<Question> questions) {
+        byte[] answerOptionNo = new byte[questions.size()];
+        for (int q = 0; q < questions.size(); q++) {
+            answerOptionNo[q] = (byte) questions.get(q).answerOptionNo();
         }
-        return new Exam(UUID.randomUUID(), level, direction, timePerQuestionSec, examinee,
-                now, now.plus(allowedTime(count, timePerQuestionSec, grace)),
-                optionIds, answerOptionNo, new byte[count],
-                ExamStatus.IN_PROGRESS, false, null, null, null, null);
+        return answerOptionNo;
     }
 
     /** 저장된 시험을 그 상태 그대로 되살린다 (영속성 어댑터가 DB 에서 읽을 때) */
@@ -157,35 +174,50 @@ public class Exam {
 
     /**
      * 제출 및 채점. 마감 시각이 지났으면 만료(EXPIRED) 처리 후 예외.
+     * 보기 번호 검사를 먼저 모두 마친 뒤 기록한다 (거절할 때 일부만 바뀐 채 남지 않게)
      *
      * @param selectedByQuestionNo 문제 번호 → 고른 보기 번호(1~4). 시간 초과/미응답 문제는 없거나 null
      */
     public void submit(Map<Integer, Integer> selectedByQuestionNo, Instant now) {
         requireInProgress();
+        expireIfPastDeadline(now);
+        selectedByQuestionNo.forEach(Exam::requireValidOption);
+        recordSelected(selectedByQuestionNo);
+        this.correctCount = countCorrect();
+        this.score = toScore(correctCount);
+        this.submittedAt = now;
+        this.status = ExamStatus.COMPLETED;
+    }
+
+    private void expireIfPastDeadline(Instant now) {
         if (now.isAfter(deadline)) {
             status = ExamStatus.EXPIRED;
             throw new CustomException(ErrorCode.EXAM_EXPIRED);
         }
-        // 검사를 먼저 모두 마친 뒤 기록한다 (거절할 때 일부만 바뀐 채 남지 않게)
-        selectedByQuestionNo.forEach((no, selected) -> {
-            if (selected != null && (selected < 1 || selected > OPTION_COUNT)) {
-                throw new CustomException(ErrorCode.EXAM_INVALID_OPTION,
-                        "문제 " + no + "의 보기 번호가 올바르지 않습니다: " + selected);
-            }
-        });
-        int correct = 0;
+    }
+
+    private static void requireValidOption(Integer no, Integer selected) {
+        if (selected != null && (selected < 1 || selected > OPTION_COUNT)) {
+            throw new CustomException(ErrorCode.EXAM_INVALID_OPTION,
+                    "문제 " + no + "의 보기 번호가 올바르지 않습니다: " + selected);
+        }
+    }
+
+    /** 고른 보기 번호를 기록한다. 없거나 null 이면 0 (시간 초과/미응답) */
+    private void recordSelected(Map<Integer, Integer> selectedByQuestionNo) {
         for (int q = 0; q < questionCount; q++) {
             Integer selected = selectedByQuestionNo.get(q + 1);
             selectedOptionNo[q] = selected == null ? 0 : selected.byteValue();
-            if (selected != null && selected == answerOptionNo[q]) {
-                correct++;
-            }
         }
-        this.correctCount = correct;
-        // 버림 : 틀린 문제가 있으면 100점이 되지 않게 (반올림이면 997문항 중 995개도 100점, U1)
-        this.score = correct * 100 / questionCount;
-        this.submittedAt = now;
-        this.status = ExamStatus.COMPLETED;
+    }
+
+    private int countCorrect() {
+        return (int) IntStream.rangeClosed(1, questionCount).filter(this::isCorrect).count();
+    }
+
+    /** 0~100 버림 : 틀린 문제가 있으면 100점이 되지 않게 (반올림이면 997문항 중 995개도 100점, U1) */
+    private int toScore(int correct) {
+        return correct * 100 / questionCount;
     }
 
     /** 시험 화면이 문제를 받아 감 */

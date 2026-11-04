@@ -3,10 +3,8 @@ package org.ruscayn.vocarunner.exam.domain;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 import java.util.random.RandomGenerator;
@@ -60,27 +58,41 @@ public class QuestionGenerator {
      */
     public List<Question> generate(WordCatalog wordCatalog, Level level, int maxCount) {
         List<CatalogWord> answerPool = wordCatalog.findAnswerPool(level);
-        int count = questionCount(answerPool.size(), maxCount);
-        if (count == 0) {
-            throw new CustomException(ErrorCode.EXAM_NOT_ENOUGH_WORDS, "레벨 " + level + " 에 출제 가능한 단어가 없습니다.");
-        }
-
-        // 오답 보기 후보 (시험 제외 단어 제외), 세부 레벨별
-        Map<Level, List<CatalogWord>> optionPoolByLevel = new EnumMap<>(Level.class);
-        for (CatalogWord word : wordCatalog.findOptionPool(level)) {
-            optionPoolByLevel.computeIfAbsent(word.level(), k -> new ArrayList<>()).add(word);
-        }
-
+        int count = requireQuestionCount(level, answerPool.size(), maxCount);
+        Map<Level, List<CatalogWord>> optionPoolByLevel = groupByLevel(wordCatalog.findOptionPool(level));
         RandomGenerator random = randomSupplier.get();
         List<CatalogWord> answers = new ArrayList<>(answerPool);
         shuffle(answers, random);
+        return toQuestions(wordCatalog, answers.subList(0, count), optionPoolByLevel, random);
+    }
 
-        List<Question> result = new ArrayList<>(count);
-        for (CatalogWord answer : answers.subList(0, count)) {
-            List<CatalogWord> sameLevel = optionPoolByLevel.getOrDefault(answer.level(), List.of());
-            result.add(new Question(answer, pickOptions(wordCatalog, answer, sameLevel, random)));
+    /** 실제 문제 수. 출제 가능한 단어가 없으면 거절 */
+    private static int requireQuestionCount(Level level, int answerPoolSize, int maxCount) {
+        int count = questionCount(answerPoolSize, maxCount);
+        if (count == 0) {
+            throw new CustomException(ErrorCode.EXAM_NOT_ENOUGH_WORDS, "레벨 " + level + " 에 출제 가능한 단어가 없습니다.");
         }
-        return result;
+        return count;
+    }
+
+    /** 오답 보기 후보 (시험 제외 단어 제외)를 세부 레벨별로 */
+    private static Map<Level, List<CatalogWord>> groupByLevel(List<CatalogWord> optionPool) {
+        Map<Level, List<CatalogWord>> byLevel = new EnumMap<>(Level.class);
+        for (CatalogWord word : optionPool) {
+            byLevel.computeIfAbsent(word.level(), k -> new ArrayList<>()).add(word);
+        }
+        return byLevel;
+    }
+
+    /** 정답마다 같은 세부 레벨에서 보기를 골라 문항으로 */
+    private List<Question> toQuestions(WordCatalog wordCatalog, List<CatalogWord> answers,
+                                       Map<Level, List<CatalogWord>> optionPoolByLevel, RandomGenerator random) {
+        List<Question> questions = new ArrayList<>(answers.size());
+        for (CatalogWord answer : answers) {
+            List<CatalogWord> sameLevel = optionPoolByLevel.getOrDefault(answer.level(), List.of());
+            questions.add(new Question(answer, pickOptions(wordCatalog, answer, sameLevel, random)));
+        }
+        return questions;
     }
 
     /**
@@ -99,54 +111,57 @@ public class QuestionGenerator {
                                           RandomGenerator random) {
         List<CatalogWord> options = new ArrayList<>(Question.OPTION_COUNT);
         options.add(answer);
-        // 이미 고른 단어 + 그 단어들과 헷갈리는 단어 → 보기로 낼 수 없는 word_id
-        Set<Long> blockedWordIds = new HashSet<>();
-        blockedWordIds.add(answer.wordId());
-        blockedWordIds.addAll(wordCatalog.findConfusableWordIds(answer.wordId()));
-        Set<String> usedMeanings = new HashSet<>(answer.optionMeanings());
-
-        // 1차: 무작위로 뽑아 조건 검사
-        for (int i = 0; !sameLevel.isEmpty() && i < RANDOM_TRY_LIMIT && options.size() < Question.OPTION_COUNT; i++) {
-            tryAdd(wordCatalog, sameLevel.get(random.nextInt(sameLevel.size())), options, blockedWordIds, usedMeanings);
-        }
-        // 2차: 전체를 섞어 순서대로 검사
-        if (options.size() < Question.OPTION_COUNT) {
-            List<CatalogWord> shuffled = new ArrayList<>(sameLevel);
-            shuffle(shuffled, random);
-            for (CatalogWord candidate : shuffled) {
-                if (options.size() >= Question.OPTION_COUNT) {
-                    break;
-                }
-                tryAdd(wordCatalog, candidate, options, blockedWordIds, usedMeanings);
-            }
-        }
-        if (options.size() < Question.OPTION_COUNT) {
-            throw new CustomException(ErrorCode.EXAM_NOT_ENOUGH_WORDS,
-                    "'" + answer.headword() + "' 의 오답 보기 " + INCORRECT_OPTION_COUNT + "개를 만들 수 없습니다.");
-        }
-
+        addRandomly(wordCatalog, sameLevel, options, random);
+        addInShuffledOrder(wordCatalog, sameLevel, options, random);
+        requireFull(options, answer);
         shuffle(options, random);
         return options;
     }
 
-    /**
-     * 조건을 통과하면 보기에 추가한다.
-     * 탈락: 이미 고른 단어 / 고른 단어와 헷갈리는 단어(묶음) / 고른 보기와 보기 뜻이 하나라도 같은 단어
-     */
-    private void tryAdd(WordCatalog wordCatalog, CatalogWord candidate, List<CatalogWord> options,
-                        Set<Long> blockedWordIds, Set<String> usedMeanings) {
-        if (blockedWordIds.contains(candidate.wordId())) {
+    /** 1차: 무작위로 뽑아 조건 검사 (최대 RANDOM_TRY_LIMIT 번) */
+    private void addRandomly(WordCatalog wordCatalog, List<CatalogWord> sameLevel, List<CatalogWord> options,
+                             RandomGenerator random) {
+        for (int i = 0; !sameLevel.isEmpty() && i < RANDOM_TRY_LIMIT && !isFull(options); i++) {
+            tryAdd(wordCatalog, sameLevel.get(random.nextInt(sameLevel.size())), options);
+        }
+    }
+
+    /** 2차: 1차로 다 채우지 못했으면 전체를 섞어 순서대로 검사 */
+    private void addInShuffledOrder(WordCatalog wordCatalog, List<CatalogWord> sameLevel, List<CatalogWord> options,
+                                    RandomGenerator random) {
+        if (isFull(options)) {
             return;
         }
-        for (String meaning : candidate.optionMeanings()) {
-            if (usedMeanings.contains(meaning)) {
-                return;
-            }
+        List<CatalogWord> shuffled = new ArrayList<>(sameLevel);
+        shuffle(shuffled, random);
+        for (int i = 0; i < shuffled.size() && !isFull(options); i++) {
+            tryAdd(wordCatalog, shuffled.get(i), options);
         }
-        options.add(candidate);
-        blockedWordIds.add(candidate.wordId());
-        blockedWordIds.addAll(wordCatalog.findConfusableWordIds(candidate.wordId()));
-        usedMeanings.addAll(candidate.optionMeanings());
+    }
+
+    private static void requireFull(List<CatalogWord> options, CatalogWord answer) {
+        if (!isFull(options)) {
+            throw new CustomException(ErrorCode.EXAM_NOT_ENOUGH_WORDS,
+                    "'" + answer.headword() + "' 의 오답 보기 " + INCORRECT_OPTION_COUNT + "개를 만들 수 없습니다.");
+        }
+    }
+
+    private static boolean isFull(List<CatalogWord> options) {
+        return options.size() >= Question.OPTION_COUNT;
+    }
+
+    /** 이미 고른 보기 어느 것과도 부딪치지 않으면 보기에 추가한다 */
+    private void tryAdd(WordCatalog wordCatalog, CatalogWord candidate, List<CatalogWord> options) {
+        if (options.stream().noneMatch(chosen -> conflicts(wordCatalog, chosen, candidate))) {
+            options.add(candidate);
+        }
+    }
+
+    /** 부딪침: 같은 단어 / 헷갈리는 단어(묶음, 양방향) / 보기 뜻이 하나라도 같음 */
+    private static boolean conflicts(WordCatalog wordCatalog, CatalogWord chosen, CatalogWord candidate) {
+        return chosen.wordId() == candidate.wordId()
+                || wordCatalog.findConfusableWordIds(chosen.wordId()).contains(candidate.wordId())
+                || !Collections.disjoint(chosen.optionMeanings(), candidate.optionMeanings());
     }
 
     /** Fisher–Yates */
