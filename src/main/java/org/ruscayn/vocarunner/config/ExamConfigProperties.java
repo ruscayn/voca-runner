@@ -13,7 +13,6 @@ public record ExamConfigProperties(
         @DefaultValue("1h") Duration resultRetention,
         @DefaultValue("20000") int maxInProgress,
         @DefaultValue("50") int maxInProgressPerIp,
-        @DefaultValue("1m") Duration cleanupInterval,
         @DefaultValue("5m") Duration undeliveredTimeout
 ) {
 

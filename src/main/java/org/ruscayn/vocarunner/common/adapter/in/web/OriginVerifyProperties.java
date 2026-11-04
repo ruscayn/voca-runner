@@ -11,8 +11,4 @@ public record OriginVerifyProperties(String header, List<String> secrets) {
                 : secrets.stream().map(String::trim).filter(s -> !s.isEmpty()).toList();
     }
 
-    public boolean enabled() {
-        return !secrets.isEmpty();
-    }
-
 }

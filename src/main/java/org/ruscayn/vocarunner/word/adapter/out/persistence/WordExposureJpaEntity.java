@@ -8,23 +8,19 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.LocalDate;
 import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-import org.ruscayn.vocarunner.common.adapter.out.persistence.BaseEntity;
 import org.ruscayn.vocarunner.word.domain.ExposureAction;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.ruscayn.vocarunner.word.domain.WordExposureRules;
 
 /** 뜻은 meaning_id 가 아니라 단어 안 순번(seq)으로 가리킨다 (meaning_id 는 단어 데이터를 다시 적재할 때마다 새로 매겨진다) */
-@Getter
 @Entity
 @Table(name = "word_exposure")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class WordExposureJpaEntity extends BaseEntity {
+public class WordExposureJpaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,21 +41,6 @@ public class WordExposureJpaEntity extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "action", nullable = false, length = 20)
     private ExposureAction action;
-
-    @Column(name = "issue_type", nullable = false, length = 30)
-    private String issueType;
-
-    @Column(name = "severity", length = 10)
-    private String severity;
-
-    @Column(name = "reason", nullable = false, length = 500)
-    private String reason;
-
-    @Column(name = "decided_at", nullable = false)
-    private LocalDate decidedDate;
-
-    @Column(name = "decided_by", nullable = false, length = 30)
-    private String decidedBy;
 
     public WordExposureRules.Rule toRule() {
         return new WordExposureRules.Rule(wordId, meaningSeq, level, action);

@@ -17,14 +17,13 @@ import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.ruscayn.vocarunner.common.adapter.out.persistence.BaseEntity;
 import org.ruscayn.vocarunner.word.domain.Level;
 
 @Getter
 @Entity
 @Table(name = "level_word")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class LevelWordJpaEntity extends BaseEntity {
+public class LevelWordJpaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

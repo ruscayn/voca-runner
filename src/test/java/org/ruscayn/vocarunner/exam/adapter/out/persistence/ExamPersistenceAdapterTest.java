@@ -219,7 +219,7 @@ class ExamPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("정리 작업은 폐기 대상 시험만 지운다 (Exam.isDisposable 과 같은 조건)")
+    @DisplayName("정리 작업은 마감이 지난 시험 · 문제를 받아 가지 않은 시험 · 보관이 끝난 결과 · 만료된 시험만 지운다")
     void deleteDisposable() {
         Instant now = NOW.plus(Duration.ofHours(3));
         // 남아야 하는 시험
@@ -246,13 +246,6 @@ class ExamPersistenceAdapterTest {
         assertThat(deleted).isEqualTo(4);
         assertThat(springDataRepository.findAll()).extracting(ExamJpaEntity::getId)
                 .containsExactlyInAnyOrder(delivered.getId(), justStarted.getId(), recentResult.getId());
-        // 화면·서비스가 쓰는 판정과 DB 삭제 조건이 어긋나지 않는지
-        List<UUID> disposable = all.stream()
-                .filter(s -> s.isDisposable(now, RETENTION, UNDELIVERED))
-                .map(Exam::getId)
-                .toList();
-        assertThat(disposable).containsExactlyInAnyOrder(
-                pastDeadline.getId(), undelivered.getId(), oldResult.getId(), expired.getId());
     }
 
     @Test

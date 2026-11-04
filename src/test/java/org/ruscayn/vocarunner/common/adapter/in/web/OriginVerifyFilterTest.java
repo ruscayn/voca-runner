@@ -84,7 +84,6 @@ class OriginVerifyFilterTest {
         OriginVerifyProperties properties = binder.bind("voca-runner.origin-verify", OriginVerifyProperties.class)
                 .get();
         assertThat(properties.secrets()).containsExactly("old-value", "new-value");
-        assertThat(properties.enabled()).isTrue();
     }
 
 }

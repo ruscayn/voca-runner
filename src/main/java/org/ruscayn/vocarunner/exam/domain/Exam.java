@@ -224,20 +224,6 @@ public class Exam {
         return status == ExamStatus.COMPLETED;
     }
 
-    /**
-     * 정리 작업의 삭제 조건(ExamPersistenceAdapter.deleteDisposable)과 같아야 한다.
-     * 진행 중 → 마감이 지났거나 문제를 받아 가지 않은 채 undeliveredTimeout 이 지남, 완료 → 결과 보관 시간이 지남, 만료 → 바로.
-     * 문제를 못 받아 간 시험은 중단 요청도 못 보냈을 수 있어(연결 끊김) 마감까지 두면 동시 진행 수를 차지한다
-     */
-    public boolean isDisposable(Instant now, Duration resultRetention, Duration undeliveredTimeout) {
-        return switch (status) {
-            case IN_PROGRESS -> now.isAfter(deadline)
-                    || (!questionsDelivered && now.isAfter(startedAt.plus(undeliveredTimeout)));
-            case COMPLETED -> now.isAfter(submittedAt.plus(resultRetention));
-            case EXPIRED -> true;
-        };
-    }
-
     public int[] getOptionIds() {
         return optionIds.clone();
     }

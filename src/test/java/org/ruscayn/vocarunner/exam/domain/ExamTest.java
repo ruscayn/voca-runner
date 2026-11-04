@@ -25,8 +25,6 @@ class ExamTest {
 
     private static final Instant NOW = Instant.parse("2026-10-08T00:00:00Z");
     private static final Duration GRACE = Duration.ofMinutes(3);
-    private static final Duration RETENTION = Duration.ofMinutes(10);
-    private static final Duration UNDELIVERED = Duration.ofMinutes(5);
     private static final Examinee EXAMINEE = new Examinee("device-1", "127.0.0.1");
 
     private static Exam start(int questionCount) {
@@ -280,59 +278,6 @@ class ExamTest {
             completed.submit(Map.of(), NOW);
             completed.expire();
             assertThat(completed.getStatus()).isEqualTo(ExamStatus.COMPLETED);
-        }
-    }
-
-    @Nested
-    @DisplayName("정리 대상 판단 (isDisposable)")
-    class Disposable {
-
-        @Test
-        @DisplayName("진행 중 : 마감 시각이 지나야 정리")
-        void inProgress() {
-            Exam exam = start(5);
-            exam.markQuestionsDelivered();
-
-            assertThat(exam.isDisposable(exam.getDeadline(), RETENTION, UNDELIVERED)).isFalse();
-            assertThat(exam.isDisposable(exam.getDeadline().plusMillis(1), RETENTION, UNDELIVERED)).isTrue();
-        }
-
-        @Test
-        @DisplayName("진행 중 : 문제를 받아 가지 않았으면 시작 후 정해진 시간이 지나면 정리")
-        void undelivered() {
-            Exam exam = start(500);
-
-            assertThat(exam.isDisposable(NOW.plus(UNDELIVERED), RETENTION, UNDELIVERED)).isFalse();
-            assertThat(exam.isDisposable(NOW.plus(UNDELIVERED).plusMillis(1), RETENTION, UNDELIVERED)).isTrue();
-        }
-
-        @Test
-        @DisplayName("진행 중 : 문제를 받아 갔으면 시작 후 정해진 시간이 지나도 마감 전에는 정리하지 않음")
-        void delivered() {
-            Exam exam = start(500);
-            exam.markQuestionsDelivered();
-
-            assertThat(exam.isDisposable(NOW.plus(UNDELIVERED).plusMillis(1), RETENTION, UNDELIVERED)).isFalse();
-        }
-
-        @Test
-        @DisplayName("완료 : 제출 후 결과 보관 시간이 지나야 정리")
-        void completed() {
-            Exam exam = start(5);
-            Instant submittedAt = NOW.plusSeconds(60);
-            exam.submit(Map.of(), submittedAt);
-
-            assertThat(exam.isDisposable(submittedAt.plus(RETENTION), RETENTION, UNDELIVERED)).isFalse();
-            assertThat(exam.isDisposable(submittedAt.plus(RETENTION).plusMillis(1), RETENTION, UNDELIVERED)).isTrue();
-        }
-
-        @Test
-        @DisplayName("만료 : 바로 정리")
-        void expired() {
-            Exam exam = start(5);
-            exam.expire();
-
-            assertThat(exam.isDisposable(NOW, RETENTION, UNDELIVERED)).isTrue();
         }
     }
 
