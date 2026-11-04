@@ -133,7 +133,8 @@ class ExamPersistenceAdapterTest {
             assertThat(loaded.getSubmittedAt()).isEqualTo(NOW.plusSeconds(30));
             assertThat(loaded.isCorrect(1)).isTrue();
             assertThat(loaded.isCorrect(2)).isFalse();
-            assertThat(loaded.selectedLevelWordId(2)).isEqualTo(exam.optionLevelWordIds(2).get(incorrectOptionNo(2) - 1));
+            assertThat(loaded.selectedLevelWordId(2)).isEqualTo(
+                    exam.optionLevelWordIds(2).get(incorrectOptionNo(2) - 1));
             assertThat(loaded.selectedLevelWordId(4)).isNull();
         }
 

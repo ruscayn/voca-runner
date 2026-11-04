@@ -113,7 +113,8 @@ public class ExamController {
         return examUseCase.findResult(examId)
                 .map(result -> {
                     model.addAttribute("result", result);
-                    model.addAttribute("retentionDeadline", RETENTION_DEADLINE_FORMAT.format(result.retentionDeadline()));
+                    model.addAttribute("retentionDeadline",
+                            RETENTION_DEADLINE_FORMAT.format(result.retentionDeadline()));
                     return "result";
                 })
                 .orElse("redirect:/?notice=" + MainController.NOTICE_RESULT_EXPIRED);

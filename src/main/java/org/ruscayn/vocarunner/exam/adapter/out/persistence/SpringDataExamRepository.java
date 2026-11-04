@@ -30,7 +30,7 @@ public interface SpringDataExamRepository extends JpaRepository<ExamJpaEntity, U
              where s.status = :status and s.deadline >= :now and s.deviceId = :deviceId
             """)
     List<ExamJpaEntity> findActiveByDevice(@Param("status") ExamStatus status, @Param("now") Instant now,
-            @Param("deviceId") String deviceId);
+                                           @Param("deviceId") String deviceId);
 
     @Query("""
             select count(s) from ExamJpaEntity s

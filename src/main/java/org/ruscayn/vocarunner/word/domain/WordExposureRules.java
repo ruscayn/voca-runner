@@ -34,7 +34,8 @@ public final class WordExposureRules {
                 case EXCLUDE_WORD -> excludedWords.add(rule.wordId());
                 case EXCLUDE_LEVEL -> excludedLevelWords.add(new LevelWordKey(rule.wordId(), rule.level()));
                 case EXCLUDE_MEANING -> excludedMeanings.add(new MeaningKey(rule.wordId(), rule.meaningSeq()));
-                case KEEP -> { }
+                case KEEP -> {
+                }
             }
         }
     }

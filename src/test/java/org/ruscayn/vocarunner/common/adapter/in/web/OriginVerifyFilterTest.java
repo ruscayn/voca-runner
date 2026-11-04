@@ -19,7 +19,8 @@ class OriginVerifyFilterTest {
 
     private static final String HEADER = "X-Origin-Verify";
 
-    private static MockHttpServletResponse run(List<String> secrets, String remoteAddr, String headerValue) throws Exception {
+    private static MockHttpServletResponse run(List<String> secrets, String remoteAddr, String headerValue)
+            throws Exception {
         OriginVerifyFilter filter = new OriginVerifyFilter(new OriginVerifyProperties(HEADER, secrets));
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/");
         request.setRemoteAddr(remoteAddr);
@@ -80,7 +81,8 @@ class OriginVerifyFilterTest {
         Binder binder = new Binder(new MapConfigurationPropertySource(Map.of(
                 "voca-runner.origin-verify.header", HEADER,
                 "voca-runner.origin-verify.secrets", "old-value, new-value,")));
-        OriginVerifyProperties properties = binder.bind("voca-runner.origin-verify", OriginVerifyProperties.class).get();
+        OriginVerifyProperties properties = binder.bind("voca-runner.origin-verify", OriginVerifyProperties.class)
+                .get();
         assertThat(properties.secrets()).containsExactly("old-value", "new-value");
         assertThat(properties.enabled()).isTrue();
     }

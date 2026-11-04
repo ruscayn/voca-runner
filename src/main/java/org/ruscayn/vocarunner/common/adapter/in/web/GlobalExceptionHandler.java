@@ -35,7 +35,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CustomException.class)
     public Object handleCustomException(CustomException e, HttpServletRequest request) {
         log.warn("Business exception: {} {} {}", request.getRequestURI(), e.getErrorCode().getCode(), e.getMessage());
-        ErrorResponse errorResponse = ErrorResponse.of(e.getErrorCode().getCode(), e.getMessage(), request.getRequestURI());
+        ErrorResponse errorResponse = ErrorResponse.of(e.getErrorCode().getCode(), e.getMessage(),
+                request.getRequestURI());
         return respond(request, HttpStatus.BAD_REQUEST, errorResponse, e.getMessage());
     }
 

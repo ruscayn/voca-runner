@@ -73,7 +73,8 @@ class ParameterStoreConfigTest {
             assertThat(ssm.requests.getFirst().withDecryption()).isTrue();
             assertThat(context.getEnvironment().getProperty("spring.datasource.username")).isEqualTo("prod_user");
             assertThat(context.getEnvironment().getProperty("spring.datasource.password")).isEqualTo("prod-password");
-            assertThat(context.getEnvironment().getProperty("voca-runner.origin-verify.secrets")).isEqualTo("old-value,new-value");
+            assertThat(context.getEnvironment().getProperty("voca-runner.origin-verify.secrets")).isEqualTo(
+                    "old-value,new-value");
         }
     }
 
