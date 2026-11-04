@@ -19,13 +19,19 @@ final class ClientIp {
      * @return 헤더가 있으면 그 IP, 없으면 연결 IP
      */
     static String find(HttpServletRequest request, String headerName) {
-        if (headerName != null && !headerName.isBlank()) {
-            String value = request.getHeader(headerName);
-            if (value != null && !value.isBlank()) {
-                return withoutPort(value.trim());
-            }
+        String value = headerValue(request, headerName);
+        if (value == null || value.isBlank()) {
+            return request.getRemoteAddr();
         }
-        return request.getRemoteAddr();
+        return withoutPort(value.trim());
+    }
+
+    /** 헤더 이름이 비어 있으면 헤더를 보지 않는다 (null) */
+    private static String headerValue(HttpServletRequest request, String headerName) {
+        if (headerName == null || headerName.isBlank()) {
+            return null;
+        }
+        return request.getHeader(headerName);
     }
 
     /** "IP:포트" 에서 IP 만. IPv6 는 콜론이 여러 개라 마지막 ':' 앞까지 ("[IPv6]:포트" 꼴이면 대괄호 안) */

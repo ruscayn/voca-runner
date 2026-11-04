@@ -100,19 +100,29 @@ public class ExamJpaEntity extends BaseEntity {
     static ExamJpaEntity from(Exam exam) {
         ExamJpaEntity entity = new ExamJpaEntity();
         entity.id = exam.getId();
-        entity.level = exam.getLevel();
-        entity.direction = exam.getDirection();
-        entity.questionCount = exam.getQuestionCount();
-        entity.timePerQuestionSec = exam.getTimePerQuestionSec();
-        entity.deviceId = exam.getExaminee().deviceId();
-        entity.clientIp = exam.getExaminee().clientIp();
-        entity.startedAt = exam.getStartedAt();
-        entity.deadline = exam.getDeadline();
-        entity.optionIds = exam.getOptionIds();
-        entity.answerOptionNo = exam.getAnswerOptionNo();
         entity.version = exam.getVersion();
+        entity.copyStart(exam);
+        entity.copyQuestions(exam);
         entity.update(exam);
         return entity;
+    }
+
+    /** 시작할 때 정해져 바뀌지 않는 레벨 · 출제 방향 · 문항당 시간 · 응시자 · 시각 */
+    private void copyStart(Exam exam) {
+        this.level = exam.getLevel();
+        this.direction = exam.getDirection();
+        this.timePerQuestionSec = exam.getTimePerQuestionSec();
+        this.deviceId = exam.getExaminee().deviceId();
+        this.clientIp = exam.getExaminee().clientIp();
+        this.startedAt = exam.getStartedAt();
+        this.deadline = exam.getDeadline();
+    }
+
+    /** 문항 (보기 · 정답 보기 번호). 시작할 때 정해져 바뀌지 않는다 */
+    private void copyQuestions(Exam exam) {
+        this.questionCount = exam.getQuestionCount();
+        this.optionIds = exam.getOptionIds();
+        this.answerOptionNo = exam.getAnswerOptionNo();
     }
 
     /**

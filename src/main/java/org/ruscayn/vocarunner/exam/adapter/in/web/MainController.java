@@ -1,6 +1,7 @@
 package org.ruscayn.vocarunner.exam.adapter.in.web;
 
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.ruscayn.vocarunner.common.WebAdapter;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
@@ -25,30 +26,35 @@ public class MainController {
     /** 결과 보관 시간이 지난 결과 주소로 들어온 경우 (ExamController) */
     public static final String NOTICE_RESULT_EXPIRED = "result-expired";
 
+    /** 안내 코드 → 문구 */
+    private static final Map<String, String> NOTICE_MESSAGES = Map.of(
+            NOTICE_EXAM_IN_USE, "이미 시작된 시험입니다. 시험을 시작한 화면에서만 풀 수 있습니다.",
+            NOTICE_EXAM_ENDED, "이미 끝난 시험입니다. 새 시험을 시작해 주세요.",
+            NOTICE_RESULT_EXPIRED, "결과 보관 시간이 지났습니다. 결과는 제출 후 잠시 동안만 볼 수 있어요.");
+
     private final ExamUseCase examUseCase;
 
     /**
-     * @param notice 세션 없이 안내할 때 쓰는 코드. 정해진 코드만 문구로 바꾸고 그 밖의 값은 무시한다
+     * @param notice 세션 없이 안내할 때 쓰는 코드. 정해진 코드만 문구로 바꾸고 그 밖의 값은 무시한다.
+     *               이미 안내 문구(flash)가 있으면 그쪽을 쓴다
      */
     @GetMapping("/")
     public String main(@RequestParam(required = false) String notice, Model model) {
-        if (!model.containsAttribute("message")) {
-            if (NOTICE_EXAM_IN_USE.equals(notice)) {
-                model.addAttribute("message", "이미 시작된 시험입니다. 시험을 시작한 화면에서만 풀 수 있습니다.");
-            } else if (NOTICE_EXAM_ENDED.equals(notice)) {
-                model.addAttribute("message", "이미 끝난 시험입니다. 새 시험을 시작해 주세요.");
-            } else if (NOTICE_RESULT_EXPIRED.equals(notice)) {
-                model.addAttribute("message", "결과 보관 시간이 지났습니다. 결과는 제출 후 잠시 동안만 볼 수 있어요.");
-            }
+        if (!model.containsAttribute("message") && notice != null && NOTICE_MESSAGES.containsKey(notice)) {
+            model.addAttribute("message", NOTICE_MESSAGES.get(notice));
         }
+        addLevels(model);
+        return "main";
+    }
+
+    /** 레벨 목록 + 처음 선택된 레벨(첫 레벨)의 문항 수 · 허용 시간. 다른 레벨을 고르면 화면 스크립트가 바꾼다 */
+    private void addLevels(Model model) {
         List<LevelGroupSummary> levelGroups = examUseCase.getDetailLevelGroups();
-        // 처음 선택된 레벨(첫 레벨)의 문항 수·허용 시간. 다른 레벨을 고르면 화면 스크립트가 바꾼다
         LevelSummary first = levelGroups.getFirst().levels().getFirst();
         model.addAttribute("levelGroups", levelGroups);
         model.addAttribute("questionCount", first.questionCount());
         model.addAttribute("timePerQuestionSec", Exam.DEFAULT_TIME_PER_QUESTION_SEC);
         model.addAttribute("allowedMinutes", first.allowedMinutes());
-        return "main";
     }
 
     /** 정보 · 출처 (데이터 라이선스 표기) */

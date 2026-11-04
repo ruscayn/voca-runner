@@ -4,6 +4,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.UUID;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -26,14 +27,13 @@ final class DeviceCookie {
     /** 쿠키의 기기 값. 없거나 형식이 다르면 null */
     static String find(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if (NAME.equals(cookie.getName()) && isUuid(cookie.getValue())) {
-                    return cookie.getValue();
-                }
-            }
+        if (cookies == null) {
+            return null;
         }
-        return null;
+        return Arrays.stream(cookies)
+                .filter(cookie -> NAME.equals(cookie.getName()) && isUuid(cookie.getValue()))
+                .map(Cookie::getValue)
+                .findFirst().orElse(null);
     }
 
     /** 쿠키에 있으면 그대로, 없거나 형식이 다르면 새로 만들어 1년짜리 쿠키로 저장한다 */
@@ -43,15 +43,19 @@ final class DeviceCookie {
             return found;
         }
         String deviceId = UUID.randomUUID().toString();
-        ResponseCookie cookie = ResponseCookie.from(NAME, deviceId)
+        response.addHeader(HttpHeaders.SET_COOKIE, toCookie(deviceId, request.isSecure()).toString());
+        return deviceId;
+    }
+
+    /** 1년짜리 기기 쿠키 (화면 스크립트가 읽지 못하고, 같은 사이트 요청에만 붙음) */
+    private static ResponseCookie toCookie(String deviceId, boolean secure) {
+        return ResponseCookie.from(NAME, deviceId)
                 .maxAge(MAX_AGE)
                 .path("/")
                 .httpOnly(true)
-                .secure(request.isSecure())
+                .secure(secure)
                 .sameSite("Lax")
                 .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        return deviceId;
     }
 
     private static boolean isUuid(String value) {
