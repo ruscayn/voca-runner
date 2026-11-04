@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'checkstyle'
     id 'org.springframework.boot' version '4.1.1'
     id 'io.spring.dependency-management' version '1.1.7'
 }
@@ -12,6 +13,13 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
     }
+}
+
+// 코드 스타일 검사 (우테코 자바 스타일, 규칙은 config/checkstyle/checkstyle.xml). check · build 때 main · test 소스를 검사하고
+// 위반이 하나라도 있으면 실패
+checkstyle {
+    toolVersion = '14.3.0'
+    maxWarnings = 0
 }
 
 configurations {
