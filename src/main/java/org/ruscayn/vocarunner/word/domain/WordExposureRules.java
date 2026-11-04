@@ -1,6 +1,5 @@
 package org.ruscayn.vocarunner.word.domain;
 
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +35,7 @@ public final class WordExposureRules {
                 case EXCLUDE_MEANING -> excludedMeanings.add(new MeaningKey(rule.wordId(), rule.meaningSeq()));
                 case KEEP -> {
                 }
+                default -> throw new IllegalStateException("처리하지 않은 노출 판정: " + rule.action());
             }
         }
     }
