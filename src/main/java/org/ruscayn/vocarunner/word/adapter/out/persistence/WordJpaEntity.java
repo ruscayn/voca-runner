@@ -15,9 +15,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.ruscayn.vocarunner.common.adapter.out.persistence.BaseEntity;
 
-/**
- * 표제어 (word). 데이터는 CSV 로 적재하며 앱에서는 조회만 한다.
- */
 @Getter
 @Entity
 @Table(name = "word")
@@ -29,18 +26,13 @@ public class WordJpaEntity extends BaseEntity {
     @Column(name = "word_id")
     private Long id;
 
-    /** 대소문자 구분 (May / may) */
+    /** 대소문자를 구분한다 (May / may 는 다른 단어) */
     @Column(name = "headword", nullable = false, unique = true, length = 50)
     private String headword;
 
-    /** 외래어 표기 (예: elevator → 엘리베이터). 화면에는 아직 쓰지 않음. 없으면 null */
     @Column(name = "loanword", length = 50)
     private String loanword;
 
-    /**
-     * 표제어 보조 = 시험 화면에서 표제어 아래 줄에 함께 보여 줄 형태 (예: for the sake of → for one's sake).
-     * 없으면 null
-     */
     @Column(name = "headword_sub", length = 100)
     private String headwordSub;
 

@@ -10,10 +10,7 @@ import org.ruscayn.vocarunner.word.domain.WordCatalog;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * 단어 출제 목록 등록. 서버 시작 시 DB 에서 1번 읽어 메모리에 올린다.
- * 단어 데이터를 수정하면 서버 재시작으로 반영.
- */
+/** 앱 시작 때 DB 에서 한 번 읽어 메모리에 둔다. 단어 데이터를 바꾸면 재시작해야 반영된다 */
 @Slf4j
 @Configuration
 public class WordCatalogConfig {
@@ -30,12 +27,11 @@ public class WordCatalogConfig {
     private static void logCatalogLoaded(InMemoryWordCatalog catalog, long elapsedMs) {
         log.info("단어 출제 목록 로딩 완료: 전체 {}행, 시험 제외 {}행, 레벨별 정답 가능 ({}), "
                         + "헷갈리는 단어 묶음 {}개(단어 {}개) {}ms",
-                catalog.size(), catalog.excludedCount(), countByLevelText(catalog),
+                catalog.size(), catalog.excludedCount(), answerableCountByDetailLevel(catalog),
                 catalog.confusableGroupCount(), catalog.confusableWordCount(), elapsedMs);
     }
 
-    /** 세부 레벨별 정답 가능 수 (예: "A1=995, A2=…") */
-    private static String countByLevelText(InMemoryWordCatalog catalog) {
+    private static String answerableCountByDetailLevel(InMemoryWordCatalog catalog) {
         return Arrays.stream(Level.values())
                 .filter(level -> !level.isGroup())
                 .map(level -> level + "=" + catalog.countByLevel(level))

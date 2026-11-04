@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface SpringDataLevelWordRepository extends JpaRepository<LevelWordJpaEntity, Long> {
 
-    /** 단어 출제 목록 로딩용: level_word 전체 (단어, 보기 뜻 함께 조회) */
     @Query("""
             select lw from LevelWordJpaEntity lw
               join fetch lw.word

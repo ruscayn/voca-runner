@@ -353,7 +353,7 @@ class ExamServicePersistenceTest {
         void deleted() {
             UUID examId = start(DEVICE_ID, IP);
 
-            examUseCase.abortExam(examId, DEVICE_ID);
+            examUseCase.abortIfInProgress(examId, DEVICE_ID);
 
             assertThat(exists(examId)).isFalse();
         }
@@ -363,7 +363,7 @@ class ExamServicePersistenceTest {
         void otherDeviceIgnored() {
             UUID examId = start(DEVICE_ID, IP);
 
-            examUseCase.abortExam(examId, OTHER_DEVICE_ID);
+            examUseCase.abortIfInProgress(examId, OTHER_DEVICE_ID);
 
             assertThat(row(examId)).containsEntry("status", "IN_PROGRESS");
         }
@@ -374,7 +374,7 @@ class ExamServicePersistenceTest {
             UUID examId = start(DEVICE_ID, IP);
             submit(examId, DEVICE_ID, answer(1, 1));
 
-            examUseCase.abortExam(examId, DEVICE_ID);
+            examUseCase.abortIfInProgress(examId, DEVICE_ID);
 
             assertThat(row(examId)).containsEntry("status", "COMPLETED");
         }
@@ -414,8 +414,8 @@ class ExamServicePersistenceTest {
         void twoAborts() {
             UUID examId = start(DEVICE_ID, IP);
 
-            Overlap late = Overlap.begin(transactionManager, () -> examUseCase.abortExam(examId, DEVICE_ID));
-            examUseCase.abortExam(examId, DEVICE_ID);
+            Overlap late = Overlap.begin(transactionManager, () -> examUseCase.abortIfInProgress(examId, DEVICE_ID));
+            examUseCase.abortIfInProgress(examId, DEVICE_ID);
 
             assertThatThrownBy(late::commit).isInstanceOf(OptimisticLockingFailureException.class);
             assertThat(exists(examId)).isFalse();
@@ -426,7 +426,7 @@ class ExamServicePersistenceTest {
         void abortAfterQuestionsDelivered() {
             UUID examId = start(DEVICE_ID, IP);
 
-            Overlap late = Overlap.begin(transactionManager, () -> examUseCase.abortExam(examId, DEVICE_ID));
+            Overlap late = Overlap.begin(transactionManager, () -> examUseCase.abortIfInProgress(examId, DEVICE_ID));
             examUseCase.getQuestions(examId, DEVICE_ID);
 
             assertThatThrownBy(late::commit).isInstanceOf(OptimisticLockingFailureException.class);
@@ -440,7 +440,7 @@ class ExamServicePersistenceTest {
             UUID examId = start(DEVICE_ID, IP);
 
             Overlap late = Overlap.begin(transactionManager, () -> examUseCase.getQuestions(examId, DEVICE_ID));
-            examUseCase.abortExam(examId, DEVICE_ID);
+            examUseCase.abortIfInProgress(examId, DEVICE_ID);
 
             assertThatThrownBy(late::commit).isInstanceOf(OptimisticLockingFailureException.class);
             assertThat(exists(examId)).isFalse();

@@ -16,9 +16,6 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.ruscayn.vocarunner.common.adapter.out.persistence.BaseEntity;
 
-/**
- * 단어의 한국어 뜻 (word_meaning). 단어당 최대 5개, seq 1~5.
- */
 @Getter
 @Entity
 @Table(name = "word_meaning")
@@ -38,7 +35,6 @@ public class WordMeaningJpaEntity extends BaseEntity {
     @Column(name = "seq", nullable = false)
     private Integer seq;
 
-    /** 품사 (noun, verb ...) */
     @Column(name = "pos", nullable = false, length = 20)
     private String pos;
 

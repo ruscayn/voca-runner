@@ -146,7 +146,7 @@ class ExamControllerTest {
             mockMvc.perform(get("/test/" + EXAM_ID).session(httpSession).cookie(DEVICE_COOKIE))
                     .andExpect(redirectedUrl("/"))
                     .andExpect(flash().attribute("message", "시험이 종료되었습니다. 처음부터 다시 시작해 주세요."));
-            verify(examUseCase).abortExam(EXAM_ID, DEVICE_ID);
+            verify(examUseCase).abortIfInProgress(EXAM_ID, DEVICE_ID);
         }
 
         @Test
@@ -158,7 +158,7 @@ class ExamControllerTest {
                     .andExpect(redirectedUrl("/?notice=" + MainController.NOTICE_EXAM_IN_USE))
                     .andReturn();
 
-            verify(examUseCase, never()).abortExam(any(), any());
+            verify(examUseCase, never()).abortIfInProgress(any(), any());
             // 세션을 만들지 않는다 (만들면 주소에 ;jsessionid 가 붙음, B9)
             assertThat(result.getRequest().getSession(false)).isNull();
         }

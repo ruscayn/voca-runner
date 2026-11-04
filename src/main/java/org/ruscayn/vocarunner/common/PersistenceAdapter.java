@@ -8,10 +8,7 @@ import java.lang.annotation.Target;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.stereotype.Repository;
 
-/**
- * 영속성 어댑터(나가는 포트 …PersistencePort 를 DB 로 구현)라는 표시.
- * 책은 @Component 를 쓰지만, 시험 어댑터에 붙어 있던 @Repository 의 DB 예외 변환을 그대로 두려고 @Repository 로 한다.
- */
+/** 책은 @Component 를 쓰지만 DB 예외 변환을 그대로 두려고 @Repository 를 바탕으로 한다 */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented

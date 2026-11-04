@@ -21,14 +21,7 @@ import org.ruscayn.vocarunner.exam.domain.ExamStatus;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.word.domain.Level;
 
-/**
- * 시험 1회의 DB 저장용 클래스 = test_session 1행. 도메인 Exam 과는 from · toDomain 으로 오간다.
- *
- * <p>문항을 행으로 나누지 않고 배열로 1행에 보관한다 (500문항 기준 약 10KB). 배열 모양은 Exam 과 같다.
- * 정답 보기 번호(answerOptionNo)의 칼럼 이름은 correct_option_no.
- *
- * <p>동시성: 같은 시험을 동시에 두 번 제출하면 version(낙관적 잠금)으로 하나만 반영된다.
- */
+/** 문항을 행으로 나누지 않고 배열로 한 행에 둔다 (500문항 기준 약 10KB) */
 @Getter
 @Entity
 @Table(name = "test_session")
@@ -91,24 +84,21 @@ public class ExamJpaEntity extends BaseEntity {
     @Column(name = "submitted_at")
     private Instant submittedAt;
 
-    /** 낙관적 잠금. null 이면 새 행(INSERT) */
     @Version
     @Column(name = "version", nullable = false)
     private Integer version;
 
-    /** 도메인 → 새 행. 처음 저장할 때만 쓴다 (이미 있는 행은 update) */
     static ExamJpaEntity from(Exam exam) {
         ExamJpaEntity entity = new ExamJpaEntity();
         entity.id = exam.getId();
         entity.version = exam.getVersion();
-        entity.copyStart(exam);
+        entity.copyFixedAtStart(exam);
         entity.copyQuestions(exam);
-        entity.update(exam);
+        entity.copyChangedState(exam);
         return entity;
     }
 
-    /** 시작할 때 정해져 바뀌지 않는 레벨 · 출제 방향 · 문항당 시간 · 응시자 · 시각 */
-    private void copyStart(Exam exam) {
+    private void copyFixedAtStart(Exam exam) {
         this.level = exam.getLevel();
         this.direction = exam.getDirection();
         this.timePerQuestionSec = exam.getTimePerQuestionSec();
@@ -118,18 +108,13 @@ public class ExamJpaEntity extends BaseEntity {
         this.deadline = exam.getDeadline();
     }
 
-    /** 문항 (보기 · 정답 보기 번호). 시작할 때 정해져 바뀌지 않는다 */
     private void copyQuestions(Exam exam) {
         this.questionCount = exam.getQuestionCount();
         this.optionIds = exam.getOptionIds();
         this.answerOptionNo = exam.getAnswerOptionNo();
     }
 
-    /**
-     * 시험을 하며 바뀌는 상태만 도메인에서 옮겨 담는다 (상태 · 문제 받음 · 고른 보기 · 채점 · 제출 시각).
-     * 나머지(레벨 · 문항 · 마감 등)는 시작할 때 정해져 바뀌지 않는다
-     */
-    void update(Exam exam) {
+    void copyChangedState(Exam exam) {
         this.status = exam.getStatus();
         this.questionsDelivered = exam.isQuestionsDelivered();
         this.selectedOptionNo = exam.getSelectedOptionNo();
@@ -138,7 +123,6 @@ public class ExamJpaEntity extends BaseEntity {
         this.submittedAt = exam.getSubmittedAt();
     }
 
-    /** 행 → 도메인 */
     Exam toDomain() {
         return Exam.withId(id, level, direction, timePerQuestionSec, new Examinee(deviceId, clientIp),
                 startedAt, deadline, optionIds, answerOptionNo, selectedOptionNo,

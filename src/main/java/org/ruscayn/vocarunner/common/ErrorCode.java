@@ -7,17 +7,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum ErrorCode {
 
-    // Common
     INTERNAL_SERVER_ERROR("COMMON_001", "내부 서버 오류가 발생했습니다."),
     INVALID_INPUT_VALUE("COMMON_002", "올바르지 않은 입력값입니다."),
     METHOD_NOT_ALLOWED("COMMON_003", "허용되지 않은 HTTP 메서드입니다."),
     RESOURCE_NOT_FOUND("COMMON_004", "요청한 리소스를 찾을 수 없습니다."),
     UNSUPPORTED_MEDIA_TYPE("COMMON_005", "지원하지 않는 요청 형식입니다."),
 
-    // Business Logic
     ENTITY_NOT_FOUND("BUSINESS_001", "요청한 엔티티를 찾을 수 없습니다."),
 
-    // Test
     EXAM_NOT_ENOUGH_WORDS("TEST_001", "문제를 만들 단어가 부족합니다."),
     EXAM_NOT_IN_PROGRESS("TEST_002", "진행 중인 시험이 아닙니다."),
     EXAM_INVALID_OPTION("TEST_003", "올바르지 않은 보기 번호입니다."),

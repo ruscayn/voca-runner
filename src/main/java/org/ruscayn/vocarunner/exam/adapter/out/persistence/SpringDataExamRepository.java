@@ -9,13 +9,10 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-/** test_session Spring Data 저장소. 나가는 포트(ExamPersistencePort)를 구현한 ExamPersistenceAdapter 에서만 쓴다 */
 public interface SpringDataExamRepository extends JpaRepository<ExamJpaEntity, UUID> {
 
-    /** 시험 시작 잠금 키 (pg_advisory_xact_lock). 다른 용도의 잠금과 겹치지 않는 임의의 값 */
     long START_LOCK_KEY = 7_726_001L;
 
-    /** 트랜잭션 잠금. 다른 트랜잭션이 같은 키를 잡고 있으면 끝날 때까지 기다린다 (반환값은 의미 없음) */
     @Query(value = "select 1 from (select pg_advisory_xact_lock(:key)) l", nativeQuery = true)
     Integer advisoryLock(@Param("key") long key);
 

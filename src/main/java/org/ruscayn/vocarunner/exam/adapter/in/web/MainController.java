@@ -13,20 +13,15 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-/** 메인 화면 : 레벨 선택 + 시험 시작 */
 @WebAdapter
 @Controller
 @RequiredArgsConstructor
 public class MainController {
 
-    /** 진행 중인 시험 주소를 다른 브라우저·기기에서 연 경우 (ExamController) */
     public static final String NOTICE_EXAM_IN_USE = "test-in-use";
-    /** 이미 끝났고 결과 보관 시간도 지난 시험 주소로 들어온 경우 (ExamController) */
     public static final String NOTICE_EXAM_ENDED = "test-finished";
-    /** 결과 보관 시간이 지난 결과 주소로 들어온 경우 (ExamController) */
     public static final String NOTICE_RESULT_EXPIRED = "result-expired";
 
-    /** 안내 코드 → 문구 */
     private static final Map<String, String> NOTICE_MESSAGES = Map.of(
             NOTICE_EXAM_IN_USE, "이미 시작된 시험입니다. 시험을 시작한 화면에서만 풀 수 있습니다.",
             NOTICE_EXAM_ENDED, "이미 끝난 시험입니다. 새 시험을 시작해 주세요.",
@@ -34,10 +29,6 @@ public class MainController {
 
     private final ExamUseCase examUseCase;
 
-    /**
-     * @param notice 세션 없이 안내할 때 쓰는 코드. 정해진 코드만 문구로 바꾸고 그 밖의 값은 무시한다.
-     *               이미 안내 문구(flash)가 있으면 그쪽을 쓴다
-     */
     @GetMapping("/")
     public String main(@RequestParam(required = false) String notice, Model model) {
         if (!model.containsAttribute("message") && notice != null && NOTICE_MESSAGES.containsKey(notice)) {
@@ -47,7 +38,6 @@ public class MainController {
         return "main";
     }
 
-    /** 레벨 목록 + 처음 선택된 레벨(첫 레벨)의 문항 수 · 허용 시간. 다른 레벨을 고르면 화면 스크립트가 바꾼다 */
     private void addLevels(Model model) {
         List<LevelGroupSummary> levelGroups = examUseCase.getDetailLevelGroups();
         LevelSummary first = levelGroups.getFirst().levels().getFirst();
@@ -57,7 +47,6 @@ public class MainController {
         model.addAttribute("allowedMinutes", first.allowedMinutes());
     }
 
-    /** 정보 · 출처 (데이터 라이선스 표기) */
     @GetMapping("/about")
     public String about() {
         return "about";

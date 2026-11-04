@@ -1,8 +1,5 @@
 package org.ruscayn.vocarunner.word.domain;
 
-/**
- * 노출 처리 = 단어 노출의 처리 (word_exposure.action). 처리마다 가리키는 대상이 다르다.
- */
 public enum ExposureAction {
 
     /** 단어 제외: 단어 전체. 모든 레벨에서 정답으로도, 오답 보기로도 내지 않는다 */
@@ -17,7 +14,7 @@ public enum ExposureAction {
     /** 유지: 검토했지만 그대로 둔다 (검토 기록) */
     KEEP;
 
-    /** 이 처리가 가리킬 수 있는 대상인지 (뜻 순번 · 레벨, DB 의 ck_word_exposure_target 과 같은 규칙) */
+    /** DB 제약 ck_word_exposure_target 과 같은 규칙 */
     public boolean isAllowed(Integer meaningSeq, Level level) {
         return switch (this) {
             case EXCLUDE_WORD -> meaningSeq == null && level == null;
