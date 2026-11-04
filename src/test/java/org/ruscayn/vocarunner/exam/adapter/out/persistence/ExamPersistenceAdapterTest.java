@@ -225,9 +225,10 @@ class ExamPersistenceAdapterTest {
         // 남아야 하는 시험
         Exam delivered = exam("d1", "10.0.0.1", now.minus(Duration.ofMinutes(3)));
         delivered.markQuestionsDelivered();
-        Exam justStarted = exam("d2", "10.0.0.1", now.minus(Duration.ofMinutes(1)));     // 아직 문제를 받기 전
         Exam recentResult = exam("d3", "10.0.0.1", now.minus(Duration.ofMinutes(10)));
         recentResult.submit(Map.of(), now.minus(Duration.ofMinutes(9)));                            // 결과 보관 중
+        // CHECKSTYLE.SUPPRESS: VariableDeclarationUsageDistance — 남을 시험 · 지울 시험을 묶어 만들고 마지막에 한꺼번에 저장
+        Exam justStarted = exam("d2", "10.0.0.1", now.minus(Duration.ofMinutes(1)));     // 아직 문제를 받기 전
         // 지워야 하는 시험
         Exam pastDeadline = exam("d4", "10.0.0.1", now.minus(Duration.ofMinutes(30)));
         pastDeadline.markQuestionsDelivered();

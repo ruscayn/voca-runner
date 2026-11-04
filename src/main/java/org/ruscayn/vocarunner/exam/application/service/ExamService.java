@@ -125,7 +125,6 @@ public class ExamService implements ExamUseCase {
         if (!exam.isInProgress(now)) {
             throw new CustomException(ErrorCode.EXAM_NOT_IN_PROGRESS);
         }
-        long remainingSec = Math.max(0, Duration.between(now, exam.getDeadline()).toSeconds());
         exam.markQuestionsDelivered();
         examPersistencePort.save(exam);
 
@@ -135,6 +134,7 @@ public class ExamService implements ExamUseCase {
             questions.add(toQuestionItem(exam, no, direction));
         }
 
+        long remainingSec = Math.max(0, Duration.between(now, exam.getDeadline()).toSeconds());
         return new ExamQuestionsResult(
                 exam.getId(),
                 exam.getLevel().name(),

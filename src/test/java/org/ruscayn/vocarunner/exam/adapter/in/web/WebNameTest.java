@@ -72,7 +72,6 @@ class WebNameTest {
     @MockitoBean
     private ExamUseCase examUseCase;
 
-
     private static Map<String, Object> readObject(String json, String path) {
         return JsonPath.read(json, path);
     }

@@ -127,13 +127,13 @@ class ExamTest {
         @Test
         @DisplayName("정답·오답·시간 초과(null)·미응답을 구분해 채점한다")
         void grades() {
-            Exam exam = start(4);
             Map<Integer, Integer> answers = new HashMap<>();
             answers.put(1, answerOptionNo(1));   // 정답
             answers.put(2, incorrectOptionNo(2));     // 오답
             answers.put(3, null);                 // 시간 초과
             // 4번은 아예 없음 (미응답)
 
+            Exam exam = start(4);
             exam.submit(answers, NOW.plusSeconds(30));
 
             assertThat(exam.getStatus()).isEqualTo(ExamStatus.COMPLETED);

@@ -1,6 +1,5 @@
 package org.ruscayn.vocarunner.word.domain;
 
-
 import java.util.List;
 import java.util.Set;
 
