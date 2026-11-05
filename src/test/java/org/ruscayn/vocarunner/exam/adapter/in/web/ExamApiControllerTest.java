@@ -97,6 +97,16 @@ class ExamApiControllerTest {
         }
 
         @Test
+        @DisplayName("묶음 레벨은 시험을 만들지 않고 400 (B10 — 묶음 레벨 시험은 아직 없음)")
+        void groupLevel() throws Exception {
+            mockMvc.perform(post("/api/exams").param("level", "A"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()));
+
+            verify(startExamUseCase, never()).start(any());
+        }
+
+        @Test
         @DisplayName("응시자가 많아 거절되면 400 과 화면에 띄울 안내 문구")
         void serverBusy() throws Exception {
             given(startExamUseCase.start(argThat(command -> command.level() == Level.A1)))
