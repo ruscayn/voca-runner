@@ -14,7 +14,6 @@ import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.exam.domain.Question;
 import org.ruscayn.vocarunner.exam.domain.QuestionGenerator;
-import org.ruscayn.vocarunner.word.domain.WordCatalog;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Slf4j
@@ -23,8 +22,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class StartExamService implements StartExamUseCase {
 
     private final ExamPersistencePort examPersistencePort;
-    private final QuestionGenerator questionGenerator = new QuestionGenerator();
-    private final WordCatalog wordCatalog;
+    private final QuestionGenerator questionGenerator;
     private final ExamProperties examProperties;
     private final TransactionTemplate transactionTemplate;
 
@@ -66,8 +64,7 @@ public class StartExamService implements StartExamUseCase {
     }
 
     private Exam newExam(StartExamCommand command, Instant now) {
-        List<Question> questions = questionGenerator.generate(wordCatalog, command.level(),
-                examProperties.maxQuestionCount());
+        List<Question> questions = questionGenerator.generate(command.level(), examProperties.maxQuestionCount());
         return Exam.start(command.level(), questions, command.examinee(), now, examProperties.grace());
     }
 
