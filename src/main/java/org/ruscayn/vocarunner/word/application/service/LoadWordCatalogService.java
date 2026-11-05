@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ruscayn.vocarunner.common.UseCase;
 import org.ruscayn.vocarunner.word.application.port.in.LoadWordCatalogUseCase;
+import org.ruscayn.vocarunner.word.application.port.out.ReplaceWordCatalogPort;
 import org.ruscayn.vocarunner.word.application.port.out.WordPersistencePort;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
 import org.ruscayn.vocarunner.word.domain.Level;
@@ -19,13 +20,15 @@ import org.ruscayn.vocarunner.word.domain.WordExposureRules;
 public class LoadWordCatalogService implements LoadWordCatalogUseCase {
 
     private final WordPersistencePort wordPersistencePort;
+    private final ReplaceWordCatalogPort replaceWordCatalogPort;
 
+    /** 싣기가 겹치면 먼저 읽은 쪽이 나중에 교체해 새 변경이 빠질 수 있어 한 번에 하나씩 돈다 */
     @Override
-    public WordCatalog load() {
+    public synchronized void load() {
         long begin = System.currentTimeMillis();
         WordCatalog wordCatalog = new WordCatalog(loadCatalogWords(), wordPersistencePort.loadConfusableGroups());
+        replaceWordCatalogPort.replace(wordCatalog);
         logLoaded(wordCatalog, System.currentTimeMillis() - begin);
-        return wordCatalog;
     }
 
     private List<CatalogWord> loadCatalogWords() {

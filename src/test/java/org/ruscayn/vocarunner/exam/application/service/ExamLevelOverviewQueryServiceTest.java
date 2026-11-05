@@ -18,8 +18,9 @@ import org.ruscayn.vocarunner.word.domain.WordCatalog;
 @DisplayName("ExamLevelOverviewQueryService : 시험 레벨 개요")
 class ExamLevelOverviewQueryServiceTest {
 
-    private final ExamLevelOverviewQueryService service = new ExamLevelOverviewQueryService(
-            new WordCatalog(TestWords.words(Level.A1, 1, 20), List.of()),
+    private static final WordCatalog WORD_CATALOG = new WordCatalog(TestWords.words(Level.A1, 1, 20), List.of());
+
+    private final ExamLevelOverviewQueryService service = new ExamLevelOverviewQueryService(() -> WORD_CATALOG,
             new ExamProperties(10, Duration.ofMinutes(1), Duration.ofHours(1), new ExamCapacity(100, 10),
                     Duration.ofMinutes(2)));
 

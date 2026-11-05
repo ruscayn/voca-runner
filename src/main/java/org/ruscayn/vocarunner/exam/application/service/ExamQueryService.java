@@ -8,7 +8,7 @@ import org.ruscayn.vocarunner.exam.application.port.in.ExamQuery;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
 import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
 import org.ruscayn.vocarunner.exam.domain.Exam;
-import org.ruscayn.vocarunner.word.domain.WordCatalog;
+import org.ruscayn.vocarunner.word.application.port.in.WordCatalogQuery;
 import org.springframework.transaction.annotation.Transactional;
 
 @UseCase
@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ExamQueryService implements ExamQuery {
 
     private final ExamPersistencePort examPersistencePort;
-    private final WordCatalog wordCatalog;
+    private final WordCatalogQuery wordCatalogQuery;
     private final ExamProperties examProperties;
 
     @Override
@@ -28,7 +28,7 @@ public class ExamQueryService implements ExamQuery {
     }
 
     private ExamResult toResult(Exam exam) {
-        return ExamResult.of(exam, wordCatalog, examProperties.resultRetention());
+        return ExamResult.of(exam, wordCatalogQuery.getWordCatalog(), examProperties.resultRetention());
     }
 
     @Override

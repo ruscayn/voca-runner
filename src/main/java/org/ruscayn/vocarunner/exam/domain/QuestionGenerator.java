@@ -26,15 +26,14 @@ public class QuestionGenerator {
 
     public static final int ALL_WORDS = 0;
 
-    private final WordCatalog wordCatalog;
     /** 여러 요청(스레드)이 함께 쓰므로 부를 때마다 그 스레드의 난수를 쓴다 */
     private final Supplier<RandomGenerator> randomSupplier;
 
-    public QuestionGenerator(WordCatalog wordCatalog) {
-        this(wordCatalog, ThreadLocalRandom::current);
+    public QuestionGenerator() {
+        this(ThreadLocalRandom::current);
     }
 
-    public List<Question> generate(Level level, int maxCount) {
+    public List<Question> generate(WordCatalog wordCatalog, Level level, int maxCount) {
         List<CatalogWord> answerPool = wordCatalog.findAnswerPool(level);
         int count = requireQuestionCount(level, answerPool.size(), maxCount);
         RandomGenerator random = randomSupplier.get();

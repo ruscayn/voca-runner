@@ -25,8 +25,8 @@ import org.ruscayn.vocarunner.word.domain.WordCatalog;
 class QuestionGeneratorTest {
 
     private static List<Question> generate(List<CatalogWord> catalogWords, long seed, Level level, int maxCount) {
-        return new QuestionGenerator(new WordCatalog(catalogWords, List.of()), () -> new Random(seed))
-                .generate(level, maxCount);
+        return new QuestionGenerator(() -> new Random(seed))
+                .generate(new WordCatalog(catalogWords, List.of()), level, maxCount);
     }
 
     /** 모든 문제에 공통으로 지켜야 하는 규칙 */
@@ -304,7 +304,7 @@ class QuestionGeneratorTest {
         WordCatalog wordCatalog = new WordCatalog(catalog, groups);
 
         List<Question> questions =
-                new QuestionGenerator(wordCatalog, () -> new Random(seed)).generate(Level.A1, 60);
+                new QuestionGenerator(() -> new Random(seed)).generate(wordCatalog, Level.A1, 60);
 
         assertThat(questions).hasSize(60);
         assertQuestionRules(questions);
@@ -332,7 +332,7 @@ class QuestionGeneratorTest {
         for (long seed = 1; seed <= 30; seed++) {
             long s = seed;
             List<Question> questions =
-                    new QuestionGenerator(wordCatalog, () -> new Random(s)).generate(Level.A1, 6);
+                    new QuestionGenerator(() -> new Random(s)).generate(wordCatalog, Level.A1, 6);
 
             Question teacher = questions.stream()
                     .filter(q -> q.answer().wordId() == 2L).findFirst().orElseThrow();
@@ -350,7 +350,7 @@ class QuestionGeneratorTest {
         List<CatalogWord> catalog = words(Level.A1, 1, 4);
         WordCatalog wordCatalog = new WordCatalog(catalog, List.of(List.of(1L, 2L)));
 
-        assertThatThrownBy(() -> new QuestionGenerator(wordCatalog, () -> new Random(1)).generate(Level.A1, 4))
+        assertThatThrownBy(() -> new QuestionGenerator(() -> new Random(1)).generate(wordCatalog, Level.A1, 4))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.EXAM_NOT_ENOUGH_WORDS);

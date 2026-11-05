@@ -15,7 +15,7 @@ import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamResult;
 import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.SelectedOption;
-import org.ruscayn.vocarunner.word.domain.WordCatalog;
+import org.ruscayn.vocarunner.word.application.port.in.WordCatalogQuery;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -26,7 +26,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 public class ExamService implements ExamUseCase {
 
     private final ExamPersistencePort examPersistencePort;
-    private final WordCatalog wordCatalog;
+    private final WordCatalogQuery wordCatalogQuery;
 
     @Override
     @Transactional
@@ -35,7 +35,7 @@ public class ExamService implements ExamUseCase {
         Instant now = Instant.now();
         exam.deliverQuestions(now);
         examPersistencePort.save(exam);
-        return ExamQuestionsResult.of(exam, wordCatalog, now);
+        return ExamQuestionsResult.of(exam, wordCatalogQuery.getWordCatalog(), now);
     }
 
     /** 다른 기기면 없는 시험과 같은 응답을 준다. 시험 id 가 새어도 다른 사람이 문제를 받아 가거나 대신 제출할 수 없게 */

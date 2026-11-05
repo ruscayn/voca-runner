@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -60,9 +61,13 @@ class LoadWordCatalogServiceTest {
     }
 
     @Test
-    @DisplayName("읽은 레벨 단어마다 단어 노출을 적용해 출제 목록을 만든다")
+    @DisplayName("읽은 레벨 단어마다 단어 노출을 적용해 출제 목록을 만들고 교체한다")
     void load() {
-        WordCatalog wordCatalog = new LoadWordCatalogService(WORDS).load();
+        AtomicReference<WordCatalog> replaced = new AtomicReference<>();
+
+        new LoadWordCatalogService(WORDS, replaced::set).load();
+
+        WordCatalog wordCatalog = replaced.get();
 
         assertThat(wordCatalog.getWordCount()).isEqualTo(5);
         assertThat(wordCatalog.get(101).excluded()).isFalse();

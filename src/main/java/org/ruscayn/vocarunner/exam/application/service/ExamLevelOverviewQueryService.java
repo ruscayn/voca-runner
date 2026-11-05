@@ -14,6 +14,7 @@ import org.ruscayn.vocarunner.exam.application.port.in.ExamLevelOverviewGroup;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamLevelOverviewQuery;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.QuestionGenerator;
+import org.ruscayn.vocarunner.word.application.port.in.WordCatalogQuery;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
 
@@ -21,7 +22,7 @@ import org.ruscayn.vocarunner.word.domain.WordCatalog;
 @RequiredArgsConstructor
 public class ExamLevelOverviewQueryService implements ExamLevelOverviewQuery {
 
-    private final WordCatalog wordCatalog;
+    private final WordCatalogQuery wordCatalogQuery;
     private final ExamProperties examProperties;
 
     @Override
@@ -35,13 +36,14 @@ public class ExamLevelOverviewQueryService implements ExamLevelOverviewQuery {
     }
 
     private List<ExamLevelOverview> getDetailLevelOverviews() {
+        WordCatalog wordCatalog = wordCatalogQuery.getWordCatalog();
         return Arrays.stream(Level.values())
                 .filter(level -> !level.isGroup())
-                .map(this::toOverview)
+                .map(level -> toOverview(wordCatalog, level))
                 .toList();
     }
 
-    private ExamLevelOverview toOverview(Level level) {
+    private ExamLevelOverview toOverview(WordCatalog wordCatalog, Level level) {
         int wordCount = wordCatalog.countByLevel(level);
         int questionCount = QuestionGenerator.questionCount(wordCount, examProperties.maxQuestionCount());
         long allowedMinutes = Exam.calculateAllowedTime(questionCount, examProperties.grace()).toMinutes();
@@ -53,7 +55,7 @@ public class ExamLevelOverviewQueryService implements ExamLevelOverviewQuery {
         if (level.isGroup()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "묶음 레벨 시험은 아직 볼 수 없습니다: " + level);
         }
-        return toOverview(level);
+        return toOverview(wordCatalogQuery.getWordCatalog(), level);
     }
 
 }
