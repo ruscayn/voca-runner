@@ -27,6 +27,7 @@ import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
 import org.ruscayn.vocarunner.exam.domain.Exam;
+import org.ruscayn.vocarunner.exam.domain.ExamCapacity;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.support.TestWords;
 import org.ruscayn.vocarunner.word.domain.InMemoryWordCatalog;
@@ -90,8 +91,8 @@ class ExamServicePersistenceTest {
         @Bean
         @Primary
         ExamProperties examProperties() {
-            return new ExamProperties(QUESTION_COUNT, GRACE, Duration.ofHours(1), 20000, MAX_IN_PROGRESS_PER_IP,
-                    Duration.ofMinutes(5));
+            return new ExamProperties(QUESTION_COUNT, GRACE, Duration.ofHours(1),
+                    new ExamCapacity(20000, MAX_IN_PROGRESS_PER_IP), Duration.ofMinutes(5));
         }
 
     }

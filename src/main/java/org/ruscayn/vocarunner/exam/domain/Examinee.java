@@ -6,4 +6,8 @@ package org.ruscayn.vocarunner.exam.domain;
  */
 public record Examinee(String deviceId, String clientIp) {
 
+    boolean isSameIp(Examinee other) {
+        return clientIp.equals(other.clientIp);
+    }
+
 }

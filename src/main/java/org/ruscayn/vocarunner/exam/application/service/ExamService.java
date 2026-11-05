@@ -55,14 +55,24 @@ public class ExamService implements ExamUseCase {
         return exam.getId();
     }
 
-    /** 같은 기기의 진행 중 시험은 새 시험으로 바뀌므로 세지 않는다. 돌려주는 값 = 새로 시작하면 중단할 그 기기의 진행 중 시험 */
+    /** 돌려주는 값 = 새로 시작하면 중단할 그 기기의 진행 중 시험 */
     private List<Exam> checkCapacity(Examinee examinee, Instant now) {
-        List<Exam> byDevice = examPersistencePort.findInProgressByDevice(examinee.deviceId(), now);
-        requireBelowMaxInProgress(examPersistencePort.countInProgress(now) - byDevice.size());
-        long sameIp = byDevice.stream().filter(s -> examinee.clientIp().equals(s.getExaminee().clientIp())).count();
-        long byIp = examPersistencePort.countInProgressByIp(examinee.clientIp(), now) - sameIp;
-        requireBelowMaxInProgressPerIp(examinee.clientIp(), byIp);
-        return byDevice;
+        List<Exam> examsOnDevice = examPersistencePort.findInProgressByDevice(examinee.deviceId(), now);
+        int inProgressCount = examPersistencePort.countInProgress(now);
+        int inProgressCountByIp = examPersistencePort.countInProgressByIp(examinee.clientIp(), now);
+        requireCapacity(examinee, inProgressCount, inProgressCountByIp, examsOnDevice);
+        return examsOnDevice;
+    }
+
+    private void requireCapacity(Examinee examinee, int inProgressCount, int inProgressCountByIp,
+                                 List<Exam> examsOnDevice) {
+        try {
+            examProperties.capacity().check(examinee, inProgressCount, inProgressCountByIp, examsOnDevice);
+        } catch (CustomException e) {
+            log.warn("시험 시작 거절 ({}) ip={} 진행 중={} IP 진행 중={}", e.getErrorCode().getCode(),
+                    examinee.clientIp(), inProgressCount, inProgressCountByIp);
+            throw e;
+        }
     }
 
     private Exam newExam(StartExamCommand command, Instant now) {
@@ -80,20 +90,6 @@ public class ExamService implements ExamUseCase {
     private void deleteReplaced(Exam old) {
         examPersistencePort.delete(old.getId());
         log.info("시험 중단 (같은 기기에서 새 시험 시작) exam={}", old.getId());
-    }
-
-    private void requireBelowMaxInProgress(int inProgress) {
-        if (inProgress >= examProperties.maxInProgress()) {
-            log.warn("시험 시작 거절 (최대 진행 중) 진행 중={} 최대={}", inProgress, examProperties.maxInProgress());
-            throw new CustomException(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS);
-        }
-    }
-
-    private void requireBelowMaxInProgressPerIp(String clientIp, long byIp) {
-        if (byIp >= examProperties.maxInProgressPerIp()) {
-            log.warn("시험 시작 거절 (IP당 최대 진행 중) ip={} 진행 중={}", clientIp, byIp);
-            throw new CustomException(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS_PER_IP);
-        }
     }
 
     private static void logStarted(Exam exam, long begin) {

@@ -2,6 +2,7 @@ package org.ruscayn.vocarunner.config;
 
 import java.time.Duration;
 import org.ruscayn.vocarunner.exam.application.service.ExamProperties;
+import org.ruscayn.vocarunner.exam.domain.ExamCapacity;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.boot.context.properties.bind.Name;
@@ -17,8 +18,8 @@ public record ExamConfigProperties(
 ) {
 
     public ExamProperties toExamProperties() {
-        return new ExamProperties(maxQuestionCount, grace, resultRetention, maxInProgress, maxInProgressPerIp,
-                undeliveredTimeout);
+        return new ExamProperties(maxQuestionCount, grace, resultRetention,
+                new ExamCapacity(maxInProgress, maxInProgressPerIp), undeliveredTimeout);
     }
 
 }
