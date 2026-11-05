@@ -237,7 +237,7 @@ class ExamApiControllerTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("EXAM_005"));
 
-            assertThat(output.getOut()).contains("WARN").contains("Business exception").contains("EXAM_005")
+            assertThat(output.getOut()).contains("WARN").contains("업무 오류").contains("EXAM_005")
                     .doesNotContain("ERROR").doesNotContain("\tat ");
         }
 

@@ -25,7 +25,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CustomException.class)
     public Object handleCustomException(CustomException e, HttpServletRequest request) {
-        log.warn("Business exception: {} {} {}", request.getRequestURI(), e.getErrorCode().getCode(), e.getMessage());
+        log.warn("업무 오류: {} {} {}", request.getRequestURI(), e.getErrorCode().getCode(), e.getMessage());
         ErrorResponse errorResponse = ErrorResponse.of(e.getErrorCode().getCode(), e.getMessage(),
                 request.getRequestURI());
         return respond(request, HttpStatus.BAD_REQUEST, errorResponse, e.getMessage());
@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class, ConstraintViolationException.class})
     public Object handleValidationException(Exception e, HttpServletRequest request) {
-        log.warn("Validation failed: {} {}", request.getRequestURI(), e.getMessage());
+        log.warn("입력값 오류 (검사 실패): {} {}", request.getRequestURI(), e.getMessage());
         ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, request.getRequestURI());
         return respond(request, HttpStatus.BAD_REQUEST, errorResponse, null);
     }
@@ -55,7 +55,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class,
             HttpMessageNotReadableException.class})
     public Object handleBadRequestParameter(Exception e, HttpServletRequest request) {
-        log.warn("Bad request parameter: {} {}", request.getRequestURI(), e.getMessage());
+        log.warn("입력값 오류 (파라미터): {} {}", request.getRequestURI(), e.getMessage());
         ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, request.getRequestURI());
         return respond(request, HttpStatus.BAD_REQUEST, errorResponse, null);
     }
@@ -63,7 +63,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public Object handleMediaTypeNotSupportedException(
             HttpMediaTypeNotSupportedException e, HttpServletRequest request) {
-        log.warn("Media type not supported: {} {}", request.getRequestURI(), e.getMessage());
+        log.warn("지원하지 않는 요청 형식: {} {}", request.getRequestURI(), e.getMessage());
         ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.UNSUPPORTED_MEDIA_TYPE, request.getRequestURI());
         return respond(request, HttpStatus.UNSUPPORTED_MEDIA_TYPE, errorResponse, null);
     }
@@ -71,7 +71,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public Object handleMethodNotSupportedException(
             HttpRequestMethodNotSupportedException e, HttpServletRequest request) {
-        log.warn("Method not supported: {} {}", request.getRequestURI(), e.getMessage());
+        log.warn("허용하지 않는 메서드: {} {}", request.getRequestURI(), e.getMessage());
         ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.METHOD_NOT_ALLOWED, request.getRequestURI());
         return respond(request, HttpStatus.METHOD_NOT_ALLOWED, errorResponse, null);
     }
@@ -79,14 +79,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     public Object handleNoResourceFoundException(
             NoResourceFoundException e, HttpServletRequest request) {
-        log.debug("Resource not found: {}", e.getResourcePath());
+        log.debug("없는 주소 · 파일: {}", e.getResourcePath());
         ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.RESOURCE_NOT_FOUND, request.getRequestURI());
         return respond(request, HttpStatus.NOT_FOUND, errorResponse, null);
     }
 
     @ExceptionHandler(Exception.class)
     public Object handleGeneralException(Exception e, HttpServletRequest request) {
-        log.error("Unexpected exception occurred: {}", e.getMessage(), e);
+        log.error("서버 내부 오류: {}", e.getMessage(), e);
         ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR, request.getRequestURI());
         return respond(request, HttpStatus.INTERNAL_SERVER_ERROR, errorResponse, null);
     }
