@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public final class ConfusableGroups {
 
@@ -21,9 +22,8 @@ public final class ConfusableGroups {
         for (Collection<Long> group : groups) {
             addConfusableWordIds(map, group);
         }
-        Map<Long, Set<Long>> result = new HashMap<>(map.size() * 2);
-        map.forEach((wordId, others) -> result.put(wordId, Set.copyOf(others)));
-        return Map.copyOf(result);
+        return map.entrySet().stream()
+                .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, entry -> Set.copyOf(entry.getValue())));
     }
 
     private static void addConfusableWordIds(Map<Long, Set<Long>> map, Collection<Long> group) {
