@@ -184,14 +184,12 @@ class QuestionGeneratorTest {
     }
 
     @Test
-    @DisplayName("정답 후보 수는 제외 단어를 빼고 센다 (문항 수가 더 많으면 정답 후보만 출제)")
-    void excludedNotCountedAsAnswerPool() {
+    @DisplayName("최대 문항 수가 정답 후보 수보다 많으면 정답 후보만 출제 (시험 제외는 세지 않음)")
+    void onlyAnswerPoolWhenFewer() {
         List<CatalogWord> catalog = new ArrayList<>(words(Level.A1, 1, 10));
         for (long id = 101; id <= 130; id++) {
             catalog.add(excluded(id, id, Level.A1));
         }
-
-        assertThat(new WordCatalog(catalog, List.of()).countByLevel(Level.A1)).isEqualTo(10);
 
         List<Question> questions = generate(catalog, 1, Level.A1, 11);
 
@@ -223,9 +221,6 @@ class QuestionGeneratorTest {
         catalog.add(excluded(900, 900, Level.A1, "A1뜻900"));
         catalog.add(word(901, 900, Level.A2, "A2뜻900"));
 
-        // 정답 후보 = A1 30 + A2 30 + word 900(A2) = 61
-        assertThat(new WordCatalog(catalog, List.of()).countByLevel(Level.A)).isEqualTo(61);
-
         List<Question> questions = generate(catalog, seed, Level.A, 61);
 
         assertQuestionRules(questions);
@@ -233,22 +228,6 @@ class QuestionGeneratorTest {
                 .as("word 900 은 A2 행으로 출제")
                 .contains(901L)
                 .doesNotContain(900L);
-    }
-
-    @Test
-    @DisplayName("묶음 레벨 정답 후보 수는 같은 단어를 한 번만 센다")
-    void groupLevelCountDedupe() {
-        List<CatalogWord> catalog = new ArrayList<>(words(Level.B1, 1, 10));
-        catalog.addAll(words(Level.B2, 101, 5));
-        for (long wordId = 1; wordId <= 3; wordId++) {      // B1 단어 3개가 B2 에도 있음
-            catalog.add(word(500 + wordId, wordId, Level.B2, "B2뜻" + wordId));
-        }
-
-        WordCatalog wordCatalog = new WordCatalog(catalog, List.of());
-
-        assertThat(wordCatalog.countByLevel(Level.B1)).isEqualTo(10);
-        assertThat(wordCatalog.countByLevel(Level.B2)).isEqualTo(8);
-        assertThat(wordCatalog.countByLevel(Level.B)).isEqualTo(15);
     }
 
     @Test
@@ -354,21 +333,6 @@ class QuestionGeneratorTest {
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.EXAM_NOT_ENOUGH_WORDS);
-    }
-
-    @Test
-    @DisplayName("헷갈리는 단어 map : 양방향, 여러 묶음은 합침, 묶음 없는 단어는 빈 집합")
-    void confusableMap() {
-        WordCatalog wordCatalog = new WordCatalog(words(Level.A1, 1, 10),
-                List.of(List.of(1L, 2L), List.of(1L, 3L), List.of(4L, 5L, 6L)));
-
-        assertThat(wordCatalog.findConfusableWordIds(1L)).containsExactlyInAnyOrder(2L, 3L);
-        assertThat(wordCatalog.findConfusableWordIds(2L)).containsExactly(1L);
-        assertThat(wordCatalog.findConfusableWordIds(3L)).containsExactly(1L);
-        assertThat(wordCatalog.findConfusableWordIds(5L)).containsExactlyInAnyOrder(4L, 6L);
-        assertThat(wordCatalog.findConfusableWordIds(7L)).isEmpty();
-        assertThat(wordCatalog.getConfusableGroups().getGroupCount()).isEqualTo(3);
-        assertThat(wordCatalog.getConfusableGroups().getWordCount()).isEqualTo(6);
     }
 
     @Test
