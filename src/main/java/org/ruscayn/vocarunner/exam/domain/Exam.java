@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.IntStream;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,8 +23,8 @@ public class Exam {
     private final int timePerQuestionSec;
     private final Examinee examinee;
     private final ExamTime time;
+    private ExamPaper paper;
     private final AnswerKey answerKey;
-    private SelectedOptions selectedOptions;
     private ExamStatus status;
     private boolean questionsDelivered;
     private GradingResult gradingResult;
@@ -34,8 +33,8 @@ public class Exam {
     public static Exam start(Level level, List<Question> questions, Examinee examinee, Instant now, Duration grace) {
         int count = questions.size();
         return new Exam(UUID.randomUUID(), level, Direction.EN_KO, DEFAULT_TIME_PER_QUESTION_SEC, examinee,
-                ExamTime.start(now, count, DEFAULT_TIME_PER_QUESTION_SEC, grace), AnswerKey.from(questions),
-                SelectedOptions.none(count), ExamStatus.IN_PROGRESS, false, null, null);
+                ExamTime.start(now, count, DEFAULT_TIME_PER_QUESTION_SEC, grace), ExamPaper.from(questions),
+                AnswerKey.from(questions), ExamStatus.IN_PROGRESS, false, null, null);
     }
 
     public static Duration calculateAllowedTime(int questionCount, Duration grace) {
@@ -43,12 +42,12 @@ public class Exam {
     }
 
     public static Exam of(UUID id, Level level, Direction direction, int timePerQuestionSec, Examinee examinee,
-                          ExamTime time, AnswerKey answerKey, SelectedOptions selectedOptions, ExamStatus status,
+                          ExamTime time, ExamPaper paper, AnswerKey answerKey, ExamStatus status,
                           boolean questionsDelivered, GradingResult gradingResult, Integer version) {
-        if (selectedOptions.getQuestionCount() != answerKey.getQuestionCount()) {
-            throw new IllegalArgumentException("문항 배열 길이가 맞지 않습니다: exam=" + id);
+        if (paper.getQuestionCount() != answerKey.getQuestionCount()) {
+            throw new IllegalArgumentException("시험지와 정답지의 문항 수가 맞지 않습니다: exam=" + id);
         }
-        return new Exam(id, level, direction, timePerQuestionSec, examinee, time, answerKey, selectedOptions, status,
+        return new Exam(id, level, direction, timePerQuestionSec, examinee, time, paper, answerKey, status,
                 questionsDelivered, gradingResult, version);
     }
 
@@ -62,8 +61,8 @@ public class Exam {
     public void submit(List<SelectedOption> selected, Instant now) {
         requireInProgress();
         requireNotPastDeadline(now);
-        this.selectedOptions = SelectedOptions.record(selected, getQuestionCount());
-        this.gradingResult = GradingResult.of(countCorrect(), getQuestionCount(), now);
+        this.paper = paper.record(selected);
+        this.gradingResult = GradingResult.of(answerKey.countCorrect(paper), getQuestionCount(), now);
         this.status = ExamStatus.COMPLETED;
     }
 
@@ -79,16 +78,12 @@ public class Exam {
         }
     }
 
-    private int countCorrect() {
-        return (int) IntStream.rangeClosed(1, getQuestionCount()).filter(this::isCorrect).count();
-    }
-
     public boolean isAbortableBy(String deviceId, Instant now) {
         return isStartedBy(deviceId) && isInProgress(now);
     }
 
     public int getQuestionCount() {
-        return answerKey.getQuestionCount();
+        return paper.getQuestionCount();
     }
 
     /** 문제 받기 · 제출 · 중단은 시험을 시작한 기기만 할 수 있다 */
@@ -110,30 +105,13 @@ public class Exam {
         }
     }
 
+    /** 제시어 단어 = 정답 보기의 단어 : 시험지 보기 중 정답지가 가리키는 것 */
     public long answerOptionId(int no) {
-        return answerKey.answerOptionId(no);
-    }
-
-    public List<Long> optionIds(int no) {
-        return answerKey.optionIds(no);
-    }
-
-    public Long selectedOptionId(int no) {
-        if (!selectedOptions.isSelected(no)) {
-            return null;
-        }
-        return answerKey.optionId(no, selectedOptions.optionNo(no));
-    }
-
-    public boolean isCorrect(int no) {
-        return selectedOptions.isSelected(no) && answerKey.isAnswer(no, selectedOptions.optionNo(no));
+        return paper.optionId(no, answerKey.answerOptionNo(no));
     }
 
     public List<Integer> getWrongQuestionNos() {
-        return IntStream.rangeClosed(1, getQuestionCount())
-                .filter(no -> !isCorrect(no))
-                .boxed()
-                .toList();
+        return answerKey.findWrongQuestionNos(paper);
     }
 
 }

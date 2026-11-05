@@ -57,7 +57,7 @@ public record ExamResult(
         }
 
         private static String selectedText(Exam exam, int no, WordCatalog wordCatalog) {
-            Long selectedOptionId = exam.selectedOptionId(no);
+            Long selectedOptionId = exam.getPaper().selectedOptionId(no);
             if (selectedOptionId == null) {
                 return null;
             }

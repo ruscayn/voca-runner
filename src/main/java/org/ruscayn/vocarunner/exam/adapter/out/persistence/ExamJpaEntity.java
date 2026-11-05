@@ -18,6 +18,7 @@ import org.ruscayn.vocarunner.common.adapter.out.persistence.BaseEntity;
 import org.ruscayn.vocarunner.exam.domain.AnswerKey;
 import org.ruscayn.vocarunner.exam.domain.Direction;
 import org.ruscayn.vocarunner.exam.domain.Exam;
+import org.ruscayn.vocarunner.exam.domain.ExamPaper;
 import org.ruscayn.vocarunner.exam.domain.ExamStatus;
 import org.ruscayn.vocarunner.exam.domain.ExamTime;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
@@ -114,14 +115,14 @@ public class ExamJpaEntity extends BaseEntity {
 
     private void copyQuestions(Exam exam) {
         this.questionCount = exam.getQuestionCount();
-        this.optionIds = exam.getAnswerKey().toOptionIdArray();
+        this.optionIds = exam.getPaper().toOptionIdArray();
         this.answerOptionNo = exam.getAnswerKey().toAnswerOptionNoArray();
     }
 
     void copyChangedState(Exam exam) {
         this.status = exam.getStatus();
         this.questionsDelivered = exam.isQuestionsDelivered();
-        this.selectedOptionNo = exam.getSelectedOptions().toSelectedOptionNoArray();
+        this.selectedOptionNo = exam.getPaper().getSelectedOptions().toSelectedOptionNoArray();
         copyGradingResult(exam.getGradingResult());
     }
 
@@ -136,8 +137,8 @@ public class ExamJpaEntity extends BaseEntity {
 
     Exam toDomain() {
         return Exam.of(id, level, direction, timePerQuestionSec, new Examinee(deviceId, clientIp),
-                new ExamTime(startedAt, deadline), AnswerKey.of(optionIds, answerOptionNo),
-                SelectedOptions.of(selectedOptionNo), status, questionsDelivered, toGradingResult(), version);
+                new ExamTime(startedAt, deadline), ExamPaper.of(optionIds, SelectedOptions.of(selectedOptionNo)),
+                AnswerKey.of(answerOptionNo), status, questionsDelivered, toGradingResult(), version);
     }
 
     private GradingResult toGradingResult() {

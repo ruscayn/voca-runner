@@ -40,7 +40,7 @@ public record ExamQuestionsResult(
         static QuestionItem of(Exam exam, int no, WordCatalog wordCatalog) {
             CatalogWord answer = wordCatalog.get(exam.answerOptionId(no));
             return new QuestionItem(no, answer.headword(), answer.headwordSub(),
-                    options(exam.optionIds(no), wordCatalog));
+                    options(exam.getPaper().optionIds(no), wordCatalog));
         }
 
         private static List<Option> options(List<Long> optionIds, WordCatalog wordCatalog) {

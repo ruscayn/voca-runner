@@ -5,69 +5,45 @@ import java.util.stream.IntStream;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
-/** 문항 n(1부터)의 보기 i(1~4) = optionIds[(n-1)*4 + (i-1)] (레벨 단어 아이디), 정답 보기 번호 = answerOptionNo[n-1] */
+/** 문항 n(1부터)의 정답 보기 번호(1~4) = answerOptionNo[n-1]. 정답지로 시험지를 채점한다 */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class AnswerKey {
 
-    private static final int OPTION_COUNT = Question.OPTION_COUNT;
-
-    private final int[] optionIds;
     private final byte[] answerOptionNo;
 
     static AnswerKey from(List<Question> questions) {
-        return new AnswerKey(toOptionIds(questions), toAnswerOptionNo(questions));
-    }
-
-    private static int[] toOptionIds(List<Question> questions) {
-        return questions.stream()
-                .flatMap(question -> question.options().stream())
-                .mapToInt(option -> Math.toIntExact(option.levelWordId()))
-                .toArray();
-    }
-
-    private static byte[] toAnswerOptionNo(List<Question> questions) {
         byte[] answerOptionNo = new byte[questions.size()];
         for (int q = 0; q < questions.size(); q++) {
             answerOptionNo[q] = (byte) questions.get(q).answerOptionNo();
         }
-        return answerOptionNo;
+        return new AnswerKey(answerOptionNo);
     }
 
-    public static AnswerKey of(int[] optionIds, byte[] answerOptionNo) {
-        if (optionIds.length != answerOptionNo.length * OPTION_COUNT) {
-            throw new IllegalArgumentException("보기 수가 문항 수 × " + OPTION_COUNT + " 가 아닙니다: " + optionIds.length);
-        }
-        return new AnswerKey(optionIds.clone(), answerOptionNo.clone());
+    public static AnswerKey of(byte[] answerOptionNo) {
+        return new AnswerKey(answerOptionNo.clone());
     }
 
     int getQuestionCount() {
         return answerOptionNo.length;
     }
 
-    long answerOptionId(int no) {
-        return optionId(no, answerOptionNo[index(no)]);
+    int answerOptionNo(int no) {
+        return answerOptionNo[Question.index(no, getQuestionCount())];
     }
 
-    private int index(int no) {
-        return Question.index(no, getQuestionCount());
+    int countCorrect(ExamPaper paper) {
+        return (int) IntStream.rangeClosed(1, getQuestionCount()).filter(no -> isCorrect(no, paper)).count();
     }
 
-    long optionId(int no, int optionNo) {
-        return optionIds[index(no) * OPTION_COUNT + optionNo - 1];
+    boolean isCorrect(int no, ExamPaper paper) {
+        return paper.isSelected(no, answerOptionNo(no));
     }
 
-    List<Long> optionIds(int no) {
-        return IntStream.rangeClosed(1, OPTION_COUNT)
-                .mapToObj(optionNo -> optionId(no, optionNo))
+    List<Integer> findWrongQuestionNos(ExamPaper paper) {
+        return IntStream.rangeClosed(1, getQuestionCount())
+                .filter(no -> !isCorrect(no, paper))
+                .boxed()
                 .toList();
-    }
-
-    boolean isAnswer(int no, int optionNo) {
-        return answerOptionNo[index(no)] == optionNo;
-    }
-
-    public int[] toOptionIdArray() {
-        return optionIds.clone();
     }
 
     public byte[] toAnswerOptionNoArray() {
