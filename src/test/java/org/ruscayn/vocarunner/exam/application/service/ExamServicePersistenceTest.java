@@ -22,8 +22,10 @@ import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.common.adapter.out.persistence.JpaConfig;
 import org.ruscayn.vocarunner.exam.adapter.out.persistence.ExamPersistenceAdapter;
+import org.ruscayn.vocarunner.exam.application.port.in.CleanUpExamsUseCase;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
 import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
+import org.ruscayn.vocarunner.exam.application.port.in.StartExamUseCase;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
 import org.ruscayn.vocarunner.exam.domain.Exam;
@@ -59,10 +61,10 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  */
 @DataJpaTest
 @Testcontainers
-@Import({ExamService.class, ExamPersistenceAdapter.class, JpaConfig.class,
-        ExamServicePersistenceTest.Config.class})
+@Import({StartExamService.class, ExamService.class, CleanUpExamsService.class, ExamPersistenceAdapter.class,
+        JpaConfig.class, ExamServicePersistenceTest.Config.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
-@DisplayName("ExamService : 유스케이스별 DB 상태 (PostgreSQL)")
+@DisplayName("시험 서비스 : 유스케이스별 DB 상태 (PostgreSQL)")
 class ExamServicePersistenceTest {
 
     @Container
@@ -98,7 +100,13 @@ class ExamServicePersistenceTest {
     }
 
     @Autowired
+    private StartExamUseCase startExamUseCase;
+
+    @Autowired
     private ExamUseCase examUseCase;
+
+    @Autowired
+    private CleanUpExamsUseCase cleanUpExamsUseCase;
 
     @Autowired
     private ExamPersistencePort examPersistencePort;
@@ -115,7 +123,7 @@ class ExamServicePersistenceTest {
     }
 
     private UUID start(String deviceId, String ip) {
-        return examUseCase.start(new StartExamCommand(Level.A1, new Examinee(deviceId, ip)));
+        return startExamUseCase.start(new StartExamCommand(Level.A1, new Examinee(deviceId, ip)));
     }
 
     /** 서비스를 거치지 않고 시작 시각을 정한 시험 (마감 지남 · 오래된 결과 등을 만들 때) */
@@ -397,7 +405,7 @@ class ExamServicePersistenceTest {
         oldResult.submit(List.of(), now.minus(Duration.ofHours(3)).plusSeconds(30));   // 보관 1시간 지남
         List.of(delivered, justStarted, pastDeadline, undelivered, oldResult).forEach(this::saved);
 
-        examUseCase.cleanup();
+        cleanUpExamsUseCase.cleanUp();
 
         assertThat(jdbcTemplate.queryForList("select test_session_id from test_session", UUID.class))
                 .containsExactlyInAnyOrder(delivered.getId(), justStarted.getId());

@@ -36,6 +36,7 @@ import org.ruscayn.vocarunner.exam.application.port.in.ExamQuery;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResult;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
+import org.ruscayn.vocarunner.exam.application.port.in.StartExamUseCase;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamResult;
 import org.ruscayn.vocarunner.word.domain.Level;
@@ -70,6 +71,9 @@ class WebNameTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockitoBean
+    private StartExamUseCase startExamUseCase;
 
     @MockitoBean
     private ExamUseCase examUseCase;
@@ -227,7 +231,7 @@ class WebNameTest {
         @Test
         @DisplayName("시험 화면 : examId 를 data-exam-id 로 그린다")
         void exam() throws Exception {
-            given(examUseCase.start(any())).willReturn(EXAM_ID);
+            given(startExamUseCase.start(any())).willReturn(EXAM_ID);
             given(examQuery.isInProgress(EXAM_ID)).willReturn(true);
             MockHttpSession httpSession = new MockHttpSession();
             mockMvc.perform(post("/exam/start").param("level", "A1").session(httpSession).cookie(DEVICE_COOKIE))

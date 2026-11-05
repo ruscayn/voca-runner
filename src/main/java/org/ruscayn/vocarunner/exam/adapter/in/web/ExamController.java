@@ -13,6 +13,7 @@ import org.ruscayn.vocarunner.common.WebAdapter;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamQuery;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
 import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
+import org.ruscayn.vocarunner.exam.application.port.in.StartExamUseCase;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.springframework.stereotype.Controller;
@@ -38,6 +39,7 @@ public class ExamController {
     private static final DateTimeFormatter RETENTION_DEADLINE_FORMAT =
             DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of("Asia/Seoul"));
 
+    private final StartExamUseCase startExamUseCase;
     private final ExamUseCase examUseCase;
     private final ExamQuery examQuery;
     private final ClientIpProperties clientIpProperties;
@@ -46,7 +48,7 @@ public class ExamController {
     public String start(@RequestParam Level level, HttpSession httpSession,
                         HttpServletRequest request, HttpServletResponse response, RedirectAttributes redirect) {
         try {
-            UUID examId = examUseCase.start(new StartExamCommand(level, toExaminee(request, response)));
+            UUID examId = startExamUseCase.start(new StartExamCommand(level, toExaminee(request, response)));
             EntryToken.issue(httpSession, examId);
             return "redirect:/exam/" + examId;
         } catch (CustomException e) {

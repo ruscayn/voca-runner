@@ -1,7 +1,7 @@
 package org.ruscayn.vocarunner.exam.adapter.in.scheduler;
 
 import lombok.RequiredArgsConstructor;
-import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
+import org.ruscayn.vocarunner.exam.application.port.in.CleanUpExamsUseCase;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -9,11 +9,11 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ExamCleanupScheduler {
 
-    private final ExamUseCase examUseCase;
+    private final CleanUpExamsUseCase cleanUpExamsUseCase;
 
     @Scheduled(fixedDelayString = "${voca-runner.exam.cleanup-interval:1m}")
     public void cleanup() {
-        examUseCase.cleanup();
+        cleanUpExamsUseCase.cleanUp();
     }
 
 }

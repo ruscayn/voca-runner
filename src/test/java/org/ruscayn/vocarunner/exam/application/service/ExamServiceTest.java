@@ -40,7 +40,7 @@ class ExamServiceTest {
 
     private final ExamPersistencePort repository = mock(ExamPersistencePort.class);
     // 제출에는 저장소만 쓴다
-    private final ExamService service = new ExamService(repository, null, null, null);
+    private final ExamService service = new ExamService(repository, null);
 
     private final Exam exam = Exam.start(Level.A1, questions(2), new Examinee(DEVICE_ID, "10.0.0.1"), Instant.now(),
             Duration.ofMinutes(3));
