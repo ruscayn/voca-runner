@@ -58,6 +58,16 @@ public class ExamService implements ExamUseCase {
         return exam.getId();
     }
 
+    /** 같은 기기의 진행 중 시험은 새 시험으로 바뀌므로 세지 않는다. 돌려주는 값 = 새로 시작하면 중단할 그 기기의 진행 중 시험 */
+    private List<Exam> checkCapacity(Examinee examinee, Instant now) {
+        List<Exam> byDevice = examPersistencePort.findInProgressByDevice(examinee.deviceId(), now);
+        requireBelowMaxInProgress(examPersistencePort.countInProgress(now) - byDevice.size());
+        long sameIp = byDevice.stream().filter(s -> examinee.clientIp().equals(s.getExaminee().clientIp())).count();
+        long byIp = examPersistencePort.countInProgressByIp(examinee.clientIp(), now) - sameIp;
+        requireBelowMaxInProgressPerIp(examinee.clientIp(), byIp);
+        return byDevice;
+    }
+
     private Exam newExam(StartExamCommand command, Instant now) {
         List<Question> questions = questionGenerator.generate(wordCatalog, command.level(),
                 examProperties.maxQuestionCount());
@@ -76,22 +86,6 @@ public class ExamService implements ExamUseCase {
         log.info("시험 중단 (같은 기기에서 새 시험 시작) exam={}", old.getId());
     }
 
-    private static void logStarted(Exam exam, long begin) {
-        log.info("시험 시작 exam={} level={} 문제={} 마감={} ({}ms)",
-                exam.getId(), exam.getLevel(), exam.getQuestionCount(), exam.getDeadline(),
-                System.currentTimeMillis() - begin);
-    }
-
-    /** 같은 기기의 진행 중 시험은 새 시험으로 바뀌므로 세지 않는다. 돌려주는 값 = 새로 시작하면 중단할 그 기기의 진행 중 시험 */
-    private List<Exam> checkCapacity(Examinee examinee, Instant now) {
-        List<Exam> byDevice = examPersistencePort.findInProgressByDevice(examinee.deviceId(), now);
-        requireBelowMaxInProgress(examPersistencePort.countInProgress(now) - byDevice.size());
-        long sameIp = byDevice.stream().filter(s -> examinee.clientIp().equals(s.getExaminee().clientIp())).count();
-        long byIp = examPersistencePort.countInProgressByIp(examinee.clientIp(), now) - sameIp;
-        requireBelowMaxInProgressPerIp(examinee.clientIp(), byIp);
-        return byDevice;
-    }
-
     private void requireBelowMaxInProgress(int inProgress) {
         if (inProgress >= examProperties.maxInProgress()) {
             log.warn("시험 시작 거절 (최대 진행 중) 진행 중={} 최대={}", inProgress, examProperties.maxInProgress());
@@ -104,6 +98,12 @@ public class ExamService implements ExamUseCase {
             log.warn("시험 시작 거절 (IP당 최대 진행 중) ip={} 진행 중={}", clientIp, byIp);
             throw new CustomException(ErrorCode.EXAM_TOO_MANY_IN_PROGRESS_PER_IP);
         }
+    }
+
+    private static void logStarted(Exam exam, long begin) {
+        log.info("시험 시작 exam={} level={} 문제={} 마감={} ({}ms)",
+                exam.getId(), exam.getLevel(), exam.getQuestionCount(), exam.getDeadline(),
+                System.currentTimeMillis() - begin);
     }
 
     @Override
@@ -119,6 +119,21 @@ public class ExamService implements ExamUseCase {
         return toQuestionsResult(exam, now);
     }
 
+    /** 다른 기기면 없는 시험과 같은 응답을 준다. 시험 id 가 새어도 다른 사람이 문제를 받아 가거나 대신 제출할 수 없게 */
+    private Exam findStartedBy(UUID examId, String deviceId) {
+        Exam exam = find(examId);
+        if (!exam.isStartedBy(deviceId)) {
+            log.warn("다른 기기의 시험 요청 거절 exam={}", examId);
+            throw new ExamNotFoundException();
+        }
+        return exam;
+    }
+
+    private Exam find(UUID examId) {
+        return examPersistencePort.findById(examId)
+                .orElseThrow(ExamNotFoundException::new);
+    }
+
     private ExamQuestionsResult toQuestionsResult(Exam exam, Instant now) {
         long remainingSec = Math.max(0, Duration.between(now, exam.getDeadline()).toSeconds());
         return new ExamQuestionsResult(exam.getId(), exam.getLevel().name(), exam.getLevel().groupName(),
@@ -131,6 +146,15 @@ public class ExamService implements ExamUseCase {
         return IntStream.rangeClosed(1, exam.getQuestionCount())
                 .mapToObj(no -> toQuestionItem(exam, no))
                 .toList();
+    }
+
+    private ExamQuestionsResult.QuestionItem toQuestionItem(Exam exam, int no) {
+        List<Long> optionIds = exam.optionLevelWordIds(no);
+        List<ExamQuestionsResult.Option> options = IntStream.range(0, optionIds.size())
+                .mapToObj(i -> new ExamQuestionsResult.Option(i + 1, wordCatalog.get(optionIds.get(i)).optionText()))
+                .toList();
+        CatalogWord answer = wordCatalog.get(exam.answerLevelWordId(no));
+        return new ExamQuestionsResult.QuestionItem(no, answer.headword(), answer.headwordSub(), options);
     }
 
     /** 거절해도 마감 초과 삭제는 반영해야 하므로 업무 예외로는 되돌리지 않는다 (채점 전 검사에서 거절하면 바뀐 것이 없다) */
@@ -190,6 +214,15 @@ public class ExamService implements ExamUseCase {
                 exam.getId(), exam.getCorrectCount(), exam.getQuestionCount(), exam.getScore()));
     }
 
+    private static void afterCommit(Runnable action) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                action.run();
+            }
+        });
+    }
+
     @Override
     @Transactional
     public void abortIfInProgress(UUID examId, String deviceId) {
@@ -211,39 +244,6 @@ public class ExamService implements ExamUseCase {
             log.info("시험 정리: {}개 삭제, 남은 {}개 (진행 중 {}개)",
                     removed, examPersistencePort.count(), examPersistencePort.countInProgress(now));
         }
-    }
-
-    private ExamQuestionsResult.QuestionItem toQuestionItem(Exam exam, int no) {
-        List<Long> optionIds = exam.optionLevelWordIds(no);
-        List<ExamQuestionsResult.Option> options = IntStream.range(0, optionIds.size())
-                .mapToObj(i -> new ExamQuestionsResult.Option(i + 1, wordCatalog.get(optionIds.get(i)).optionText()))
-                .toList();
-        CatalogWord answer = wordCatalog.get(exam.answerLevelWordId(no));
-        return new ExamQuestionsResult.QuestionItem(no, answer.headword(), answer.headwordSub(), options);
-    }
-
-    /** 다른 기기면 없는 시험과 같은 응답을 준다. 시험 id 가 새어도 다른 사람이 문제를 받아 가거나 대신 제출할 수 없게 */
-    private Exam findStartedBy(UUID examId, String deviceId) {
-        Exam exam = find(examId);
-        if (!exam.isStartedBy(deviceId)) {
-            log.warn("다른 기기의 시험 요청 거절 exam={}", examId);
-            throw new ExamNotFoundException();
-        }
-        return exam;
-    }
-
-    private Exam find(UUID examId) {
-        return examPersistencePort.findById(examId)
-                .orElseThrow(ExamNotFoundException::new);
-    }
-
-    private static void afterCommit(Runnable action) {
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                action.run();
-            }
-        });
     }
 
 }
