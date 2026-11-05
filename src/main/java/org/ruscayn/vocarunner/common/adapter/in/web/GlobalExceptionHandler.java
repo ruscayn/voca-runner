@@ -45,17 +45,11 @@ public class GlobalExceptionHandler {
         return mav;
     }
 
-    @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class, ConstraintViolationException.class})
-    public Object handleValidationException(Exception e, HttpServletRequest request) {
-        log.warn("입력값 오류 (검사 실패): {} {}", request.getRequestURI(), e.getMessage());
-        ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, request.getRequestURI());
-        return respond(request, HttpStatus.BAD_REQUEST, errorResponse, null);
-    }
-
-    @ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class,
+    @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class, ConstraintViolationException.class,
+            MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class,
             HttpMessageNotReadableException.class})
-    public Object handleBadRequestParameter(Exception e, HttpServletRequest request) {
-        log.warn("입력값 오류 (파라미터): {} {}", request.getRequestURI(), e.getMessage());
+    public Object handleInvalidInputValue(Exception e, HttpServletRequest request) {
+        log.warn("입력값 오류: {} {} {}", request.getRequestURI(), e.getClass().getSimpleName(), e.getMessage());
         ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, request.getRequestURI());
         return respond(request, HttpStatus.BAD_REQUEST, errorResponse, null);
     }
