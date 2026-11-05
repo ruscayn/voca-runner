@@ -8,8 +8,6 @@ import java.util.Set;
 
 public final class WordExposureRules {
 
-    public static final WordExposureRules NONE = new WordExposureRules(List.of());
-
     private final Set<Long> excludedWords = new HashSet<>();
     private final Set<LevelWordKey> excludedLevelWords = new HashSet<>();
     private final Set<MeaningKey> excludedMeanings = new HashSet<>();
@@ -30,15 +28,24 @@ public final class WordExposureRules {
     }
 
     /** 보일 뜻이 하나도 남지 않으면 제외하고 원래 뜻을 그대로 둔다 (제외된 레벨 단어는 시험에 쓰지 않아 뜻이 보이지 않는다) */
-    public Applied apply(long wordId, Level level, List<Meaning> optionMeanings) {
-        List<String> visible = optionMeanings.stream()
-                .filter(m -> !excludedMeanings.contains(new MeaningKey(wordId, m.seq())))
-                .map(Meaning::text)
+    public CatalogWord apply(LevelWord levelWord) {
+        List<String> exposedMeanings = findExposedMeanings(levelWord);
+        if (exposedMeanings.isEmpty()) {
+            return levelWord.toCatalogWord(levelWord.optionMeaningTexts(), true);
+        }
+        return levelWord.toCatalogWord(exposedMeanings, isExcluded(levelWord));
+    }
+
+    private List<String> findExposedMeanings(LevelWord levelWord) {
+        return levelWord.optionMeanings().stream()
+                .filter(meaning -> !excludedMeanings.contains(new MeaningKey(levelWord.wordId(), meaning.seq())))
+                .map(WordMeaning::text)
                 .toList();
-        boolean excluded = excludedWords.contains(wordId)
-                || excludedLevelWords.contains(new LevelWordKey(wordId, level))
-                || visible.isEmpty();
-        return new Applied(visible.isEmpty() ? optionMeanings.stream().map(Meaning::text).toList() : visible, excluded);
+    }
+
+    private boolean isExcluded(LevelWord levelWord) {
+        return excludedWords.contains(levelWord.wordId())
+                || excludedLevelWords.contains(new LevelWordKey(levelWord.wordId(), levelWord.level()));
     }
 
     public record Rule(long wordId, Integer meaningSeq, Level level, ExposureAction action) {
@@ -53,14 +60,6 @@ public final class WordExposureRules {
                         .formatted(action, wordId, meaningSeq, level));
             }
         }
-
-    }
-
-    public record Meaning(int seq, String text) {
-
-    }
-
-    public record Applied(List<String> optionMeanings, boolean excluded) {
 
     }
 

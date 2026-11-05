@@ -8,7 +8,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.ruscayn.vocarunner.common.PersistenceAdapter;
 import org.ruscayn.vocarunner.word.application.port.out.WordPersistencePort;
-import org.ruscayn.vocarunner.word.domain.CatalogWord;
+import org.ruscayn.vocarunner.word.domain.LevelWord;
 import org.ruscayn.vocarunner.word.domain.WordExposureRules;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,15 +19,21 @@ public class WordPersistenceAdapter implements WordPersistencePort {
     private final SpringDataLevelWordRepository levelWordRepository;
     private final SpringDataConfusableGroupWordRepository confusableGroupWordRepository;
     private final SpringDataWordExposureRepository wordExposureRepository;
-    private final CatalogWordMapper catalogWordMapper;
+    private final LevelWordMapper levelWordMapper;
 
     @Override
     @Transactional(readOnly = true)
-    public List<CatalogWord> loadCatalogWords() {
-        WordExposureRules rules = new WordExposureRules(
-                wordExposureRepository.findAll().stream().map(WordExposureJpaEntity::toRule).toList());
+    public List<WordExposureRules.Rule> loadExposureRules() {
+        return wordExposureRepository.findAll().stream()
+                .map(WordExposureJpaEntity::toRule)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<LevelWord> loadLevelWords() {
         return levelWordRepository.findAllFetch().stream()
-                .map(levelWord -> catalogWordMapper.toCatalogWord(levelWord, rules))
+                .map(levelWordMapper::toLevelWord)
                 .toList();
     }
 

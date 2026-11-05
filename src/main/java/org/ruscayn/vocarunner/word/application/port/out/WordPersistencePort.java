@@ -2,11 +2,14 @@ package org.ruscayn.vocarunner.word.application.port.out;
 
 import java.util.Collection;
 import java.util.List;
-import org.ruscayn.vocarunner.word.domain.CatalogWord;
+import org.ruscayn.vocarunner.word.domain.LevelWord;
+import org.ruscayn.vocarunner.word.domain.WordExposureRules;
 
 public interface WordPersistencePort {
 
-    List<CatalogWord> loadCatalogWords();
+    List<WordExposureRules.Rule> loadExposureRules();
+
+    List<LevelWord> loadLevelWords();
 
     Collection<List<Long>> loadConfusableGroups();
 

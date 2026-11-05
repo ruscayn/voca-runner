@@ -13,8 +13,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.ruscayn.vocarunner.common.adapter.out.persistence.JpaConfig;
-import org.ruscayn.vocarunner.word.domain.CatalogWord;
+import org.ruscayn.vocarunner.word.domain.ExposureAction;
 import org.ruscayn.vocarunner.word.domain.Level;
+import org.ruscayn.vocarunner.word.domain.LevelWord;
+import org.ruscayn.vocarunner.word.domain.WordExposureRules.Rule;
+import org.ruscayn.vocarunner.word.domain.WordMeaning;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
@@ -26,14 +29,14 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
- * 단어 출제 목록 로딩에 단어 노출(word_exposure)이 적용되는지 실제 PostgreSQL 로 확인한다.
+ * 레벨 단어 · 단어 노출(word_exposure)을 실제 PostgreSQL 에서 그대로 읽는지 확인한다 (단어 노출 적용은 하지 않음).
  * 테스트 동안만 Docker 로 임시 PostgreSQL 을 띄워 표를 만든다 (db/schema.sql. 개발 DB 는 건드리지 않음).
  * 테스트마다 트랜잭션을 되돌리므로 넣은 단어는 남지 않는다.
  */
 @DataJpaTest
 @Testcontainers
-@Import({WordPersistenceAdapter.class, CatalogWordMapper.class, JpaConfig.class})
-@DisplayName("WordPersistenceAdapter : 단어 출제 목록 로딩과 단어 노출 (PostgreSQL)")
+@Import({WordPersistenceAdapter.class, LevelWordMapper.class, JpaConfig.class})
+@DisplayName("WordPersistenceAdapter : 레벨 단어 · 단어 노출 읽기 (PostgreSQL)")
 class WordPersistenceAdapterTest {
 
     @Container
@@ -86,37 +89,26 @@ class WordPersistenceAdapterTest {
                   (4, NULL, 'A1', 'KEEP', 'LOANWORD', '검토 후 유지', '2026-10-10', '사용자')""");
     }
 
-    private Map<Long, CatalogWord> loadById() {
-        return adapter.loadCatalogWords().stream()
-                .collect(Collectors.toMap(CatalogWord::levelWordId, Function.identity()));
+    @Test
+    @DisplayName("레벨 단어를 표제어 · 보기 뜻(순번)과 함께 읽는다")
+    void loadLevelWords() {
+        Map<Long, LevelWord> levelWords = adapter.loadLevelWords().stream()
+                .collect(Collectors.toMap(LevelWord::levelWordId, Function.identity()));
+
+        assertThat(levelWords).hasSize(6);
+        assertThat(levelWords.get(201L)).isEqualTo(new LevelWord(201, 2, "sex", null, Level.B1,
+                List.of(new WordMeaning(1, "성별"), new WordMeaning(2, "성관계"))));
+        assertThat(levelWords.get(301L).optionMeanings()).containsExactly(new WordMeaning(1, "끈적한 것"));
     }
 
     @Test
-    @DisplayName("판정대로 레벨 단어를 빼고 뜻을 뺀다")
-    void appliesExposure() {
-        Map<Long, CatalogWord> words = loadById();
-
-        assertThat(words).hasSize(6);
-        // 레벨 제외: lark C2 만 제외
-        assertThat(words.get(101L).excluded()).isFalse();
-        assertThat(words.get(102L).excluded()).isTrue();
-        assertThat(words.get(102L).level()).isEqualTo(Level.C2);
-        // 뜻 제외: sex 뜻 2 를 보기에서 빼고 출제
-        assertThat(words.get(201L).optionMeanings()).containsExactly("성별");
-        assertThat(words.get(201L).excluded()).isFalse();
-        // 단어 제외: gook 모든 레벨 단어
-        assertThat(List.of(words.get(301L), words.get(302L))).allMatch(CatalogWord::excluded);
-        // 유지: 그대로
-        assertThat(words.get(401L).excluded()).isFalse();
-        assertThat(words.get(401L).optionMeanings()).containsExactly("버스");
-    }
-
-    @Test
-    @DisplayName("판정이 없으면 모든 레벨 단어를 그대로 낸다")
-    void noExposure() {
-        jdbcTemplate.update("DELETE FROM word_exposure");
-
-        assertThat(adapter.loadCatalogWords()).hasSize(6).noneMatch(CatalogWord::excluded);
+    @DisplayName("단어 노출 판정을 그대로 읽는다 (유지 포함)")
+    void loadExposureRules() {
+        assertThat(adapter.loadExposureRules()).containsExactlyInAnyOrder(
+                new Rule(1, null, Level.C2, ExposureAction.EXCLUDE_LEVEL),
+                new Rule(2, 2, null, ExposureAction.EXCLUDE_MEANING),
+                new Rule(3, null, null, ExposureAction.EXCLUDE_WORD),
+                new Rule(4, null, Level.A1, ExposureAction.KEEP));
     }
 
     /** 오류가 나면 PostgreSQL 트랜잭션이 깨지므로 한 테스트에 잘못된 줄 하나씩 */
