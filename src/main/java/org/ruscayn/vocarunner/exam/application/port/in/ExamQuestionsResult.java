@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
 import org.ruscayn.vocarunner.exam.domain.Exam;
+import org.ruscayn.vocarunner.exam.domain.Questions;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
 
@@ -31,16 +32,16 @@ public record ExamQuestionsResult(
 
     private static List<QuestionItem> questionItems(Exam exam, WordCatalog wordCatalog) {
         return IntStream.rangeClosed(1, exam.getQuestionCount())
-                .mapToObj(no -> QuestionItem.of(exam, no, wordCatalog))
+                .mapToObj(no -> QuestionItem.of(exam.getQuestions(), no, wordCatalog))
                 .toList();
     }
 
     public record QuestionItem(int no, String prompt, String promptSub, List<Option> options) {
 
-        static QuestionItem of(Exam exam, int no, WordCatalog wordCatalog) {
-            CatalogWord answer = wordCatalog.get(exam.answerOptionId(no));
+        static QuestionItem of(Questions questions, int no, WordCatalog wordCatalog) {
+            CatalogWord answer = wordCatalog.get(questions.answerOptionId(no));
             return new QuestionItem(no, answer.headword(), answer.headwordSub(),
-                    options(exam.getPaper().optionIds(no), wordCatalog));
+                    options(questions.optionIds(no), wordCatalog));
         }
 
         private static List<Option> options(List<Long> optionIds, WordCatalog wordCatalog) {

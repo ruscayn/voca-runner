@@ -111,8 +111,8 @@ class ExamPersistenceAdapterTest {
             assertThat(jdbcTemplate.queryForObject("select created_at is not null from test_session"
                     + " where test_session_id = ?", Boolean.class, exam.getId())).isTrue();
             for (int no = 1; no <= 4; no++) {
-                assertThat(loaded.getPaper().optionIds(no)).isEqualTo(exam.getPaper().optionIds(no));
-                assertThat(loaded.answerOptionId(no)).isEqualTo(exam.answerOptionId(no));
+                assertThat(loaded.getQuestions().optionIds(no)).isEqualTo(exam.getQuestions().optionIds(no));
+                assertThat(loaded.getQuestions().answerOptionId(no)).isEqualTo(exam.getQuestions().answerOptionId(no));
             }
         }
 
@@ -132,9 +132,9 @@ class ExamPersistenceAdapterTest {
             assertThat(loaded.getGradingResult().score()).isEqualTo(50);
             assertThat(loaded.getTime().submittedAt()).isEqualTo(NOW.plusSeconds(30));
             assertThat(loaded.getWrongQuestionNos()).containsExactly(2, 4);
-            assertThat(loaded.getPaper().selectedOptionId(2)).isEqualTo(
-                    exam.getPaper().optionIds(2).get(incorrectOptionNo(2) - 1));
-            assertThat(loaded.getPaper().selectedOptionId(4)).isNull();
+            assertThat(loaded.selectedOptionId(2)).isEqualTo(
+                    exam.getQuestions().optionIds(2).get(incorrectOptionNo(2) - 1));
+            assertThat(loaded.selectedOptionId(4)).isNull();
         }
 
         @Test

@@ -48,10 +48,10 @@ public class ExamJpaEntity extends BaseEntity {
     private ExamTimeEmbeddable time;
 
     @Embedded
-    private ExamPaperEmbeddable paper;
+    private QuestionsEmbeddable questions;
 
     @Embedded
-    private AnswerKeyEmbeddable answerKey;
+    private SelectedOptionsEmbeddable selectedOptions;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 12)
@@ -81,20 +81,21 @@ public class ExamJpaEntity extends BaseEntity {
         this.subject = exam.getSubject();
         this.timePerQuestionSec = exam.getTimePerQuestionSec();
         this.examinee = ExamineeEmbeddable.from(exam.getExaminee());
-        this.answerKey = AnswerKeyEmbeddable.from(exam.getAnswerKey());
+        this.questions = QuestionsEmbeddable.from(exam.getQuestions());
     }
 
     void copyChangedState(Exam exam) {
         this.status = exam.getStatus();
         this.questionsDelivered = exam.isQuestionsDelivered();
         this.time = ExamTimeEmbeddable.from(exam.getTime());
-        this.paper = ExamPaperEmbeddable.from(exam.getPaper());
+        this.selectedOptions = SelectedOptionsEmbeddable.from(exam.getSelectedOptions());
         this.gradingResult = GradingResultEmbeddable.from(exam.getGradingResult());
     }
 
     Exam toDomain() {
         return Exam.of(id, level, subject, timePerQuestionSec, examinee.toDomain(), time.toDomain(),
-                paper.toDomain(), answerKey.toDomain(), status, questionsDelivered, toGradingResult(), version);
+                questions.toDomain(), selectedOptions.toDomain(), status, questionsDelivered,
+                toGradingResult(), version);
     }
 
     private GradingResult toGradingResult() {

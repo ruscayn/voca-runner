@@ -47,8 +47,8 @@ class ExamTest {
             assertThat(exam.isInProgress(NOW)).isTrue();
             for (int no = 1; no <= 4; no++) {
                 Question q = questions.get(no - 1);
-                assertThat(exam.answerOptionId(no)).isEqualTo(q.answer().levelWordId());
-                assertThat(exam.getPaper().optionIds(no))
+                assertThat(exam.getQuestions().answerOptionId(no)).isEqualTo(q.answer().levelWordId());
+                assertThat(exam.getQuestions().optionIds(no))
                         .containsExactlyElementsOf(q.options().stream().map(o -> o.levelWordId()).toList());
             }
         }
@@ -80,8 +80,8 @@ class ExamTest {
         void questionNoRange() {
             Exam exam = start(3);
 
-            assertThatThrownBy(() -> exam.answerOptionId(0)).isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> exam.answerOptionId(4)).isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> exam.selectedOptionId(0)).isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> exam.selectedOptionId(4)).isInstanceOf(IllegalArgumentException.class);
         }
 
     }
@@ -143,11 +143,11 @@ class ExamTest {
             assertThat(exam.getGradingResult().score()).isEqualTo(25);
             assertThat(exam.getTime().submittedAt()).isEqualTo(NOW.plusSeconds(30));
 
-            ExamPaper paper = exam.getPaper();
-            assertThat(paper.selectedOptionId(1)).isEqualTo(exam.answerOptionId(1));
-            assertThat(paper.selectedOptionId(2)).isEqualTo(paper.optionIds(2).get(incorrectOptionNo(2) - 1));
-            assertThat(paper.selectedOptionId(3)).isNull();
-            assertThat(paper.selectedOptionId(4)).isNull();
+            Questions questions = exam.getQuestions();
+            assertThat(exam.selectedOptionId(1)).isEqualTo(questions.answerOptionId(1));
+            assertThat(exam.selectedOptionId(2)).isEqualTo(questions.optionIds(2).get(incorrectOptionNo(2) - 1));
+            assertThat(exam.selectedOptionId(3)).isNull();
+            assertThat(exam.selectedOptionId(4)).isNull();
             assertThat(exam.getWrongQuestionNos()).containsExactly(2, 3, 4);
         }
 
