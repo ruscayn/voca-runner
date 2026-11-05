@@ -12,14 +12,14 @@ import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamLevelOverview;
 import org.ruscayn.vocarunner.exam.domain.ExamCapacity;
 import org.ruscayn.vocarunner.support.TestWords;
-import org.ruscayn.vocarunner.word.domain.InMemoryWordCatalog;
 import org.ruscayn.vocarunner.word.domain.Level;
+import org.ruscayn.vocarunner.word.domain.WordCatalog;
 
 @DisplayName("ExamLevelOverviewQueryService : 시험 레벨 개요")
 class ExamLevelOverviewQueryServiceTest {
 
     private final ExamLevelOverviewQueryService service = new ExamLevelOverviewQueryService(
-            new InMemoryWordCatalog(TestWords.words(Level.A1, 1, 20), List.of()),
+            new WordCatalog(TestWords.words(Level.A1, 1, 20), List.of()),
             new ExamProperties(10, Duration.ofMinutes(1), Duration.ofHours(1), new ExamCapacity(100, 10),
                     Duration.ofMinutes(2)));
 

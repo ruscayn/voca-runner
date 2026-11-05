@@ -33,7 +33,6 @@ import org.ruscayn.vocarunner.exam.domain.ExamCapacity;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.exam.domain.QuestionGenerator;
 import org.ruscayn.vocarunner.support.TestWords;
-import org.ruscayn.vocarunner.word.domain.InMemoryWordCatalog;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,7 +86,7 @@ class ExamServicePersistenceTest {
         /** A1 단어 20개 (뜻이 모두 다름) */
         @Bean
         WordCatalog wordCatalog() {
-            return new InMemoryWordCatalog(TestWords.words(Level.A1, 1, 20), List.of());
+            return new WordCatalog(TestWords.words(Level.A1, 1, 20), List.of());
         }
 
         @Bean

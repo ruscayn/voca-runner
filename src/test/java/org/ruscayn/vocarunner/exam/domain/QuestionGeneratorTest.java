@@ -18,14 +18,14 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
-import org.ruscayn.vocarunner.word.domain.InMemoryWordCatalog;
 import org.ruscayn.vocarunner.word.domain.Level;
+import org.ruscayn.vocarunner.word.domain.WordCatalog;
 
 @DisplayName("QuestionGenerator : 문항 생성 규칙")
 class QuestionGeneratorTest {
 
     private static List<Question> generate(List<CatalogWord> catalogWords, long seed, Level level, int maxCount) {
-        return new QuestionGenerator(new InMemoryWordCatalog(catalogWords, List.of()), () -> new Random(seed))
+        return new QuestionGenerator(new WordCatalog(catalogWords, List.of()), () -> new Random(seed))
                 .generate(level, maxCount);
     }
 
@@ -191,7 +191,7 @@ class QuestionGeneratorTest {
             catalog.add(excluded(id, id, Level.A1));
         }
 
-        assertThat(new InMemoryWordCatalog(catalog, List.of()).countByLevel(Level.A1)).isEqualTo(10);
+        assertThat(new WordCatalog(catalog, List.of()).countByLevel(Level.A1)).isEqualTo(10);
 
         List<Question> questions = generate(catalog, 1, Level.A1, 11);
 
@@ -224,7 +224,7 @@ class QuestionGeneratorTest {
         catalog.add(word(901, 900, Level.A2, "A2뜻900"));
 
         // 정답 후보 = A1 30 + A2 30 + word 900(A2) = 61
-        assertThat(new InMemoryWordCatalog(catalog, List.of()).countByLevel(Level.A)).isEqualTo(61);
+        assertThat(new WordCatalog(catalog, List.of()).countByLevel(Level.A)).isEqualTo(61);
 
         List<Question> questions = generate(catalog, seed, Level.A, 61);
 
@@ -244,7 +244,7 @@ class QuestionGeneratorTest {
             catalog.add(word(500 + wordId, wordId, Level.B2, "B2뜻" + wordId));
         }
 
-        InMemoryWordCatalog wordCatalog = new InMemoryWordCatalog(catalog, List.of());
+        WordCatalog wordCatalog = new WordCatalog(catalog, List.of());
 
         assertThat(wordCatalog.countByLevel(Level.B1)).isEqualTo(10);
         assertThat(wordCatalog.countByLevel(Level.B2)).isEqualTo(8);
@@ -301,7 +301,7 @@ class QuestionGeneratorTest {
         for (long id = 31; id <= 43; id += 3) {
             groups.add(List.of(id, id + 1, id + 2));
         }
-        InMemoryWordCatalog wordCatalog = new InMemoryWordCatalog(catalog, groups);
+        WordCatalog wordCatalog = new WordCatalog(catalog, groups);
 
         List<Question> questions =
                 new QuestionGenerator(wordCatalog, () -> new Random(seed)).generate(Level.A1, 60);
@@ -326,7 +326,7 @@ class QuestionGeneratorTest {
         // 단어 6개 (sir 문제는 teacher·Mr. 를 빼고 4,5,6 으로 오답을 채울 수 있음)
         // teacher 문제 : sir 는 절대 안 나오고, Mr. 는 teacher 와 묶음이 아니므로 나올 수 있음
         List<CatalogWord> catalog = words(Level.A1, 1, 6);
-        InMemoryWordCatalog wordCatalog = new InMemoryWordCatalog(catalog, List.of(List.of(1L, 2L), List.of(1L, 3L)));
+        WordCatalog wordCatalog = new WordCatalog(catalog, List.of(List.of(1L, 2L), List.of(1L, 3L)));
 
         boolean mrAppeared = false;
         for (long seed = 1; seed <= 30; seed++) {
@@ -348,7 +348,7 @@ class QuestionGeneratorTest {
     void confusableLeavesNotEnoughDistractors() {
         // 단어 4개 중 1·2 가 같은 묶음 → 1 문제의 오답 후보는 3, 4 뿐
         List<CatalogWord> catalog = words(Level.A1, 1, 4);
-        InMemoryWordCatalog wordCatalog = new InMemoryWordCatalog(catalog, List.of(List.of(1L, 2L)));
+        WordCatalog wordCatalog = new WordCatalog(catalog, List.of(List.of(1L, 2L)));
 
         assertThatThrownBy(() -> new QuestionGenerator(wordCatalog, () -> new Random(1)).generate(Level.A1, 4))
                 .isInstanceOf(CustomException.class)
@@ -359,7 +359,7 @@ class QuestionGeneratorTest {
     @Test
     @DisplayName("헷갈리는 단어 map : 양방향, 여러 묶음은 합침, 묶음 없는 단어는 빈 집합")
     void confusableMap() {
-        InMemoryWordCatalog wordCatalog = new InMemoryWordCatalog(words(Level.A1, 1, 10),
+        WordCatalog wordCatalog = new WordCatalog(words(Level.A1, 1, 10),
                 List.of(List.of(1L, 2L), List.of(1L, 3L), List.of(4L, 5L, 6L)));
 
         assertThat(wordCatalog.findConfusableWordIds(1L)).containsExactlyInAnyOrder(2L, 3L);
