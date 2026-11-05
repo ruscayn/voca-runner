@@ -111,19 +111,19 @@ public class Exam {
         }
     }
 
-    public long answerLevelWordId(int no) {
-        return answerKey.answerLevelWordId(no);
+    public long answerOptionId(int no) {
+        return answerKey.answerOptionId(no);
     }
 
-    public List<Long> optionLevelWordIds(int no) {
-        return answerKey.optionLevelWordIds(no);
+    public List<Long> optionIds(int no) {
+        return answerKey.optionIds(no);
     }
 
-    public Long selectedLevelWordId(int no) {
+    public Long selectedOptionId(int no) {
         if (!selectedOptions.isSelected(no)) {
             return null;
         }
-        return answerKey.optionLevelWordId(no, selectedOptions.optionNo(no));
+        return answerKey.optionId(no, selectedOptions.optionNo(no));
     }
 
     public boolean isCorrect(int no) {

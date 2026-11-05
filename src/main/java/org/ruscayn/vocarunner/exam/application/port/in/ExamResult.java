@@ -51,17 +51,17 @@ public record ExamResult(
                             String headword) {
 
         static WrongItem of(Exam exam, int no, WordCatalog wordCatalog) {
-            CatalogWord answer = wordCatalog.get(exam.answerLevelWordId(no));
+            CatalogWord answer = wordCatalog.get(exam.answerOptionId(no));
             return new WrongItem(no, answer.headword(), answer.headwordSub(), selectedText(exam, no, wordCatalog),
                     answer.optionText(), answer.headword());
         }
 
         private static String selectedText(Exam exam, int no, WordCatalog wordCatalog) {
-            Long selectedLevelWordId = exam.selectedLevelWordId(no);
-            if (selectedLevelWordId == null) {
+            Long selectedOptionId = exam.selectedOptionId(no);
+            if (selectedOptionId == null) {
                 return null;
             }
-            return wordCatalog.get(selectedLevelWordId).optionText();
+            return wordCatalog.get(selectedOptionId).optionText();
         }
 
     }

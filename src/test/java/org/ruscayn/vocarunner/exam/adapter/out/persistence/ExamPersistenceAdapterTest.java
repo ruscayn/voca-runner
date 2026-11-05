@@ -118,8 +118,8 @@ class ExamPersistenceAdapterTest {
             assertThat(jdbcTemplate.queryForObject("select created_at is not null from test_session"
                     + " where test_session_id = ?", Boolean.class, exam.getId())).isTrue();
             for (int no = 1; no <= 4; no++) {
-                assertThat(loaded.optionLevelWordIds(no)).isEqualTo(exam.optionLevelWordIds(no));
-                assertThat(loaded.answerLevelWordId(no)).isEqualTo(exam.answerLevelWordId(no));
+                assertThat(loaded.optionIds(no)).isEqualTo(exam.optionIds(no));
+                assertThat(loaded.answerOptionId(no)).isEqualTo(exam.answerOptionId(no));
             }
         }
 
@@ -140,9 +140,9 @@ class ExamPersistenceAdapterTest {
             assertThat(loaded.getGradingResult().submittedAt()).isEqualTo(NOW.plusSeconds(30));
             assertThat(loaded.isCorrect(1)).isTrue();
             assertThat(loaded.isCorrect(2)).isFalse();
-            assertThat(loaded.selectedLevelWordId(2)).isEqualTo(
-                    exam.optionLevelWordIds(2).get(incorrectOptionNo(2) - 1));
-            assertThat(loaded.selectedLevelWordId(4)).isNull();
+            assertThat(loaded.selectedOptionId(2)).isEqualTo(
+                    exam.optionIds(2).get(incorrectOptionNo(2) - 1));
+            assertThat(loaded.selectedOptionId(4)).isNull();
         }
 
         @Test

@@ -44,21 +44,21 @@ public final class AnswerKey {
         return answerOptionNo.length;
     }
 
-    long answerLevelWordId(int no) {
-        return optionLevelWordId(no, answerOptionNo[index(no)]);
+    long answerOptionId(int no) {
+        return optionId(no, answerOptionNo[index(no)]);
     }
 
     private int index(int no) {
         return Question.index(no, questionCount());
     }
 
-    long optionLevelWordId(int no, int optionNo) {
+    long optionId(int no, int optionNo) {
         return optionIds[index(no) * OPTION_COUNT + optionNo - 1];
     }
 
-    List<Long> optionLevelWordIds(int no) {
+    List<Long> optionIds(int no) {
         return IntStream.rangeClosed(1, OPTION_COUNT)
-                .mapToObj(optionNo -> optionLevelWordId(no, optionNo))
+                .mapToObj(optionNo -> optionId(no, optionNo))
                 .toList();
     }
 

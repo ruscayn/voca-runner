@@ -47,8 +47,8 @@ class ExamTest {
             assertThat(exam.isInProgress(NOW)).isTrue();
             for (int no = 1; no <= 4; no++) {
                 Question q = questions.get(no - 1);
-                assertThat(exam.answerLevelWordId(no)).isEqualTo(q.answer().levelWordId());
-                assertThat(exam.optionLevelWordIds(no))
+                assertThat(exam.answerOptionId(no)).isEqualTo(q.answer().levelWordId());
+                assertThat(exam.optionIds(no))
                         .containsExactlyElementsOf(q.options().stream().map(o -> o.levelWordId()).toList());
             }
         }
@@ -80,8 +80,8 @@ class ExamTest {
         void questionNoRange() {
             Exam exam = start(3);
 
-            assertThatThrownBy(() -> exam.answerLevelWordId(0)).isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> exam.answerLevelWordId(4)).isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> exam.answerOptionId(0)).isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> exam.answerOptionId(4)).isInstanceOf(IllegalArgumentException.class);
         }
 
     }
@@ -148,11 +148,11 @@ class ExamTest {
             assertThat(exam.isCorrect(3)).isFalse();
             assertThat(exam.isCorrect(4)).isFalse();
 
-            assertThat(exam.selectedLevelWordId(1)).isEqualTo(exam.answerLevelWordId(1));
-            assertThat(exam.selectedLevelWordId(2))
-                    .isEqualTo(exam.optionLevelWordIds(2).get(incorrectOptionNo(2) - 1));
-            assertThat(exam.selectedLevelWordId(3)).isNull();
-            assertThat(exam.selectedLevelWordId(4)).isNull();
+            assertThat(exam.selectedOptionId(1)).isEqualTo(exam.answerOptionId(1));
+            assertThat(exam.selectedOptionId(2))
+                    .isEqualTo(exam.optionIds(2).get(incorrectOptionNo(2) - 1));
+            assertThat(exam.selectedOptionId(3)).isNull();
+            assertThat(exam.selectedOptionId(4)).isNull();
             assertThat(exam.wrongQuestionNos()).containsExactly(2, 3, 4);
         }
 

@@ -38,14 +38,14 @@ public record ExamQuestionsResult(
     public record QuestionItem(int no, String prompt, String promptSub, List<Option> options) {
 
         static QuestionItem of(Exam exam, int no, WordCatalog wordCatalog) {
-            CatalogWord answer = wordCatalog.get(exam.answerLevelWordId(no));
+            CatalogWord answer = wordCatalog.get(exam.answerOptionId(no));
             return new QuestionItem(no, answer.headword(), answer.headwordSub(),
-                    options(exam.optionLevelWordIds(no), wordCatalog));
+                    options(exam.optionIds(no), wordCatalog));
         }
 
-        private static List<Option> options(List<Long> optionLevelWordIds, WordCatalog wordCatalog) {
-            return IntStream.range(0, optionLevelWordIds.size())
-                    .mapToObj(i -> new Option(i + 1, wordCatalog.get(optionLevelWordIds.get(i)).optionText()))
+        private static List<Option> options(List<Long> optionIds, WordCatalog wordCatalog) {
+            return IntStream.range(0, optionIds.size())
+                    .mapToObj(i -> new Option(i + 1, wordCatalog.get(optionIds.get(i)).optionText()))
                     .toList();
         }
 
