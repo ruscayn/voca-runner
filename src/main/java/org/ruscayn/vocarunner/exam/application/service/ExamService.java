@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.ruscayn.vocarunner.common.AfterCommit;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.common.UseCase;
@@ -17,8 +18,6 @@ import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.SelectedOption;
 import org.ruscayn.vocarunner.word.application.port.in.WordCatalogQuery;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Slf4j
 @UseCase
@@ -85,17 +84,8 @@ public class ExamService implements ExamUseCase {
      * 커밋된 뒤에 남겨 실제로 채점 · 저장된 제출만 로그에 한 줄 남긴다
      */
     private static void logSubmittedAfterCommit(Exam exam) {
-        afterCommit(() -> log.info("시험 제출 exam={} 맞힌 수={}/{} 점수={}", exam.getId(),
+        AfterCommit.run(() -> log.info("시험 제출 exam={} 맞힌 수={}/{} 점수={}", exam.getId(),
                 exam.getGradingResult().correctCount(), exam.getQuestionCount(), exam.getGradingResult().score()));
-    }
-
-    private static void afterCommit(Runnable action) {
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                action.run();
-            }
-        });
     }
 
     @Override
