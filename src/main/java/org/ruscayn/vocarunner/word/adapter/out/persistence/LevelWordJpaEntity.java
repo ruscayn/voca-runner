@@ -46,7 +46,7 @@ public class LevelWordJpaEntity {
     @JoinColumn(name = "meaning2_id")
     private WordMeaningJpaEntity meaning2;
 
-    public List<WordMeaningJpaEntity> optionMeanings() {
+    public List<WordMeaningJpaEntity> getOptionMeanings() {
         List<WordMeaningJpaEntity> result = new ArrayList<>(2);
         result.add(meaning1);
         if (meaning2 != null) {
@@ -55,7 +55,7 @@ public class LevelWordJpaEntity {
         return Collections.unmodifiableList(result);
     }
 
-    public String headword() {
+    public String getHeadword() {
         return word.getHeadword();
     }
 

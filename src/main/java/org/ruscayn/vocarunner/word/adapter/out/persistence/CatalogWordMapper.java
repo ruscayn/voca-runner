@@ -11,13 +11,13 @@ class CatalogWordMapper {
     CatalogWord toCatalogWord(LevelWordJpaEntity levelWord, WordExposureRules rules) {
         long wordId = levelWord.getWord().getId();
         WordExposureRules.Applied applied = rules.apply(wordId, levelWord.getLevel(), toOptionMeanings(levelWord));
-        return new CatalogWord(levelWord.getId(), wordId, levelWord.headword(),
+        return new CatalogWord(levelWord.getId(), wordId, levelWord.getHeadword(),
                 levelWord.getWord().getHeadwordSub(), levelWord.getLevel(),
                 applied.optionMeanings(), applied.excluded());
     }
 
     private static List<WordExposureRules.Meaning> toOptionMeanings(LevelWordJpaEntity levelWord) {
-        return levelWord.optionMeanings().stream()
+        return levelWord.getOptionMeanings().stream()
                 .map(meaning -> new WordExposureRules.Meaning(meaning.getSeq(), meaning.getMeaningKo()))
                 .toList();
     }

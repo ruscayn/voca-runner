@@ -18,16 +18,16 @@ class LevelTest {
     })
     @DisplayName("CEFR 묶음 이름")
     void groupName(Level level, String expected) {
-        assertThat(level.groupName()).isEqualTo(expected);
+        assertThat(level.getGroupName()).isEqualTo(expected);
     }
 
     @Test
     @DisplayName("묶음 레벨은 소속 세부 레벨 2개, 세부 레벨은 자기 자신")
     void detailLevels() {
-        assertThat(Level.A.detailLevels()).containsExactly(Level.A1, Level.A2);
-        assertThat(Level.B.detailLevels()).containsExactly(Level.B1, Level.B2);
-        assertThat(Level.C.detailLevels()).containsExactly(Level.C1, Level.C2);
-        assertThat(Level.B2.detailLevels()).containsExactly(Level.B2);
+        assertThat(Level.A.getDetailLevels()).containsExactly(Level.A1, Level.A2);
+        assertThat(Level.B.getDetailLevels()).containsExactly(Level.B1, Level.B2);
+        assertThat(Level.C.getDetailLevels()).containsExactly(Level.C1, Level.C2);
+        assertThat(Level.B2.getDetailLevels()).containsExactly(Level.B2);
     }
 
     @Test

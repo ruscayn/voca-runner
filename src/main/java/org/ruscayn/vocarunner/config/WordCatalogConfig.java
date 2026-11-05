@@ -27,8 +27,8 @@ public class WordCatalogConfig {
     private static void logCatalogLoaded(InMemoryWordCatalog catalog, long elapsedMs) {
         log.info("단어 출제 목록 로딩 완료: 전체 {}행, 시험 제외 {}행, 레벨별 정답 가능 ({}), "
                         + "헷갈리는 단어 묶음 {}개(단어 {}개) {}ms",
-                catalog.size(), catalog.excludedCount(), answerableCountByDetailLevel(catalog),
-                catalog.confusableGroups().groupCount(), catalog.confusableGroups().wordCount(), elapsedMs);
+                catalog.getWordCount(), catalog.getExcludedCount(), answerableCountByDetailLevel(catalog),
+                catalog.getConfusableGroups().getGroupCount(), catalog.getConfusableGroups().getWordCount(), elapsedMs);
     }
 
     private static String answerableCountByDetailLevel(InMemoryWordCatalog catalog) {

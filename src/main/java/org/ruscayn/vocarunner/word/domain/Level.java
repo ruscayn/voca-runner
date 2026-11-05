@@ -13,7 +13,7 @@ public enum Level {
         return name().length() == 1;
     }
 
-    public String groupName() {
+    public String getGroupName() {
         return switch (name().charAt(0)) {
             case 'A' -> "Basic";
             case 'B' -> "Independent";
@@ -21,7 +21,7 @@ public enum Level {
         };
     }
 
-    public List<Level> detailLevels() {
+    public List<Level> getDetailLevels() {
         if (!isGroup()) {
             return List.of(this);
         }

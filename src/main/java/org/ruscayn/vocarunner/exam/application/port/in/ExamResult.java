@@ -23,14 +23,14 @@ public record ExamResult(
 
     public static ExamResult of(Exam exam, WordCatalog wordCatalog, Duration resultRetention) {
         GradingResult gradingResult = exam.getGradingResult();
-        return new ExamResult(exam.getId(), exam.getLevel().name(), exam.getLevel().groupName(),
+        return new ExamResult(exam.getId(), exam.getLevel().name(), exam.getLevel().getGroupName(),
                 exam.getQuestionCount(), gradingResult.correctCount(), gradingResult.score(),
                 gradingResult.retentionDeadline(resultRetention), resultRetention.toMinutes(),
                 wrongItems(exam, wordCatalog));
     }
 
     private static List<WrongItem> wrongItems(Exam exam, WordCatalog wordCatalog) {
-        return exam.wrongQuestionNos().stream()
+        return exam.getWrongQuestionNos().stream()
                 .map(no -> WrongItem.of(exam, no, wordCatalog))
                 .toList();
     }

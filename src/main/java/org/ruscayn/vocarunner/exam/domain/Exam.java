@@ -45,7 +45,7 @@ public class Exam {
     public static Exam of(UUID id, Level level, Direction direction, int timePerQuestionSec, Examinee examinee,
                           ExamTime time, AnswerKey answerKey, SelectedOptions selectedOptions, ExamStatus status,
                           boolean questionsDelivered, GradingResult gradingResult, Integer version) {
-        if (selectedOptions.questionCount() != answerKey.questionCount()) {
+        if (selectedOptions.getQuestionCount() != answerKey.getQuestionCount()) {
             throw new IllegalArgumentException("문항 배열 길이가 맞지 않습니다: exam=" + id);
         }
         return new Exam(id, level, direction, timePerQuestionSec, examinee, time, answerKey, selectedOptions, status,
@@ -88,7 +88,7 @@ public class Exam {
     }
 
     public int getQuestionCount() {
-        return answerKey.questionCount();
+        return answerKey.getQuestionCount();
     }
 
     /** 문제 받기 · 제출 · 중단은 시험을 시작한 기기만 할 수 있다 */
@@ -129,7 +129,7 @@ public class Exam {
         return selectedOptions.isSelected(no) && answerKey.isAnswer(no, selectedOptions.optionNo(no));
     }
 
-    public List<Integer> wrongQuestionNos() {
+    public List<Integer> getWrongQuestionNos() {
         return IntStream.rangeClosed(1, getQuestionCount())
                 .filter(no -> !isCorrect(no))
                 .boxed()

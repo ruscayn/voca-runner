@@ -29,7 +29,7 @@ public class ExamController {
     @GetMapping("/exam/ready")
     public String ready(@RequestParam Level level, Model model) {
         model.addAttribute("overview", examLevelOverviewQuery.getExamLevelOverview(level));
-        model.addAttribute("groupName", level.groupName());
+        model.addAttribute("groupName", level.getGroupName());
         model.addAttribute("timePerQuestionSec", Exam.DEFAULT_TIME_PER_QUESTION_SEC);
         return "exam";
     }

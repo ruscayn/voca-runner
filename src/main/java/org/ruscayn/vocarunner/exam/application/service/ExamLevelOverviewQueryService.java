@@ -26,15 +26,15 @@ public class ExamLevelOverviewQueryService implements ExamLevelOverviewQuery {
 
     @Override
     public List<ExamLevelOverviewGroup> getExamLevelOverviews() {
-        Map<String, List<ExamLevelOverview>> byGroup = detailLevelOverviews().stream()
-                .collect(Collectors.groupingBy(overview -> overview.level().groupName(),
+        Map<String, List<ExamLevelOverview>> byGroup = getDetailLevelOverviews().stream()
+                .collect(Collectors.groupingBy(overview -> overview.level().getGroupName(),
                         LinkedHashMap::new, Collectors.toList()));
         return byGroup.entrySet().stream()
                 .map(entry -> new ExamLevelOverviewGroup(entry.getKey(), entry.getValue()))
                 .toList();
     }
 
-    private List<ExamLevelOverview> detailLevelOverviews() {
+    private List<ExamLevelOverview> getDetailLevelOverviews() {
         return Arrays.stream(Level.values())
                 .filter(level -> !level.isGroup())
                 .map(this::toOverview)

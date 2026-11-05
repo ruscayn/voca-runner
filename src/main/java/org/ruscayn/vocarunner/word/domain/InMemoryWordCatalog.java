@@ -25,7 +25,7 @@ public class InMemoryWordCatalog implements WordCatalog {
     }
 
     private static Map<Long, CatalogWord> indexByLevelWordId(Collection<CatalogWord> words) {
-        Map<Long, CatalogWord> ids = new HashMap<>(words.size() * 2);
+        Map<Long, CatalogWord> ids = HashMap.newHashMap(words.size() * 2);
         for (CatalogWord word : words) {
             putUnique(ids, word);
         }
@@ -64,7 +64,7 @@ public class InMemoryWordCatalog implements WordCatalog {
 
     private static List<CatalogWord> wordsIn(Level level, Map<Level, List<CatalogWord>> byDetailLevel) {
         List<CatalogWord> words = new ArrayList<>();
-        for (Level detailLevel : level.detailLevels()) {
+        for (Level detailLevel : level.getDetailLevels()) {
             words.addAll(byDetailLevel.getOrDefault(detailLevel, List.of()));
         }
         return words;
@@ -108,15 +108,15 @@ public class InMemoryWordCatalog implements WordCatalog {
         return confusableGroups.confusableWordIds(wordId);
     }
 
-    public int size() {
+    public int getWordCount() {
         return byId.size();
     }
 
-    public int excludedCount() {
+    public int getExcludedCount() {
         return (int) byId.values().stream().filter(CatalogWord::excluded).count();
     }
 
-    public ConfusableGroups confusableGroups() {
+    public ConfusableGroups getConfusableGroups() {
         return confusableGroups;
     }
 

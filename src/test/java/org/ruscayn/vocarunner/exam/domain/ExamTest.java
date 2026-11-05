@@ -153,7 +153,7 @@ class ExamTest {
                     .isEqualTo(exam.optionIds(2).get(incorrectOptionNo(2) - 1));
             assertThat(exam.selectedOptionId(3)).isNull();
             assertThat(exam.selectedOptionId(4)).isNull();
-            assertThat(exam.wrongQuestionNos()).containsExactly(2, 3, 4);
+            assertThat(exam.getWrongQuestionNos()).containsExactly(2, 3, 4);
         }
 
         @Test

@@ -24,7 +24,7 @@ public record ExamQuestionsResult(
 ) {
 
     public static ExamQuestionsResult of(Exam exam, WordCatalog wordCatalog, Instant now) {
-        return new ExamQuestionsResult(exam.getId(), exam.getLevel().name(), exam.getLevel().groupName(),
+        return new ExamQuestionsResult(exam.getId(), exam.getLevel().name(), exam.getLevel().getGroupName(),
                 exam.getDirection().name(), exam.getQuestionCount(), exam.getTimePerQuestionSec(),
                 exam.getTime().allowedMinutes(), exam.getTime().remainingSec(now), questionItems(exam, wordCatalog));
     }

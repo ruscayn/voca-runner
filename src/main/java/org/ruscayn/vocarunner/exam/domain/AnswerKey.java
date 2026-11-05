@@ -40,7 +40,7 @@ public final class AnswerKey {
         return new AnswerKey(optionIds.clone(), answerOptionNo.clone());
     }
 
-    int questionCount() {
+    int getQuestionCount() {
         return answerOptionNo.length;
     }
 
@@ -49,7 +49,7 @@ public final class AnswerKey {
     }
 
     private int index(int no) {
-        return Question.index(no, questionCount());
+        return Question.index(no, getQuestionCount());
     }
 
     long optionId(int no, int optionNo) {

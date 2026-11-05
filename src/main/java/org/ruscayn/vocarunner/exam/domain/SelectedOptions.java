@@ -65,7 +65,7 @@ public final class SelectedOptions {
         return optionNo == null ? NONE : optionNo.byteValue();
     }
 
-    int questionCount() {
+    int getQuestionCount() {
         return selectedOptionNo.length;
     }
 
@@ -74,7 +74,7 @@ public final class SelectedOptions {
     }
 
     int optionNo(int no) {
-        return selectedOptionNo[Question.index(no, questionCount())];
+        return selectedOptionNo[Question.index(no, getQuestionCount())];
     }
 
     public byte[] toSelectedOptionNoArray() {

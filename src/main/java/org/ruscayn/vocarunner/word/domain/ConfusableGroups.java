@@ -38,11 +38,11 @@ public final class ConfusableGroups {
         return confusableByWordId.getOrDefault(wordId, Set.of());
     }
 
-    public int groupCount() {
+    public int getGroupCount() {
         return groupCount;
     }
 
-    public int wordCount() {
+    public int getWordCount() {
         return confusableByWordId.size();
     }
 

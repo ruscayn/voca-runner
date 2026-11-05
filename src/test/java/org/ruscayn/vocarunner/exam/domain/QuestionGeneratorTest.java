@@ -367,8 +367,8 @@ class QuestionGeneratorTest {
         assertThat(wordCatalog.findConfusableWordIds(3L)).containsExactly(1L);
         assertThat(wordCatalog.findConfusableWordIds(5L)).containsExactlyInAnyOrder(4L, 6L);
         assertThat(wordCatalog.findConfusableWordIds(7L)).isEmpty();
-        assertThat(wordCatalog.confusableGroups().groupCount()).isEqualTo(3);
-        assertThat(wordCatalog.confusableGroups().wordCount()).isEqualTo(6);
+        assertThat(wordCatalog.getConfusableGroups().getGroupCount()).isEqualTo(3);
+        assertThat(wordCatalog.getConfusableGroups().getWordCount()).isEqualTo(6);
     }
 
     @Test
