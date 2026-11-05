@@ -60,7 +60,7 @@
     const state = {
         questions: [],
         timePerQuestionMs: 5000,
-        direction: 'EN_KO',
+        subject: 'ENGLISH',
         questionCount: 0,
         deadlineAt: 0,        // 전체 마감 시각 (performance.now() 기준, 기기 시계와 무관)
         questionEndAt: 0,     // 현재 문제 마감 시각 (performance.now() 기준)
@@ -390,7 +390,7 @@
         document.activeElement?.blur();
 
         // 영어 단어가 문제일 때만 읽어준다. 화면이 가려져 있으면 읽지 않음
-        if (state.direction === 'EN_KO' && !document.hidden) tts.speak(q.prompt);
+        if (state.subject === 'ENGLISH' && !document.hidden) tts.speak(q.prompt);
 
         startQuestionBar();
         updateQuestionSec();
@@ -472,7 +472,7 @@
         if (state.status !== 'STARTING') return;     // 기다리는 동안 화면을 떠남
         state.questions = data.questions;
         state.timePerQuestionMs = data.timePerQuestionSec * 1000;
-        state.direction = data.direction;
+        state.subject = data.subject;
         state.questionCount = data.questionCount;
         el.total.textContent = data.questionCount;
         el.timerSec.textContent = data.timePerQuestionSec;

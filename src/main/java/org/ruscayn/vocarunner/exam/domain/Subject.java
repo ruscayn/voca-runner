@@ -1,7 +1,7 @@
 package org.ruscayn.vocarunner.exam.domain;
 
-public enum Direction {
+public enum Subject {
 
-    EN_KO
+    ENGLISH
 
 }

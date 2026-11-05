@@ -189,7 +189,7 @@ class ExamServicePersistenceTest {
             Map<String, Object> row = row(examId);
             assertThat(row).containsEntry("status", "IN_PROGRESS")
                     .containsEntry("level_code", "A1")
-                    .containsEntry("direction", "EN_KO")
+                    .containsEntry("direction", "ENGLISH")
                     .containsEntry("question_count", QUESTION_COUNT)
                     .containsEntry("time_limit_sec", TIME_PER_QUESTION_SEC)
                     .containsEntry("device_id", DEVICE_ID)

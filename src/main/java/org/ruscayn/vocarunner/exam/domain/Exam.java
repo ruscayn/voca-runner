@@ -19,7 +19,7 @@ public class Exam {
 
     private final UUID id;
     private final Level level;
-    private final Direction direction;
+    private final Subject subject;
     private final int timePerQuestionSec;
     private final Examinee examinee;
     private ExamTime time;
@@ -32,7 +32,7 @@ public class Exam {
 
     public static Exam start(Level level, List<Question> questions, Examinee examinee, Instant now, Duration grace) {
         int count = questions.size();
-        return new Exam(UUID.randomUUID(), level, Direction.EN_KO, DEFAULT_TIME_PER_QUESTION_SEC, examinee,
+        return new Exam(UUID.randomUUID(), level, Subject.ENGLISH, DEFAULT_TIME_PER_QUESTION_SEC, examinee,
                 ExamTime.start(now, count, DEFAULT_TIME_PER_QUESTION_SEC, grace), ExamPaper.from(questions),
                 AnswerKey.from(questions), ExamStatus.IN_PROGRESS, false, null, null);
     }
@@ -41,13 +41,13 @@ public class Exam {
         return ExamTime.calculateAllowedTime(questionCount, DEFAULT_TIME_PER_QUESTION_SEC, grace);
     }
 
-    public static Exam of(UUID id, Level level, Direction direction, int timePerQuestionSec, Examinee examinee,
+    public static Exam of(UUID id, Level level, Subject subject, int timePerQuestionSec, Examinee examinee,
                           ExamTime time, ExamPaper paper, AnswerKey answerKey, ExamStatus status,
                           boolean questionsDelivered, GradingResult gradingResult, Integer version) {
         if (paper.getQuestionCount() != answerKey.getQuestionCount()) {
             throw new IllegalArgumentException("시험지와 정답지의 문항 수가 맞지 않습니다: exam=" + id);
         }
-        return new Exam(id, level, direction, timePerQuestionSec, examinee, time, paper, answerKey, status,
+        return new Exam(id, level, subject, timePerQuestionSec, examinee, time, paper, answerKey, status,
                 questionsDelivered, gradingResult, version);
     }
 

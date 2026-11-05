@@ -16,7 +16,6 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.ruscayn.vocarunner.common.adapter.out.persistence.BaseEntity;
 import org.ruscayn.vocarunner.exam.domain.AnswerKey;
-import org.ruscayn.vocarunner.exam.domain.Direction;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.ExamPaper;
 import org.ruscayn.vocarunner.exam.domain.ExamStatus;
@@ -24,6 +23,7 @@ import org.ruscayn.vocarunner.exam.domain.ExamTime;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.exam.domain.GradingResult;
 import org.ruscayn.vocarunner.exam.domain.SelectedOptions;
+import org.ruscayn.vocarunner.exam.domain.Subject;
 import org.ruscayn.vocarunner.word.domain.Level;
 
 /** 문항을 행으로 나누지 않고 배열로 한 행에 둔다 (500문항 기준 약 10KB) */
@@ -43,7 +43,7 @@ public class ExamJpaEntity extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "direction", nullable = false, length = 10)
-    private Direction direction;
+    private Subject subject;
 
     @Column(name = "question_count", nullable = false)
     private int questionCount;
@@ -105,7 +105,7 @@ public class ExamJpaEntity extends BaseEntity {
 
     private void copyFixedAtStart(Exam exam) {
         this.level = exam.getLevel();
-        this.direction = exam.getDirection();
+        this.subject = exam.getSubject();
         this.timePerQuestionSec = exam.getTimePerQuestionSec();
         this.deviceId = exam.getExaminee().deviceId();
         this.clientIp = exam.getExaminee().clientIp();
@@ -136,7 +136,7 @@ public class ExamJpaEntity extends BaseEntity {
     }
 
     Exam toDomain() {
-        return Exam.of(id, level, direction, timePerQuestionSec, new Examinee(deviceId, clientIp),
+        return Exam.of(id, level, subject, timePerQuestionSec, new Examinee(deviceId, clientIp),
                 new ExamTime(startedAt, deadline, submittedAt),
                 ExamPaper.of(optionIds, SelectedOptions.of(selectedOptionNo)), AnswerKey.of(answerOptionNo),
                 status, questionsDelivered, toGradingResult(), version);

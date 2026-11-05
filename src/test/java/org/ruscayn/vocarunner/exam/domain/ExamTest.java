@@ -54,11 +54,11 @@ class ExamTest {
         }
 
         @Test
-        @DisplayName("방향은 EN_KO, 문항당 시간은 기본 5초, 마감 = 시작 + 분 단위 허용 시간 (500문항 × 5초 + 3분 → 45분)")
+        @DisplayName("과목은 ENGLISH, 문항당 시간은 기본 5초, 마감 = 시작 + 분 단위 허용 시간 (500문항 × 5초 + 3분 → 45분)")
         void defaults() {
             Exam exam = start(500);
 
-            assertThat(exam.getDirection()).isEqualTo(Direction.EN_KO);
+            assertThat(exam.getSubject()).isEqualTo(Subject.ENGLISH);
             assertThat(exam.getTimePerQuestionSec()).isEqualTo(Exam.DEFAULT_TIME_PER_QUESTION_SEC);
             assertThat(exam.getTime().startedAt()).isEqualTo(NOW);
             assertThat(exam.getTime().deadline()).isEqualTo(NOW.plus(Duration.ofMinutes(45)));

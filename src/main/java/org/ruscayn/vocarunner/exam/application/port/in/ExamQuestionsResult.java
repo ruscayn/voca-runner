@@ -15,7 +15,7 @@ public record ExamQuestionsResult(
         UUID examId,
         String level,
         String groupName,
-        String direction,
+        String subject,
         int questionCount,
         int timePerQuestionSec,
         long allowedMinutes,
@@ -25,7 +25,7 @@ public record ExamQuestionsResult(
 
     public static ExamQuestionsResult of(Exam exam, WordCatalog wordCatalog, Instant now) {
         return new ExamQuestionsResult(exam.getId(), exam.getLevel().name(), exam.getLevel().getGroupName(),
-                exam.getDirection().name(), exam.getQuestionCount(), exam.getTimePerQuestionSec(),
+                exam.getSubject().name(), exam.getQuestionCount(), exam.getTimePerQuestionSec(),
                 exam.getTime().allowedMinutes(), exam.getTime().remainingSec(now), questionItems(exam, wordCatalog));
     }
 

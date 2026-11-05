@@ -31,7 +31,7 @@ class ExamQuestionsResultTest {
         assertThat(result.examId()).isEqualTo(exam.getId());
         assertThat(result.level()).isEqualTo("A1");
         assertThat(result.groupName()).isEqualTo("Basic");
-        assertThat(result.direction()).isEqualTo("EN_KO");
+        assertThat(result.subject()).isEqualTo("ENGLISH");
         assertThat(result.questionCount()).isEqualTo(2);
         assertThat(result.timePerQuestionSec()).isEqualTo(Exam.DEFAULT_TIME_PER_QUESTION_SEC);
         assertThat(result.allowedMinutes()).isEqualTo(4);   // 2문항 × 5초 + 3분 → 4분

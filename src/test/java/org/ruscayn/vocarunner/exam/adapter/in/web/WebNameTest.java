@@ -114,7 +114,7 @@ class WebNameTest {
             ExamQuestionsResult.QuestionItem question = new ExamQuestionsResult.QuestionItem(1, "abroad", "go abroad",
                     List.of(new ExamQuestionsResult.Option(1, "해외로"), new ExamQuestionsResult.Option(2, "국내에")));
             given(examUseCase.deliverQuestions(EXAM_ID, DEVICE_ID)).willReturn(
-                    new ExamQuestionsResult(EXAM_ID, "B1", "Independent", "EN_KO", 1, 5, 3, 170,
+                    new ExamQuestionsResult(EXAM_ID, "B1", "Independent", "ENGLISH", 1, 5, 3, 170,
                             List.of(question)));
 
             String json = mockMvc.perform(get("/api/exams/" + EXAM_ID + "/questions").cookie(DEVICE_COOKIE))
@@ -122,7 +122,7 @@ class WebNameTest {
                     .andReturn().getResponse().getContentAsString();
 
             assertThat(readObject(json, "$").keySet()).containsExactlyInAnyOrder(
-                    "examId", "level", "groupName", "direction", "questionCount", "timePerQuestionSec",
+                    "examId", "level", "groupName", "subject", "questionCount", "timePerQuestionSec",
                     "allowedMinutes", "remainingSec", "questions");
             assertThat(readObject(json, "$.questions[0]").keySet())
                     .containsExactlyInAnyOrder("no", "prompt", "promptSub", "options");

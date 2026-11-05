@@ -145,7 +145,7 @@ CREATE INDEX ix_test_session_ip     ON test_session (client_ip) WHERE status = '
 COMMENT ON TABLE  test_session                     IS '시험 1회 (정답지·고른 답·채점 결과). 진행 중·결과 보관 중인 시험만 두고, 보관 시간이 지나면 정리 작업이 삭제';
 COMMENT ON COLUMN test_session.test_session_id     IS '시험 id (시험 화면 주소에 쓰는 UUID)';
 COMMENT ON COLUMN test_session.level_code          IS '세부 레벨 A1~C2';
-COMMENT ON COLUMN test_session.direction           IS '출제 방향 (EN_KO: 영어 단어 → 한국어 뜻 고르기)';
+COMMENT ON COLUMN test_session.direction           IS '시험 과목 (ENGLISH: 영어 단어 → 한국어 뜻 고르기). 칼럼 이름은 처음 이름(출제 방향) 그대로';
 COMMENT ON COLUMN test_session.question_count      IS '문항 수';
 COMMENT ON COLUMN test_session.time_limit_sec      IS '문제당 제한 시간 (초)';
 COMMENT ON COLUMN test_session.device_id           IS '시작한 기기 구분 값 (쿠키 VR_DEVICE). 기기당 진행 중 시험 1개';
