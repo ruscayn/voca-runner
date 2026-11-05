@@ -135,7 +135,7 @@ public class ExamJpaEntity extends BaseEntity {
     }
 
     Exam toDomain() {
-        return Exam.withId(id, level, direction, timePerQuestionSec, new Examinee(deviceId, clientIp),
+        return Exam.of(id, level, direction, timePerQuestionSec, new Examinee(deviceId, clientIp),
                 new ExamTime(startedAt, deadline), AnswerKey.of(optionIds, answerOptionNo),
                 SelectedOptions.of(selectedOptionNo), status, questionsDelivered, toGradingResult(), version);
     }

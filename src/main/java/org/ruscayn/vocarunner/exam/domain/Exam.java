@@ -42,9 +42,9 @@ public class Exam {
         return ExamTime.calculateAllowedTime(questionCount, DEFAULT_TIME_PER_QUESTION_SEC, grace);
     }
 
-    public static Exam withId(UUID id, Level level, Direction direction, int timePerQuestionSec, Examinee examinee,
-                              ExamTime time, AnswerKey answerKey, SelectedOptions selectedOptions, ExamStatus status,
-                              boolean questionsDelivered, GradingResult gradingResult, Integer version) {
+    public static Exam of(UUID id, Level level, Direction direction, int timePerQuestionSec, Examinee examinee,
+                          ExamTime time, AnswerKey answerKey, SelectedOptions selectedOptions, ExamStatus status,
+                          boolean questionsDelivered, GradingResult gradingResult, Integer version) {
         if (selectedOptions.questionCount() != answerKey.questionCount()) {
             throw new IllegalArgumentException("문항 배열 길이가 맞지 않습니다: exam=" + id);
         }
