@@ -24,7 +24,7 @@ class ExamTimeTest {
     })
     @DisplayName("허용 시간은 분 단위로 올림")
     void allowedTimeRoundsUpToMinutes(int count, int sec, int graceSec, long expectedMinutes) {
-        Duration allowed = ExamTime.allowedTime(count, sec, Duration.ofSeconds(graceSec));
+        Duration allowed = ExamTime.calculateAllowedTime(count, sec, Duration.ofSeconds(graceSec));
 
         assertThat(allowed).isEqualTo(Duration.ofMinutes(expectedMinutes));
     }

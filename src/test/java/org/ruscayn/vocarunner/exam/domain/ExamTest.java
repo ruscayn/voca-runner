@@ -62,7 +62,7 @@ class ExamTest {
             assertThat(exam.getTimePerQuestionSec()).isEqualTo(Exam.DEFAULT_TIME_PER_QUESTION_SEC);
             assertThat(exam.getTime().startedAt()).isEqualTo(NOW);
             assertThat(exam.getTime().deadline()).isEqualTo(NOW.plus(Duration.ofMinutes(45)));
-            assertThat(Exam.allowedTime(500, GRACE)).isEqualTo(Duration.ofMinutes(45));
+            assertThat(Exam.calculateAllowedTime(500, GRACE)).isEqualTo(Duration.ofMinutes(45));
         }
 
         @Test

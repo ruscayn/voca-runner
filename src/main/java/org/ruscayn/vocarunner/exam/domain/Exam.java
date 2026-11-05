@@ -38,8 +38,8 @@ public class Exam {
                 SelectedOptions.none(count), ExamStatus.IN_PROGRESS, false, null, null);
     }
 
-    public static Duration allowedTime(int questionCount, Duration grace) {
-        return ExamTime.allowedTime(questionCount, DEFAULT_TIME_PER_QUESTION_SEC, grace);
+    public static Duration calculateAllowedTime(int questionCount, Duration grace) {
+        return ExamTime.calculateAllowedTime(questionCount, DEFAULT_TIME_PER_QUESTION_SEC, grace);
     }
 
     public static Exam withId(UUID id, Level level, Direction direction, int timePerQuestionSec, Examinee examinee,
