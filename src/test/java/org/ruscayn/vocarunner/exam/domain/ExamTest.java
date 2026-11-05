@@ -207,7 +207,7 @@ class ExamTest {
         }
 
         @Test
-        @DisplayName("마감 시각이 지나면 만료(EXPIRED) 처리되고 EXAM_EXPIRED")
+        @DisplayName("마감 시각이 지나면 EXAM_EXPIRED, 상태는 바꾸지 않는다 (만료는 마감으로 판정)")
         void afterDeadline() {
             Exam exam = start(5);
             Instant late = exam.getTime().deadline().plusMillis(1);
@@ -216,7 +216,7 @@ class ExamTest {
                     .isInstanceOf(CustomException.class)
                     .extracting(e -> ((CustomException) e).getErrorCode())
                     .isEqualTo(ErrorCode.EXAM_EXPIRED);
-            assertThat(exam.getStatus()).isEqualTo(ExamStatus.EXPIRED);
+            assertThat(exam.getStatus()).isEqualTo(ExamStatus.IN_PROGRESS);
         }
 
         @ParameterizedTest(name = "보기 번호 {0}")
@@ -239,19 +239,6 @@ class ExamTest {
             exam.submit(List.of(), NOW);
 
             assertThatThrownBy(() -> exam.submit(List.of(), NOW))
-                    .isInstanceOf(CustomException.class)
-                    .extracting(e -> ((CustomException) e).getErrorCode())
-                    .isEqualTo(ErrorCode.EXAM_NOT_IN_PROGRESS);
-        }
-
-        @Test
-        @DisplayName("만료된 시험은 다시 제출할 수 없다")
-        void afterExpire() {
-            Exam exam = start(2);
-            Instant late = exam.getTime().deadline().plusMillis(1);
-            assertThatThrownBy(() -> exam.submit(List.of(), late)).isInstanceOf(CustomException.class);
-
-            assertThatThrownBy(() -> exam.submit(List.of(), late))
                     .isInstanceOf(CustomException.class)
                     .extracting(e -> ((CustomException) e).getErrorCode())
                     .isEqualTo(ErrorCode.EXAM_NOT_IN_PROGRESS);

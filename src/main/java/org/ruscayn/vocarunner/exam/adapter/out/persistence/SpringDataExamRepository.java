@@ -38,8 +38,7 @@ public interface SpringDataExamRepository extends JpaRepository<ExamJpaEntity, U
     @Modifying
     @Query("""
             delete from ExamJpaEntity s
-             where s.status = org.ruscayn.vocarunner.exam.domain.ExamStatus.EXPIRED
-                or (s.status = org.ruscayn.vocarunner.exam.domain.ExamStatus.IN_PROGRESS
+             where (s.status = org.ruscayn.vocarunner.exam.domain.ExamStatus.IN_PROGRESS
                     and (s.deadline < :now
                          or (s.questionsDelivered = false and s.startedAt < :undeliveredBefore)))
                 or (s.status = org.ruscayn.vocarunner.exam.domain.ExamStatus.COMPLETED

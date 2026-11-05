@@ -82,13 +82,6 @@ class ExamPersistenceAdapterTest {
         return Exam.start(Level.A1, questions(4), new Examinee(deviceId, ip), startedAt, GRACE);
     }
 
-    /** 마감이 지난 뒤 제출해 만료 상태로 만든다 */
-    private static Exam expired(Exam exam) {
-        assertThatThrownBy(() -> exam.submit(List.of(), exam.getTime().deadline().plusSeconds(1)))
-                .isInstanceOf(CustomException.class);
-        return exam;
-    }
-
     private Exam saved(Exam exam) {
         repository.save(exam);
         return exam;
@@ -177,13 +170,12 @@ class ExamPersistenceAdapterTest {
     class InProgress {
 
         @Test
-        @DisplayName("진행 중이고 마감 전인 시험만 센다 (제출·만료·마감 지남 제외)")
+        @DisplayName("진행 중이고 마감 전인 시험만 센다 (제출·마감 지남 제외)")
         void count() {
             saved(exam("device-1", "10.0.0.1", NOW));
             Exam completed = exam("device-2", "10.0.0.1", NOW);
             completed.submit(List.of(), NOW.plusSeconds(10));
             saved(completed);
-            saved(expired(exam("device-3", "10.0.0.1", NOW)));
             saved(exam("device-4", "10.0.0.1", NOW.minus(Duration.ofHours(1))));   // 마감 지남
 
             assertThat(repository.countInProgress(NOW.plusSeconds(20))).isEqualTo(1);
@@ -226,7 +218,7 @@ class ExamPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("정리 작업은 마감이 지난 시험 · 문제를 받아 가지 않은 시험 · 보관이 끝난 결과 · 만료된 시험만 지운다")
+    @DisplayName("정리 작업은 마감이 지난 시험 · 문제를 받아 가지 않은 시험 · 보관이 끝난 결과만 지운다")
     void deleteDisposable() {
         Instant now = NOW.plus(Duration.ofHours(3));
         // 남아야 하는 시험
@@ -242,14 +234,13 @@ class ExamPersistenceAdapterTest {
         Exam undelivered = exam("d5", "10.0.0.1", now.minus(Duration.ofMinutes(3)));      // 2분 넘게 문제를 안 받아 감
         Exam oldResult = exam("d6", "10.0.0.1", now.minus(Duration.ofHours(3)));
         oldResult.submit(List.of(), now.minus(Duration.ofHours(3)).plusSeconds(30));                 // 보관 1시간 지남
-        Exam expired = expired(exam("d7", "10.0.0.1", now.minus(Duration.ofMinutes(1))));
 
-        List<Exam> all = List.of(delivered, justStarted, recentResult, pastDeadline, undelivered, oldResult, expired);
+        List<Exam> all = List.of(delivered, justStarted, recentResult, pastDeadline, undelivered, oldResult);
         all.forEach(repository::save);
 
         int deleted = repository.deleteDisposable(now, RETENTION, UNDELIVERED);
 
-        assertThat(deleted).isEqualTo(4);
+        assertThat(deleted).isEqualTo(3);
         assertThat(springDataRepository.findAll()).extracting(ExamJpaEntity::getId)
                 .containsExactlyInAnyOrder(delivered.getId(), justStarted.getId(), recentResult.getId());
     }

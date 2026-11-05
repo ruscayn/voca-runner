@@ -136,7 +136,7 @@ CREATE TABLE test_session (
     created_at          timestamptz   NOT NULL DEFAULT now(),
     updated_at          timestamptz   NOT NULL DEFAULT now(),
     CONSTRAINT ck_test_session_level  CHECK (level_code IN ('A1','A2','B1','B2','C1','C2')),
-    CONSTRAINT ck_test_session_status CHECK (status IN ('IN_PROGRESS','COMPLETED','EXPIRED'))
+    CONSTRAINT ck_test_session_status CHECK (status IN ('IN_PROGRESS','COMPLETED'))
 );
 CREATE INDEX ix_test_session_status_deadline ON test_session (status, deadline);
 CREATE INDEX ix_test_session_device ON test_session (device_id) WHERE status = 'IN_PROGRESS';
@@ -150,7 +150,7 @@ COMMENT ON COLUMN test_session.question_count      IS '문항 수';
 COMMENT ON COLUMN test_session.time_limit_sec      IS '문제당 제한 시간 (초)';
 COMMENT ON COLUMN test_session.device_id           IS '시작한 기기 구분 값 (쿠키 VR_DEVICE). 기기당 진행 중 시험 1개';
 COMMENT ON COLUMN test_session.client_ip           IS '시작한 IP. IP당 진행 중 시험 상한(50개) 확인용';
-COMMENT ON COLUMN test_session.status              IS '상태: IN_PROGRESS 진행 중, COMPLETED 제출 완료, EXPIRED 무효(중도 이탈·마감 초과)';
+COMMENT ON COLUMN test_session.status              IS '상태: IN_PROGRESS 진행 중, COMPLETED 제출 완료';
 COMMENT ON COLUMN test_session.questions_delivered IS '시험 화면이 문제를 받아 갔는지. 시작 후 5분 안에 받아 가지 않으면 정리 (연결 끊김 대비)';
 COMMENT ON COLUMN test_session.started_at          IS '시작 시각';
 COMMENT ON COLUMN test_session.deadline            IS '마감 시각. 지나면 제출 불가 (시작 + 문항 수 × 제한 시간 + 여유, 분 단위 올림)';

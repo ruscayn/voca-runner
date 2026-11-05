@@ -61,7 +61,7 @@ public class Exam {
 
     public void submit(List<SelectedOption> selected, Instant now) {
         requireInProgress();
-        expireIfPastDeadline(now);
+        requireNotPastDeadline(now);
         this.selectedOptions = SelectedOptions.record(selected, getQuestionCount());
         this.gradingResult = GradingResult.of(countCorrect(), getQuestionCount(), now);
         this.status = ExamStatus.COMPLETED;
@@ -73,9 +73,8 @@ public class Exam {
         }
     }
 
-    private void expireIfPastDeadline(Instant now) {
+    private void requireNotPastDeadline(Instant now) {
         if (time.isPastDeadline(now)) {
-            status = ExamStatus.EXPIRED;
             throw new CustomException(ErrorCode.EXAM_EXPIRED);
         }
     }
