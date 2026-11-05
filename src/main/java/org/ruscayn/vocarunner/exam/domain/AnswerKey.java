@@ -2,19 +2,17 @@ package org.ruscayn.vocarunner.exam.domain;
 
 import java.util.List;
 import java.util.stream.IntStream;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 
 /** 문항 n(1부터)의 보기 i(1~4) = optionIds[(n-1)*4 + (i-1)] (레벨 단어 아이디), 정답 보기 번호 = answerOptionNo[n-1] */
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class AnswerKey {
 
     private static final int OPTION_COUNT = Question.OPTION_COUNT;
 
     private final int[] optionIds;
     private final byte[] answerOptionNo;
-
-    private AnswerKey(int[] optionIds, byte[] answerOptionNo) {
-        this.optionIds = optionIds;
-        this.answerOptionNo = answerOptionNo;
-    }
 
     static AnswerKey from(List<Question> questions) {
         return new AnswerKey(toOptionIds(questions), toAnswerOptionNo(questions));

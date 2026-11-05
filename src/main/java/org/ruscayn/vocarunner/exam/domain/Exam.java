@@ -5,12 +5,15 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.word.domain.Level;
 
 @Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Exam {
 
     public static final int DEFAULT_TIME_PER_QUESTION_SEC = 5;
@@ -27,24 +30,6 @@ public class Exam {
     private boolean questionsDelivered;
     private GradingResult gradingResult;
     private final Integer version;
-
-    // CHECKSTYLE.SUPPRESS: MethodLength — 매개변수를 필드에 옮겨 담기만 함
-    private Exam(UUID id, Level level, Direction direction, int timePerQuestionSec, Examinee examinee, ExamTime time,
-                 AnswerKey answerKey, SelectedOptions selectedOptions, ExamStatus status, boolean questionsDelivered,
-                 GradingResult gradingResult, Integer version) {
-        this.id = id;
-        this.level = level;
-        this.direction = direction;
-        this.timePerQuestionSec = timePerQuestionSec;
-        this.examinee = examinee;
-        this.time = time;
-        this.answerKey = answerKey;
-        this.selectedOptions = selectedOptions;
-        this.status = status;
-        this.questionsDelivered = questionsDelivered;
-        this.gradingResult = gradingResult;
-        this.version = version;
-    }
 
     public static Exam start(Level level, List<Question> questions, Examinee examinee, Instant now, Duration grace) {
         requireQuestions(questions);

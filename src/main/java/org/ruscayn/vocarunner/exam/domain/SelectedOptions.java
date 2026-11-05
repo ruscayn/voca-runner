@@ -3,19 +3,18 @@ package org.ruscayn.vocarunner.exam.domain;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 
 /** 문항 n(1부터)의 고른 보기 번호 = selectedOptionNo[n-1] (1~4, 0 = 고르지 않음 · 시간 초과) */
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SelectedOptions {
 
     private static final int NONE = 0;
 
     private final byte[] selectedOptionNo;
-
-    private SelectedOptions(byte[] selectedOptionNo) {
-        this.selectedOptionNo = selectedOptionNo;
-    }
 
     static SelectedOptions none(int questionCount) {
         return new SelectedOptions(new byte[questionCount]);

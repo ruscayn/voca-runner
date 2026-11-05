@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 import java.util.random.RandomGenerator;
+import lombok.RequiredArgsConstructor;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
@@ -20,6 +21,7 @@ import org.ruscayn.vocarunner.word.domain.WordCatalog;
  *   <li>시험 제외 단어는 정답으로도 오답 보기로도 내지 않는다</li>
  * </ul>
  */
+@RequiredArgsConstructor
 public class QuestionGenerator {
 
     public static final int ALL_WORDS = 0;
@@ -29,10 +31,6 @@ public class QuestionGenerator {
 
     public QuestionGenerator() {
         this(ThreadLocalRandom::current);
-    }
-
-    public QuestionGenerator(Supplier<RandomGenerator> randomSupplier) {
-        this.randomSupplier = randomSupplier;
     }
 
     public List<Question> generate(WordCatalog wordCatalog, Level level, int maxCount) {
