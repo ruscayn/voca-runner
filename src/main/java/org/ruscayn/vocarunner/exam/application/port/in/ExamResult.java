@@ -25,7 +25,7 @@ public record ExamResult(
         GradingResult gradingResult = exam.getGradingResult();
         return new ExamResult(exam.getId(), exam.getLevel().name(), exam.getLevel().getGroupName(),
                 exam.getQuestionCount(), gradingResult.correctCount(), gradingResult.score(),
-                gradingResult.retentionDeadline(resultRetention), resultRetention.toMinutes(),
+                exam.getTime().retentionDeadline(resultRetention), resultRetention.toMinutes(),
                 wrongItems(exam, wordCatalog));
     }
 

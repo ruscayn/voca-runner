@@ -22,7 +22,7 @@ public class Exam {
     private final Direction direction;
     private final int timePerQuestionSec;
     private final Examinee examinee;
-    private final ExamTime time;
+    private ExamTime time;
     private ExamPaper paper;
     private final AnswerKey answerKey;
     private ExamStatus status;
@@ -62,7 +62,8 @@ public class Exam {
         requireInProgress();
         requireNotPastDeadline(now);
         this.paper = paper.record(selected);
-        this.gradingResult = GradingResult.of(answerKey.countCorrect(paper), getQuestionCount(), now);
+        this.gradingResult = GradingResult.of(answerKey.countCorrect(paper), getQuestionCount());
+        this.time = time.submit(now);
         this.status = ExamStatus.COMPLETED;
     }
 

@@ -123,6 +123,7 @@ public class ExamJpaEntity extends BaseEntity {
         this.status = exam.getStatus();
         this.questionsDelivered = exam.isQuestionsDelivered();
         this.selectedOptionNo = exam.getPaper().getSelectedOptions().toSelectedOptionNoArray();
+        this.submittedAt = exam.getTime().submittedAt();
         copyGradingResult(exam.getGradingResult());
     }
 
@@ -132,20 +133,20 @@ public class ExamJpaEntity extends BaseEntity {
         }
         this.correctCount = gradingResult.correctCount();
         this.score = gradingResult.score();
-        this.submittedAt = gradingResult.submittedAt();
     }
 
     Exam toDomain() {
         return Exam.of(id, level, direction, timePerQuestionSec, new Examinee(deviceId, clientIp),
-                new ExamTime(startedAt, deadline), ExamPaper.of(optionIds, SelectedOptions.of(selectedOptionNo)),
-                AnswerKey.of(answerOptionNo), status, questionsDelivered, toGradingResult(), version);
+                new ExamTime(startedAt, deadline, submittedAt),
+                ExamPaper.of(optionIds, SelectedOptions.of(selectedOptionNo)), AnswerKey.of(answerOptionNo),
+                status, questionsDelivered, toGradingResult(), version);
     }
 
     private GradingResult toGradingResult() {
-        if (submittedAt == null) {
+        if (correctCount == null) {
             return null;
         }
-        return new GradingResult(correctCount, score, submittedAt);
+        return new GradingResult(correctCount, score);
     }
 
 }

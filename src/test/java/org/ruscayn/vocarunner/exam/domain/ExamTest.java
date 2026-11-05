@@ -141,7 +141,7 @@ class ExamTest {
             assertThat(exam.isCompleted()).isTrue();
             assertThat(exam.getGradingResult().correctCount()).isEqualTo(1);
             assertThat(exam.getGradingResult().score()).isEqualTo(25);
-            assertThat(exam.getGradingResult().submittedAt()).isEqualTo(NOW.plusSeconds(30));
+            assertThat(exam.getTime().submittedAt()).isEqualTo(NOW.plusSeconds(30));
 
             ExamPaper paper = exam.getPaper();
             assertThat(paper.selectedOptionId(1)).isEqualTo(exam.answerOptionId(1));

@@ -130,7 +130,7 @@ class ExamPersistenceAdapterTest {
             assertThat(loaded.getStatus()).isEqualTo(ExamStatus.COMPLETED);
             assertThat(loaded.getGradingResult().correctCount()).isEqualTo(2);
             assertThat(loaded.getGradingResult().score()).isEqualTo(50);
-            assertThat(loaded.getGradingResult().submittedAt()).isEqualTo(NOW.plusSeconds(30));
+            assertThat(loaded.getTime().submittedAt()).isEqualTo(NOW.plusSeconds(30));
             assertThat(loaded.getWrongQuestionNos()).containsExactly(2, 4);
             assertThat(loaded.getPaper().selectedOptionId(2)).isEqualTo(
                     exam.getPaper().optionIds(2).get(incorrectOptionNo(2) - 1));
@@ -161,7 +161,7 @@ class ExamPersistenceAdapterTest {
                 .isInstanceOf(ObjectOptimisticLockingFailureException.class);
         Exam loaded = load(exam.getId());
         assertThat(loaded.getGradingResult().correctCount()).isEqualTo(1);
-        assertThat(loaded.getGradingResult().submittedAt()).isEqualTo(NOW.plusSeconds(10));
+        assertThat(loaded.getTime().submittedAt()).isEqualTo(NOW.plusSeconds(10));
     }
 
     @Nested

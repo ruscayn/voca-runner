@@ -3,10 +3,11 @@ package org.ruscayn.vocarunner.exam.domain;
 import java.time.Duration;
 import java.time.Instant;
 
-public record ExamTime(Instant startedAt, Instant deadline) {
+/** 제출 시각은 제출 전에는 없다 (null) */
+public record ExamTime(Instant startedAt, Instant deadline, Instant submittedAt) {
 
     static ExamTime start(Instant now, int questionCount, int timePerQuestionSec, Duration grace) {
-        return new ExamTime(now, now.plus(calculateAllowedTime(questionCount, timePerQuestionSec, grace)));
+        return new ExamTime(now, now.plus(calculateAllowedTime(questionCount, timePerQuestionSec, grace)), null);
     }
 
     /**
@@ -28,6 +29,14 @@ public record ExamTime(Instant startedAt, Instant deadline) {
 
     public long allowedMinutes() {
         return Duration.between(startedAt, deadline).toMinutes();
+    }
+
+    ExamTime submit(Instant now) {
+        return new ExamTime(startedAt, deadline, now);
+    }
+
+    public Instant retentionDeadline(Duration resultRetention) {
+        return submittedAt.plus(resultRetention);
     }
 
 }

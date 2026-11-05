@@ -2,17 +2,12 @@ package org.ruscayn.vocarunner.exam.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.Duration;
-import java.time.Instant;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-@DisplayName("GradingResult : 채점 결과 (맞힌 수 · 점수 · 제출 시각)")
+@DisplayName("GradingResult : 채점 결과 (맞힌 수 · 점수)")
 class GradingResultTest {
-
-    private static final Instant SUBMITTED_AT = Instant.parse("2026-10-08T00:00:00Z");
 
     @ParameterizedTest(name = "{1}문항 중 {0}개 → {2}점")
     @CsvSource({
@@ -23,19 +18,10 @@ class GradingResultTest {
     })
     @DisplayName("점수는 버림")
     void scoreFloor(int correctCount, int questionCount, int expectedScore) {
-        GradingResult gradingResult = GradingResult.of(correctCount, questionCount, SUBMITTED_AT);
+        GradingResult gradingResult = GradingResult.of(correctCount, questionCount);
 
         assertThat(gradingResult.correctCount()).isEqualTo(correctCount);
         assertThat(gradingResult.score()).isEqualTo(expectedScore);
-        assertThat(gradingResult.submittedAt()).isEqualTo(SUBMITTED_AT);
-    }
-
-    @Test
-    @DisplayName("보관 마감 = 제출 시각 + 결과 보관")
-    void retentionDeadline() {
-        GradingResult gradingResult = GradingResult.of(1, 2, SUBMITTED_AT);
-
-        assertThat(gradingResult.retentionDeadline(Duration.ofHours(1))).isEqualTo(SUBMITTED_AT.plusSeconds(3600));
     }
 
 }

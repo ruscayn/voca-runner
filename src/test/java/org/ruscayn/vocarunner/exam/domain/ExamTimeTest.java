@@ -37,12 +37,13 @@ class ExamTimeTest {
         assertThat(time.startedAt()).isEqualTo(NOW);
         assertThat(time.deadline()).isEqualTo(NOW.plus(Duration.ofMinutes(45)));
         assertThat(time.allowedMinutes()).isEqualTo(45);
+        assertThat(time.submittedAt()).isNull();
     }
 
     @Test
     @DisplayName("마감 시각 정각까지는 마감 전, 1밀리초라도 지나면 마감 지남")
     void pastDeadline() {
-        ExamTime time = new ExamTime(NOW, NOW.plusSeconds(60));
+        ExamTime time = new ExamTime(NOW, NOW.plusSeconds(60), null);
 
         assertThat(time.isPastDeadline(NOW.plusSeconds(60))).isFalse();
         assertThat(time.isPastDeadline(NOW.plusSeconds(60).plusMillis(1))).isTrue();
@@ -51,10 +52,19 @@ class ExamTimeTest {
     @Test
     @DisplayName("남은 초는 마감까지의 초, 마감이 지나면 0")
     void remainingSec() {
-        ExamTime time = new ExamTime(NOW, NOW.plusSeconds(60));
+        ExamTime time = new ExamTime(NOW, NOW.plusSeconds(60), null);
 
         assertThat(time.remainingSec(NOW.plusSeconds(10))).isEqualTo(50);
         assertThat(time.remainingSec(NOW.plusSeconds(90))).isZero();
+    }
+
+    @Test
+    @DisplayName("제출하면 제출 시각이 남고, 보관 마감 = 제출 시각 + 결과 보관")
+    void submit() {
+        ExamTime time = new ExamTime(NOW, NOW.plusSeconds(60), null).submit(NOW.plusSeconds(30));
+
+        assertThat(time.submittedAt()).isEqualTo(NOW.plusSeconds(30));
+        assertThat(time.retentionDeadline(Duration.ofHours(1))).isEqualTo(NOW.plusSeconds(30 + 3600));
     }
 
 }
