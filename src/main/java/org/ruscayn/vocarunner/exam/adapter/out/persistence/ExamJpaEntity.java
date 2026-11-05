@@ -1,28 +1,21 @@
 package org.ruscayn.vocarunner.exam.adapter.out.persistence;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
-import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import org.ruscayn.vocarunner.common.adapter.out.persistence.BaseEntity;
-import org.ruscayn.vocarunner.exam.domain.AnswerKey;
 import org.ruscayn.vocarunner.exam.domain.Exam;
-import org.ruscayn.vocarunner.exam.domain.ExamPaper;
 import org.ruscayn.vocarunner.exam.domain.ExamStatus;
-import org.ruscayn.vocarunner.exam.domain.ExamTime;
-import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.exam.domain.GradingResult;
-import org.ruscayn.vocarunner.exam.domain.SelectedOptions;
 import org.ruscayn.vocarunner.exam.domain.Subject;
 import org.ruscayn.vocarunner.word.domain.Level;
 
@@ -45,33 +38,20 @@ public class ExamJpaEntity extends BaseEntity {
     @Column(name = "direction", nullable = false, length = 10)
     private Subject subject;
 
-    @Column(name = "question_count", nullable = false)
-    private int questionCount;
-
     @Column(name = "time_limit_sec", nullable = false)
     private int timePerQuestionSec;
 
-    @Column(name = "device_id", nullable = false, length = 36)
-    private String deviceId;
+    @Embedded
+    private ExamineeEmbeddable examinee;
 
-    @Column(name = "client_ip", nullable = false, length = 45)
-    private String clientIp;
+    @Embedded
+    private ExamTimeEmbeddable time;
 
-    @Column(name = "started_at", nullable = false)
-    private Instant startedAt;
+    @Embedded
+    private ExamPaperEmbeddable paper;
 
-    @Column(name = "deadline", nullable = false)
-    private Instant deadline;
-
-    @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(name = "option_ids", nullable = false)
-    private int[] optionIds;
-
-    @Column(name = "correct_option_no", nullable = false)
-    private byte[] answerOptionNo;
-
-    @Column(name = "selected_option_no", nullable = false)
-    private byte[] selectedOptionNo;
+    @Embedded
+    private AnswerKeyEmbeddable answerKey;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 12)
@@ -80,14 +60,8 @@ public class ExamJpaEntity extends BaseEntity {
     @Column(name = "questions_delivered", nullable = false)
     private boolean questionsDelivered;
 
-    @Column(name = "correct_count")
-    private Integer correctCount;
-
-    @Column(name = "score")
-    private Integer score;
-
-    @Column(name = "submitted_at")
-    private Instant submittedAt;
+    @Embedded
+    private GradingResultEmbeddable gradingResult;
 
     @Version
     @Column(name = "version", nullable = false)
@@ -98,7 +72,6 @@ public class ExamJpaEntity extends BaseEntity {
         entity.id = exam.getId();
         entity.version = exam.getVersion();
         entity.copyFixedAtStart(exam);
-        entity.copyQuestions(exam);
         entity.copyChangedState(exam);
         return entity;
     }
@@ -107,46 +80,28 @@ public class ExamJpaEntity extends BaseEntity {
         this.level = exam.getLevel();
         this.subject = exam.getSubject();
         this.timePerQuestionSec = exam.getTimePerQuestionSec();
-        this.deviceId = exam.getExaminee().deviceId();
-        this.clientIp = exam.getExaminee().clientIp();
-        this.startedAt = exam.getTime().startedAt();
-        this.deadline = exam.getTime().deadline();
-    }
-
-    private void copyQuestions(Exam exam) {
-        this.questionCount = exam.getQuestionCount();
-        this.optionIds = exam.getPaper().toOptionIdArray();
-        this.answerOptionNo = exam.getAnswerKey().toAnswerOptionNoArray();
+        this.examinee = ExamineeEmbeddable.from(exam.getExaminee());
+        this.answerKey = AnswerKeyEmbeddable.from(exam.getAnswerKey());
     }
 
     void copyChangedState(Exam exam) {
         this.status = exam.getStatus();
         this.questionsDelivered = exam.isQuestionsDelivered();
-        this.selectedOptionNo = exam.getPaper().getSelectedOptions().toSelectedOptionNoArray();
-        this.submittedAt = exam.getTime().submittedAt();
-        copyGradingResult(exam.getGradingResult());
-    }
-
-    private void copyGradingResult(GradingResult gradingResult) {
-        if (gradingResult == null) {
-            return;
-        }
-        this.correctCount = gradingResult.correctCount();
-        this.score = gradingResult.score();
+        this.time = ExamTimeEmbeddable.from(exam.getTime());
+        this.paper = ExamPaperEmbeddable.from(exam.getPaper());
+        this.gradingResult = GradingResultEmbeddable.from(exam.getGradingResult());
     }
 
     Exam toDomain() {
-        return Exam.of(id, level, subject, timePerQuestionSec, new Examinee(deviceId, clientIp),
-                new ExamTime(startedAt, deadline, submittedAt),
-                ExamPaper.of(optionIds, SelectedOptions.of(selectedOptionNo)), AnswerKey.of(answerOptionNo),
-                status, questionsDelivered, toGradingResult(), version);
+        return Exam.of(id, level, subject, timePerQuestionSec, examinee.toDomain(), time.toDomain(),
+                paper.toDomain(), answerKey.toDomain(), status, questionsDelivered, toGradingResult(), version);
     }
 
     private GradingResult toGradingResult() {
-        if (correctCount == null) {
+        if (gradingResult == null) {
             return null;
         }
-        return new GradingResult(correctCount, score);
+        return gradingResult.toDomain();
     }
 
 }

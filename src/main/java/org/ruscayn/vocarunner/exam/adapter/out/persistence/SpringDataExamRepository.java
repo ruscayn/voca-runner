@@ -18,20 +18,20 @@ public interface SpringDataExamRepository extends JpaRepository<ExamJpaEntity, U
 
     @Query("""
             select count(s) from ExamJpaEntity s
-             where s.status = :status and s.deadline >= :now
+             where s.status = :status and s.time.deadline >= :now
             """)
     long countActive(@Param("status") ExamStatus status, @Param("now") Instant now);
 
     @Query("""
             select s from ExamJpaEntity s
-             where s.status = :status and s.deadline >= :now and s.deviceId = :deviceId
+             where s.status = :status and s.time.deadline >= :now and s.examinee.deviceId = :deviceId
             """)
     List<ExamJpaEntity> findActiveByDevice(@Param("status") ExamStatus status, @Param("now") Instant now,
                                            @Param("deviceId") String deviceId);
 
     @Query("""
             select count(s) from ExamJpaEntity s
-             where s.status = :status and s.deadline >= :now and s.clientIp = :ip
+             where s.status = :status and s.time.deadline >= :now and s.examinee.clientIp = :ip
             """)
     long countActiveByIp(@Param("status") ExamStatus status, @Param("now") Instant now, @Param("ip") String ip);
 
@@ -39,10 +39,10 @@ public interface SpringDataExamRepository extends JpaRepository<ExamJpaEntity, U
     @Query("""
             delete from ExamJpaEntity s
              where (s.status = org.ruscayn.vocarunner.exam.domain.ExamStatus.IN_PROGRESS
-                    and (s.deadline < :now
-                         or (s.questionsDelivered = false and s.startedAt < :undeliveredBefore)))
+                    and (s.time.deadline < :now
+                         or (s.questionsDelivered = false and s.time.startedAt < :undeliveredBefore)))
                 or (s.status = org.ruscayn.vocarunner.exam.domain.ExamStatus.COMPLETED
-                    and s.submittedAt < :completedBefore)
+                    and s.time.submittedAt < :completedBefore)
             """)
     int deleteDisposable(@Param("now") Instant now, @Param("undeliveredBefore") Instant undeliveredBefore,
                          @Param("completedBefore") Instant completedBefore);

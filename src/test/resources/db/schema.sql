@@ -118,7 +118,6 @@ CREATE TABLE test_session (
     test_session_id     uuid          PRIMARY KEY,
     level_code          varchar(2)    NOT NULL,
     direction           varchar(10)   NOT NULL,
-    question_count      integer       NOT NULL,
     time_limit_sec      integer       NOT NULL,
     device_id           varchar(36)   NOT NULL,
     client_ip           varchar(45)   NOT NULL,
@@ -146,7 +145,6 @@ COMMENT ON TABLE  test_session                     IS '시험 1회 (정답지·�
 COMMENT ON COLUMN test_session.test_session_id     IS '시험 id (시험 화면 주소에 쓰는 UUID)';
 COMMENT ON COLUMN test_session.level_code          IS '세부 레벨 A1~C2';
 COMMENT ON COLUMN test_session.direction           IS '시험 과목 (ENGLISH: 영어 단어 → 한국어 뜻 고르기). 칼럼 이름은 처음 이름(출제 방향) 그대로';
-COMMENT ON COLUMN test_session.question_count      IS '문항 수';
 COMMENT ON COLUMN test_session.time_limit_sec      IS '문제당 제한 시간 (초)';
 COMMENT ON COLUMN test_session.device_id           IS '시작한 기기 구분 값 (쿠키 VR_DEVICE). 기기당 진행 중 시험 1개';
 COMMENT ON COLUMN test_session.client_ip           IS '시작한 IP. IP당 진행 중 시험 상한(50개) 확인용';
