@@ -31,32 +31,13 @@ class ExamTest {
         return Exam.start(Level.B1, Direction.EN_KO, 5, questions(questionCount), EXAMINEE, NOW, GRACE);
     }
 
-    @Nested
-    @DisplayName("마감 시간 계산 (분 단위 올림)")
-    class AllowedDuration {
+    @Test
+    @DisplayName("마감 시각 = 시작 시각 + 분 단위 허용 시간 (500문항 × 5초 + 3분 → 45분)")
+    void deadline() {
+        Exam exam = start(500);
 
-        @ParameterizedTest(name = "{0}문항 × {1}초 + {2}초 → {3}분")
-        @CsvSource({
-                "500, 5, 180, 45",   // 41분 40초 + 3분 = 44분 40초 → 45분
-                "5,   5, 180, 4",    // 25초 + 3분 = 3분 25초 → 4분
-                "12,  5, 0,   1",    // 정확히 60초 → 1분 (올림 없음)
-                "13,  5, 0,   2",    // 65초 → 2분
-                "500, 10, 180, 87"   // 83분 20초 + 3분 = 86분 20초 → 87분
-        })
-        void roundsUpToMinutes(int count, int sec, int graceSec, long expectedMinutes) {
-            Duration allowed = Exam.allowedTime(count, sec, Duration.ofSeconds(graceSec));
-
-            assertThat(allowed).isEqualTo(Duration.ofMinutes(expectedMinutes));
-        }
-
-        @Test
-        @DisplayName("마감 시각 = 시작 시각 + 분 단위 허용 시간")
-        void deadline() {
-            Exam exam = start(500);
-
-            assertThat(exam.getDeadline()).isEqualTo(NOW.plus(Duration.ofMinutes(45)));
-        }
-
+        assertThat(exam.getTime().startedAt()).isEqualTo(NOW);
+        assertThat(exam.getTime().deadline()).isEqualTo(NOW.plus(Duration.ofMinutes(45)));
     }
 
     @Nested
@@ -138,9 +119,9 @@ class ExamTest {
 
             assertThat(exam.getStatus()).isEqualTo(ExamStatus.COMPLETED);
             assertThat(exam.isCompleted()).isTrue();
-            assertThat(exam.getCorrectCount()).isEqualTo(1);
-            assertThat(exam.getScore()).isEqualTo(25);
-            assertThat(exam.getSubmittedAt()).isEqualTo(NOW.plusSeconds(30));
+            assertThat(exam.getGradingResult().correctCount()).isEqualTo(1);
+            assertThat(exam.getGradingResult().score()).isEqualTo(25);
+            assertThat(exam.getGradingResult().submittedAt()).isEqualTo(NOW.plusSeconds(30));
 
             assertThat(exam.isCorrect(1)).isTrue();
             assertThat(exam.isCorrect(2)).isFalse();
@@ -161,7 +142,7 @@ class ExamTest {
 
             exam.submit(Map.of(1, answerOptionNo(1), 2, answerOptionNo(2)), NOW);
 
-            assertThat(exam.getScore()).isEqualTo(66);
+            assertThat(exam.getGradingResult().score()).isEqualTo(66);
         }
 
         @Test
@@ -175,8 +156,8 @@ class ExamTest {
 
             exam.submit(answers, NOW);
 
-            assertThat(exam.getCorrectCount()).isEqualTo(995);
-            assertThat(exam.getScore()).isEqualTo(99);
+            assertThat(exam.getGradingResult().correctCount()).isEqualTo(995);
+            assertThat(exam.getGradingResult().score()).isEqualTo(99);
         }
 
         @Test
@@ -190,8 +171,8 @@ class ExamTest {
 
             exam.submit(answers, NOW);
 
-            assertThat(exam.getCorrectCount()).isEqualTo(5);
-            assertThat(exam.getScore()).isEqualTo(100);
+            assertThat(exam.getGradingResult().correctCount()).isEqualTo(5);
+            assertThat(exam.getGradingResult().score()).isEqualTo(100);
         }
 
         @Test
@@ -199,7 +180,7 @@ class ExamTest {
         void atDeadline() {
             Exam exam = start(5);
 
-            exam.submit(Map.of(), exam.getDeadline());
+            exam.submit(Map.of(), exam.getTime().deadline());
 
             assertThat(exam.isCompleted()).isTrue();
         }
@@ -208,7 +189,7 @@ class ExamTest {
         @DisplayName("마감 시각이 지나면 만료(EXPIRED) 처리되고 EXAM_EXPIRED")
         void afterDeadline() {
             Exam exam = start(5);
-            Instant late = exam.getDeadline().plusMillis(1);
+            Instant late = exam.getTime().deadline().plusMillis(1);
 
             assertThatThrownBy(() -> exam.submit(Map.of(1, 1), late))
                     .isInstanceOf(CustomException.class)
@@ -265,8 +246,8 @@ class ExamTest {
         void inProgressByDeadline() {
             Exam exam = start(5);
 
-            assertThat(exam.isInProgress(exam.getDeadline())).isTrue();
-            assertThat(exam.isInProgress(exam.getDeadline().plusMillis(1))).isFalse();
+            assertThat(exam.isInProgress(exam.getTime().deadline())).isTrue();
+            assertThat(exam.isInProgress(exam.getTime().deadline().plusMillis(1))).isFalse();
         }
 
         @Test

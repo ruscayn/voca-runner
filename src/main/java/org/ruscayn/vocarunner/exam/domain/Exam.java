@@ -23,36 +23,29 @@ public class Exam {
     private final Direction direction;
     private final int timePerQuestionSec;
     private final Examinee examinee;
-    private final Instant startedAt;
-    private final Instant deadline;
+    private final ExamTime time;
     private final AnswerKey answerKey;
     private SelectedOptions selectedOptions;
     private ExamStatus status;
     private boolean questionsDelivered;
-    private Integer correctCount;
-    private Integer score;
-    private Instant submittedAt;
+    private GradingResult gradingResult;
     private final Integer version;
 
     // CHECKSTYLE.SUPPRESS: MethodLength — 매개변수를 필드에 옮겨 담기만 함
-    private Exam(UUID id, Level level, Direction direction, int timePerQuestionSec, Examinee examinee,
-                 Instant startedAt, Instant deadline, AnswerKey answerKey, SelectedOptions selectedOptions,
-                 ExamStatus status, boolean questionsDelivered, Integer correctCount, Integer score,
-                 Instant submittedAt, Integer version) {
+    private Exam(UUID id, Level level, Direction direction, int timePerQuestionSec, Examinee examinee, ExamTime time,
+                 AnswerKey answerKey, SelectedOptions selectedOptions, ExamStatus status, boolean questionsDelivered,
+                 GradingResult gradingResult, Integer version) {
         this.id = id;
         this.level = level;
         this.direction = direction;
         this.timePerQuestionSec = timePerQuestionSec;
         this.examinee = examinee;
-        this.startedAt = startedAt;
-        this.deadline = deadline;
+        this.time = time;
         this.answerKey = answerKey;
         this.selectedOptions = selectedOptions;
         this.status = status;
         this.questionsDelivered = questionsDelivered;
-        this.correctCount = correctCount;
-        this.score = score;
-        this.submittedAt = submittedAt;
+        this.gradingResult = gradingResult;
         this.version = version;
     }
 
@@ -63,9 +56,8 @@ public class Exam {
         requireTimePerQuestion(timePerQuestionSec);
         int count = questions.size();
         return new Exam(UUID.randomUUID(), level, direction, timePerQuestionSec, examinee,
-                now, now.plus(allowedTime(count, timePerQuestionSec, grace)),
-                AnswerKey.from(questions), SelectedOptions.none(count),
-                ExamStatus.IN_PROGRESS, false, null, null, null, null);
+                ExamTime.start(now, count, timePerQuestionSec, grace), AnswerKey.from(questions),
+                SelectedOptions.none(count), ExamStatus.IN_PROGRESS, false, null, null);
     }
 
     private static void requireQuestions(List<Question> questions) {
@@ -82,37 +74,29 @@ public class Exam {
     }
 
     public static Exam withId(UUID id, Level level, Direction direction, int timePerQuestionSec, Examinee examinee,
-                              Instant startedAt, Instant deadline, AnswerKey answerKey, SelectedOptions selectedOptions,
-                              ExamStatus status, boolean questionsDelivered, Integer correctCount, Integer score,
-                              Instant submittedAt, Integer version) {
+                              ExamTime time, AnswerKey answerKey, SelectedOptions selectedOptions, ExamStatus status,
+                              boolean questionsDelivered, GradingResult gradingResult, Integer version) {
         if (selectedOptions.questionCount() != answerKey.questionCount()) {
             throw new IllegalArgumentException("문항 배열 길이가 맞지 않습니다: exam=" + id);
         }
-        return new Exam(id, level, direction, timePerQuestionSec, examinee, startedAt, deadline,
-                answerKey, selectedOptions, status, questionsDelivered, correctCount, score, submittedAt, version);
+        return new Exam(id, level, direction, timePerQuestionSec, examinee, time, answerKey, selectedOptions, status,
+                questionsDelivered, gradingResult, version);
     }
 
-    /**
-     * (문항 수 × 문항당 시간 + 여유 시간)을 분 단위로 올림. 안내 문구를 "45분"처럼 분 단위로 보여 주므로 마감도 같은 값으로 맞춘다.
-     * 예: 500문항 × 5초 + 3분 = 44분 40초 → 45분
-     */
     public static Duration allowedTime(int questionCount, int timePerQuestionSec, Duration grace) {
-        long seconds = Duration.ofSeconds((long) questionCount * timePerQuestionSec).plus(grace).toSeconds();
-        return Duration.ofMinutes(Math.ceilDiv(seconds, 60));
+        return ExamTime.allowedTime(questionCount, timePerQuestionSec, grace);
     }
 
     public void submit(Map<Integer, Integer> selectedByQuestionNo, Instant now) {
         requireInProgress();
         expireIfPastDeadline(now);
         this.selectedOptions = SelectedOptions.record(selectedByQuestionNo, getQuestionCount());
-        this.correctCount = countCorrect();
-        this.score = toScore(correctCount);
-        this.submittedAt = now;
+        this.gradingResult = GradingResult.of(countCorrect(), getQuestionCount(), now);
         this.status = ExamStatus.COMPLETED;
     }
 
     private void expireIfPastDeadline(Instant now) {
-        if (now.isAfter(deadline)) {
+        if (time.isPastDeadline(now)) {
             status = ExamStatus.EXPIRED;
             throw new CustomException(ErrorCode.EXAM_EXPIRED);
         }
@@ -120,11 +104,6 @@ public class Exam {
 
     private int countCorrect() {
         return (int) IntStream.rangeClosed(1, getQuestionCount()).filter(this::isCorrect).count();
-    }
-
-    /** 반올림이 아니라 버림 : 틀린 문제가 있으면 100점이 되지 않게 (반올림이면 997문항 중 995개를 맞혀도 100점) */
-    private int toScore(int correct) {
-        return correct * 100 / getQuestionCount();
     }
 
     public void markQuestionsDelivered() {
@@ -147,7 +126,7 @@ public class Exam {
     }
 
     public boolean isInProgress(Instant now) {
-        return status == ExamStatus.IN_PROGRESS && !now.isAfter(deadline);
+        return status == ExamStatus.IN_PROGRESS && !time.isPastDeadline(now);
     }
 
     public boolean isCompleted() {

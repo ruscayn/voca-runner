@@ -105,8 +105,8 @@ class ExamPersistenceAdapterTest {
             assertThat(loaded.getStatus()).isEqualTo(ExamStatus.IN_PROGRESS);
             assertThat(loaded.getLevel()).isEqualTo(Level.A1);
             assertThat(loaded.getQuestionCount()).isEqualTo(4);
-            assertThat(loaded.getStartedAt()).isEqualTo(NOW);
-            assertThat(loaded.getDeadline()).isEqualTo(exam.getDeadline());
+            assertThat(loaded.getTime().startedAt()).isEqualTo(NOW);
+            assertThat(loaded.getTime().deadline()).isEqualTo(exam.getTime().deadline());
             assertThat(loaded.getExaminee()).isEqualTo(new Examinee("device-1", "10.0.0.1"));
             assertThat(jdbcTemplate.queryForObject("select created_at is not null from test_session"
                     + " where test_session_id = ?", Boolean.class, exam.getId())).isTrue();
@@ -128,9 +128,9 @@ class ExamPersistenceAdapterTest {
             Exam loaded = load(exam.getId());
 
             assertThat(loaded.getStatus()).isEqualTo(ExamStatus.COMPLETED);
-            assertThat(loaded.getCorrectCount()).isEqualTo(2);
-            assertThat(loaded.getScore()).isEqualTo(50);
-            assertThat(loaded.getSubmittedAt()).isEqualTo(NOW.plusSeconds(30));
+            assertThat(loaded.getGradingResult().correctCount()).isEqualTo(2);
+            assertThat(loaded.getGradingResult().score()).isEqualTo(50);
+            assertThat(loaded.getGradingResult().submittedAt()).isEqualTo(NOW.plusSeconds(30));
             assertThat(loaded.isCorrect(1)).isTrue();
             assertThat(loaded.isCorrect(2)).isFalse();
             assertThat(loaded.selectedLevelWordId(2)).isEqualTo(
@@ -161,8 +161,8 @@ class ExamPersistenceAdapterTest {
         assertThatThrownBy(() -> repository.save(second))
                 .isInstanceOf(ObjectOptimisticLockingFailureException.class);
         Exam loaded = load(exam.getId());
-        assertThat(loaded.getCorrectCount()).isEqualTo(1);
-        assertThat(loaded.getSubmittedAt()).isEqualTo(NOW.plusSeconds(10));
+        assertThat(loaded.getGradingResult().correctCount()).isEqualTo(1);
+        assertThat(loaded.getGradingResult().submittedAt()).isEqualTo(NOW.plusSeconds(10));
     }
 
     @Nested
@@ -188,7 +188,7 @@ class ExamPersistenceAdapterTest {
         @DisplayName("마감 시각 정각까지는 진행 중, 1초 지나면 아니다 (Exam.isInProgress 와 같음)")
         void deadlineBoundary() {
             Exam exam = saved(exam("device-1", "10.0.0.1", NOW));
-            Instant deadline = exam.getDeadline();
+            Instant deadline = exam.getTime().deadline();
 
             assertThat(repository.countInProgress(deadline)).isEqualTo(1);
             assertThat(exam.isInProgress(deadline)).isTrue();

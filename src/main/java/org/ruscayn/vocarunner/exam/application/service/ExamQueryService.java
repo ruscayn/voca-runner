@@ -13,6 +13,7 @@ import org.ruscayn.vocarunner.exam.application.port.in.ExamQuery;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
 import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
 import org.ruscayn.vocarunner.exam.domain.Exam;
+import org.ruscayn.vocarunner.exam.domain.GradingResult;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,9 +62,10 @@ public class ExamQueryService implements ExamQuery {
     }
 
     private ExamResult toResult(Exam exam) {
+        GradingResult gradingResult = exam.getGradingResult();
         return new ExamResult(exam.getId(), exam.getLevel().name(), exam.getLevel().groupName(),
-                exam.getQuestionCount(), exam.getCorrectCount(), exam.getScore(),
-                exam.getSubmittedAt().plus(examProperties.resultRetention()),
+                exam.getQuestionCount(), gradingResult.correctCount(), gradingResult.score(),
+                gradingResult.retentionDeadline(examProperties.resultRetention()),
                 examProperties.resultRetention().toMinutes(), toWrongItems(exam));
     }
 

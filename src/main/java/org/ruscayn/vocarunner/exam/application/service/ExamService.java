@@ -1,6 +1,5 @@
 package org.ruscayn.vocarunner.exam.application.service;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -102,7 +101,7 @@ public class ExamService implements ExamUseCase {
 
     private static void logStarted(Exam exam, long begin) {
         log.info("시험 시작 exam={} level={} 문제={} 마감={} ({}ms)",
-                exam.getId(), exam.getLevel(), exam.getQuestionCount(), exam.getDeadline(),
+                exam.getId(), exam.getLevel(), exam.getQuestionCount(), exam.getTime().deadline(),
                 System.currentTimeMillis() - begin);
     }
 
@@ -135,11 +134,9 @@ public class ExamService implements ExamUseCase {
     }
 
     private ExamQuestionsResult toQuestionsResult(Exam exam, Instant now) {
-        long remainingSec = Math.max(0, Duration.between(now, exam.getDeadline()).toSeconds());
         return new ExamQuestionsResult(exam.getId(), exam.getLevel().name(), exam.getLevel().groupName(),
                 exam.getDirection().name(), exam.getQuestionCount(), exam.getTimePerQuestionSec(),
-                Duration.between(exam.getStartedAt(), exam.getDeadline()).toMinutes(), remainingSec,
-                toQuestionItems(exam));
+                exam.getTime().allowedMinutes(), exam.getTime().remainingSec(now), toQuestionItems(exam));
     }
 
     private List<ExamQuestionsResult.QuestionItem> toQuestionItems(Exam exam) {
@@ -166,7 +163,8 @@ public class ExamService implements ExamUseCase {
         submitOrDeleteIfExpired(exam, selectedByNo);
         examPersistencePort.save(exam);
         logSubmittedAfterCommit(exam);
-        return new SubmitExamResult(exam.getId(), exam.getQuestionCount(), exam.getCorrectCount(), exam.getScore());
+        return new SubmitExamResult(exam.getId(), exam.getQuestionCount(), exam.getGradingResult().correctCount(),
+                exam.getGradingResult().score());
     }
 
     private static Map<Integer, Integer> toSelectedByNo(List<SubmitExamCommand.Answer> answers, int questionCount) {
@@ -201,7 +199,7 @@ public class ExamService implements ExamUseCase {
     private void deleteIfExpired(Exam exam, CustomException e) {
         if (e.getErrorCode() == ErrorCode.EXAM_EXPIRED) {
             examPersistencePort.delete(exam.getId());
-            log.info("시험 제출 거절 (마감 초과) exam={} 마감={}", exam.getId(), exam.getDeadline());
+            log.info("시험 제출 거절 (마감 초과) exam={} 마감={}", exam.getId(), exam.getTime().deadline());
         }
     }
 
@@ -210,8 +208,8 @@ public class ExamService implements ExamUseCase {
      * 커밋된 뒤에 남겨 실제로 채점 · 저장된 제출만 로그에 한 줄 남긴다
      */
     private static void logSubmittedAfterCommit(Exam exam) {
-        afterCommit(() -> log.info("시험 제출 exam={} 맞힌 수={}/{} 점수={}",
-                exam.getId(), exam.getCorrectCount(), exam.getQuestionCount(), exam.getScore()));
+        afterCommit(() -> log.info("시험 제출 exam={} 맞힌 수={}/{} 점수={}", exam.getId(),
+                exam.getGradingResult().correctCount(), exam.getQuestionCount(), exam.getGradingResult().score()));
     }
 
     private static void afterCommit(Runnable action) {

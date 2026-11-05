@@ -19,7 +19,9 @@ import org.ruscayn.vocarunner.exam.domain.AnswerKey;
 import org.ruscayn.vocarunner.exam.domain.Direction;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.ExamStatus;
+import org.ruscayn.vocarunner.exam.domain.ExamTime;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
+import org.ruscayn.vocarunner.exam.domain.GradingResult;
 import org.ruscayn.vocarunner.exam.domain.SelectedOptions;
 import org.ruscayn.vocarunner.word.domain.Level;
 
@@ -106,8 +108,8 @@ public class ExamJpaEntity extends BaseEntity {
         this.timePerQuestionSec = exam.getTimePerQuestionSec();
         this.deviceId = exam.getExaminee().deviceId();
         this.clientIp = exam.getExaminee().clientIp();
-        this.startedAt = exam.getStartedAt();
-        this.deadline = exam.getDeadline();
+        this.startedAt = exam.getTime().startedAt();
+        this.deadline = exam.getTime().deadline();
     }
 
     private void copyQuestions(Exam exam) {
@@ -120,15 +122,29 @@ public class ExamJpaEntity extends BaseEntity {
         this.status = exam.getStatus();
         this.questionsDelivered = exam.isQuestionsDelivered();
         this.selectedOptionNo = exam.getSelectedOptions().toSelectedOptionNoArray();
-        this.correctCount = exam.getCorrectCount();
-        this.score = exam.getScore();
-        this.submittedAt = exam.getSubmittedAt();
+        copyGradingResult(exam.getGradingResult());
+    }
+
+    private void copyGradingResult(GradingResult gradingResult) {
+        if (gradingResult == null) {
+            return;
+        }
+        this.correctCount = gradingResult.correctCount();
+        this.score = gradingResult.score();
+        this.submittedAt = gradingResult.submittedAt();
     }
 
     Exam toDomain() {
         return Exam.withId(id, level, direction, timePerQuestionSec, new Examinee(deviceId, clientIp),
-                startedAt, deadline, AnswerKey.of(optionIds, answerOptionNo), SelectedOptions.of(selectedOptionNo),
-                status, questionsDelivered, correctCount, score, submittedAt, version);
+                new ExamTime(startedAt, deadline), AnswerKey.of(optionIds, answerOptionNo),
+                SelectedOptions.of(selectedOptionNo), status, questionsDelivered, toGradingResult(), version);
+    }
+
+    private GradingResult toGradingResult() {
+        if (submittedAt == null) {
+            return null;
+        }
+        return new GradingResult(correctCount, score, submittedAt);
     }
 
 }
