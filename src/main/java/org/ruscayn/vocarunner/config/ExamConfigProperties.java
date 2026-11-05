@@ -14,7 +14,7 @@ public record ExamConfigProperties(
         @DefaultValue("1h") Duration resultRetention,
         @DefaultValue("20000") int maxInProgress,
         @DefaultValue("50") int maxInProgressPerIp,
-        @DefaultValue("5m") Duration undeliveredTimeout
+        @DefaultValue("2m") Duration undeliveredTimeout
 ) {
 
     public ExamProperties toExamProperties() {

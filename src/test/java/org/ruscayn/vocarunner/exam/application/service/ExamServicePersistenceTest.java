@@ -94,7 +94,7 @@ class ExamServicePersistenceTest {
         @Primary
         ExamProperties examProperties() {
             return new ExamProperties(QUESTION_COUNT, GRACE, Duration.ofHours(1),
-                    new ExamCapacity(20000, MAX_IN_PROGRESS_PER_IP), Duration.ofMinutes(5));
+                    new ExamCapacity(20000, MAX_IN_PROGRESS_PER_IP), Duration.ofMinutes(2));
         }
 
     }
@@ -400,7 +400,7 @@ class ExamServicePersistenceTest {
         delivered.deliverQuestions(now);
         Exam justStarted = exam("d2", now.minus(Duration.ofMinutes(1)));        // 아직 문제를 받기 전
         Exam pastDeadline = exam("d3", now.minus(Duration.ofMinutes(30)));
-        Exam undelivered = exam("d4", now.minus(Duration.ofMinutes(6)));        // 5분 넘게 문제를 안 받아 감
+        Exam undelivered = exam("d4", now.minus(Duration.ofMinutes(3)));        // 2분 넘게 문제를 안 받아 감
         Exam oldResult = exam("d5", now.minus(Duration.ofHours(3)));
         oldResult.submit(List.of(), now.minus(Duration.ofHours(3)).plusSeconds(30));   // 보관 1시간 지남
         List.of(delivered, justStarted, pastDeadline, undelivered, oldResult).forEach(this::saved);
