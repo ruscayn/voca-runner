@@ -176,7 +176,7 @@ class ExamServicePersistenceTest {
     class Start {
 
         @Test
-        @DisplayName("시작하면 진행 중 행이 하나 생긴다 (문제 받기 전, 고른 보기는 모두 0, 버전 0)")
+        @DisplayName("시작하면 진행 중 행이 하나 생긴다 (문제 받기 전, 선택한 보기는 모두 0, 버전 0)")
         void inserted() {
             UUID examId = start(DEVICE_ID, IP);
 
@@ -281,7 +281,7 @@ class ExamServicePersistenceTest {
     class Submit {
 
         @Test
-        @DisplayName("제출하면 완료로 바뀌고 고른 보기 · 맞힌 수 · 점수 · 제출 시각이 남는다 (못 고른 문항 = 0)")
+        @DisplayName("제출하면 완료로 바뀌고 선택한 보기 · 맞힌 수 · 점수 · 제출 시각이 남는다 (선택하지 못한 문항 = 0)")
         void completed() {
             UUID examId = start(DEVICE_ID, IP);
             examUseCase.deliverQuestions(examId, DEVICE_ID);

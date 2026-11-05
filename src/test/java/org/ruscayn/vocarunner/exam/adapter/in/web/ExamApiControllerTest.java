@@ -101,7 +101,7 @@ class ExamApiControllerTest {
         }
 
         @Test
-        @DisplayName("고른 보기 목록(answers)에 null 항목이 있으면 400 (U44)")
+        @DisplayName("선택한 보기 목록(answers)에 null 항목이 있으면 400 (U44)")
         void nullAnswer() throws Exception {
             submit(MediaType.APPLICATION_JSON, """
                     {"answers": [null]}

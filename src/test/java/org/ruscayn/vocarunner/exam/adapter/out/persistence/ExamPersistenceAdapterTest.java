@@ -124,7 +124,7 @@ class ExamPersistenceAdapterTest {
         }
 
         @Test
-        @DisplayName("제출한 시험을 다시 불러오면 고른 보기·점수가 그대로다 (시간 초과 = 고른 보기 없음)")
+        @DisplayName("제출한 시험을 다시 불러오면 선택한 보기·점수가 그대로다 (시간 초과 = 선택한 보기 없음)")
         void completed() {
             Exam exam = saved(exam("device-1", "10.0.0.1", NOW));
             Exam inProgress = load(exam.getId());

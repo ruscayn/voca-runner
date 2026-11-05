@@ -23,7 +23,7 @@ import org.ruscayn.vocarunner.word.domain.Level;
 class ExamResultTest {
 
     @Test
-    @DisplayName("완료한 시험에서 만든다 : 맞힌 수 · 점수 · 보관 마감, 틀린 항목은 문항 차례 (시간 초과는 고른 글 없음)")
+    @DisplayName("완료한 시험에서 만든다 : 맞힌 수 · 점수 · 보관 마감, 틀린 항목은 문항 차례 (시간 초과는 선택한 글 없음)")
     void of() {
         Instant submittedAt = Instant.parse("2026-10-08T00:00:30Z");
         List<Question> questions = questions(3);
@@ -49,7 +49,7 @@ class ExamResultTest {
     }
 
     @Test
-    @DisplayName("틀린 항목을 오답(보기를 고름)과 시간 초과(고른 보기 없음)로 나눠 센다")
+    @DisplayName("틀린 항목을 오답(보기를 선택함)과 시간 초과(선택한 보기 없음)로 나눠 센다")
     void wrongAndTimeoutCount() {
         List<ExamResult.WrongItem> wrongItems = List.of(
                 new ExamResult.WrongItem(1, "abandon", null, "채택하다", "버리다", "abandon"),

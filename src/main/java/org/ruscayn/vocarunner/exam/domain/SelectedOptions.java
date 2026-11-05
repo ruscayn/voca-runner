@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 
-/** 문항 n(1부터)의 고른 보기 번호 = selectedOptionNo[n-1] (1~4, 0 = 고르지 않음 · 시간 초과) */
+/** 문항 n(1부터)의 선택한 보기 번호 = selectedOptionNo[n-1] (1~4, 0 = 선택하지 않음 · 시간 초과) */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SelectedOptions {
 

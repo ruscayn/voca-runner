@@ -79,7 +79,7 @@ public final class TestWords {
         return answerOptionNo(questionNo) % Question.OPTION_COUNT + 1;
     }
 
-    /** 문항 번호 → 고른 보기 번호(null = 시간 초과)를 고른 보기 목록으로 */
+    /** 문항 번호 → 선택한 보기 번호(null = 시간 초과)를 선택한 보기 목록으로 */
     public static List<SelectedOption> selected(Map<Integer, Integer> optionNoByQuestionNo) {
         return optionNoByQuestionNo.entrySet().stream()
                 .map(entry -> new SelectedOption(entry.getKey(), entry.getValue()))

@@ -12,7 +12,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 
-@DisplayName("SelectedOptions : 고른 보기 기록")
+@DisplayName("SelectedOptions : 선택한 보기 기록")
 class SelectedOptionsTest {
 
     private static final int QUESTION_COUNT = 3;
@@ -23,7 +23,7 @@ class SelectedOptionsTest {
     }
 
     @Test
-    @DisplayName("문항마다 고른 보기 번호를 남긴다 (시간 초과 · 항목 없음 = 0)")
+    @DisplayName("문항마다 선택한 보기 번호를 남긴다 (시간 초과 · 항목 없음 = 0)")
     void records() {
         SelectedOptions selectedOptions = SelectedOptions.record(
                 List.of(new SelectedOption(1, 3), new SelectedOption(2, null)), QUESTION_COUNT);
