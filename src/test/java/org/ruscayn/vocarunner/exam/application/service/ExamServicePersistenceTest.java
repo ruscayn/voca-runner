@@ -166,12 +166,12 @@ class ExamServicePersistenceTest {
         return answerOptionNo(examId, no) % 4 + 1;
     }
 
-    private static SubmitExamCommand.Answer answer(int no, Integer selectedOptionNo) {
-        return new SubmitExamCommand.Answer(no, selectedOptionNo);
+    private static SubmitExamCommand.SelectedOptionItem selectedOption(int no, Integer selectedOptionNo) {
+        return new SubmitExamCommand.SelectedOptionItem(no, selectedOptionNo);
     }
 
-    private void submit(UUID examId, String deviceId, SubmitExamCommand.Answer... answers) {
-        examUseCase.submit(new SubmitExamCommand(examId, deviceId, List.of(answers)));
+    private void submit(UUID examId, String deviceId, SubmitExamCommand.SelectedOptionItem... selectedOptions) {
+        examUseCase.submit(new SubmitExamCommand(examId, deviceId, List.of(selectedOptions)));
     }
 
     private static Consumer<CustomException> errorCode(ErrorCode expected) {
@@ -296,7 +296,7 @@ class ExamServicePersistenceTest {
             int wrong2 = incorrectOptionNo(examId, 2);
 
             // 3번은 시간 초과(null), 4번은 항목 없음
-            submit(examId, DEVICE_ID, answer(1, correct1), answer(2, wrong2), answer(3, null));
+            submit(examId, DEVICE_ID, selectedOption(1, correct1), selectedOption(2, wrong2), selectedOption(3, null));
 
             Map<String, Object> row = row(examId);
             assertThat(row).containsEntry("status", "COMPLETED")
@@ -313,7 +313,7 @@ class ExamServicePersistenceTest {
         void expiredDeleted() {
             Exam exam = saved(exam(DEVICE_ID, Instant.now().minus(Duration.ofHours(1))));
 
-            assertThatThrownBy(() -> submit(exam.getId(), DEVICE_ID, answer(1, 1)))
+            assertThatThrownBy(() -> submit(exam.getId(), DEVICE_ID, selectedOption(1, 1)))
                     .isInstanceOfSatisfying(CustomException.class, errorCode(ErrorCode.EXAM_EXPIRED));
             assertThat(exists(exam.getId())).isFalse();
         }
@@ -323,7 +323,7 @@ class ExamServicePersistenceTest {
         void invalidQuestionNo() {
             UUID examId = start(DEVICE_ID, IP);
 
-            assertThatThrownBy(() -> submit(examId, DEVICE_ID, answer(QUESTION_COUNT + 1, 1)))
+            assertThatThrownBy(() -> submit(examId, DEVICE_ID, selectedOption(QUESTION_COUNT + 1, 1)))
                     .isInstanceOfSatisfying(CustomException.class, errorCode(ErrorCode.INVALID_INPUT_VALUE));
             assertThat(row(examId)).containsEntry("status", "IN_PROGRESS").containsEntry("version", 0);
         }
@@ -332,10 +332,10 @@ class ExamServicePersistenceTest {
         @DisplayName("이미 제출한 시험을 다시 제출하면 거절하고 처음 결과가 그대로다")
         void submitAgain() {
             UUID examId = start(DEVICE_ID, IP);
-            submit(examId, DEVICE_ID, answer(1, answerOptionNo(examId, 1)));
+            submit(examId, DEVICE_ID, selectedOption(1, answerOptionNo(examId, 1)));
 
             assertThatThrownBy(() -> submit(examId, DEVICE_ID,
-                    answer(1, answerOptionNo(examId, 1)), answer(2, answerOptionNo(examId, 2))))
+                    selectedOption(1, answerOptionNo(examId, 1)), selectedOption(2, answerOptionNo(examId, 2))))
                     .isInstanceOfSatisfying(CustomException.class, errorCode(ErrorCode.EXAM_NOT_IN_PROGRESS));
             assertThat(row(examId)).containsEntry("correct_count", 1).containsEntry("version", 1);
         }
@@ -349,9 +349,9 @@ class ExamServicePersistenceTest {
 
             // 늦은 쪽: 시험을 읽고 채점까지 했지만 아직 커밋 전
             Overlap late = Overlap.begin(transactionManager,
-                    () -> submit(examId, DEVICE_ID, answer(1, correct1)));
+                    () -> submit(examId, DEVICE_ID, selectedOption(1, correct1)));
             // 먼저 커밋하는 쪽
-            submit(examId, DEVICE_ID, answer(1, correct1), answer(2, correct2));
+            submit(examId, DEVICE_ID, selectedOption(1, correct1), selectedOption(2, correct2));
 
             assertThatThrownBy(late::commit).isInstanceOf(OptimisticLockingFailureException.class);
             assertThat(row(examId)).containsEntry("status", "COMPLETED")
@@ -389,7 +389,7 @@ class ExamServicePersistenceTest {
         @DisplayName("제출한 시험은 중단 요청이 와도 결과 행이 남는다")
         void completedKept() {
             UUID examId = start(DEVICE_ID, IP);
-            submit(examId, DEVICE_ID, answer(1, 1));
+            submit(examId, DEVICE_ID, selectedOption(1, 1));
 
             examUseCase.abortIfInProgress(examId, DEVICE_ID);
 

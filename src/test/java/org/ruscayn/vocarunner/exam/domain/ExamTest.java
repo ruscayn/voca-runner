@@ -128,14 +128,14 @@ class ExamTest {
         @Test
         @DisplayName("정답·오답·시간 초과(null)·미응답을 구분해 채점한다")
         void grades() {
-            Map<Integer, Integer> answers = new HashMap<>();
-            answers.put(1, answerOptionNo(1));   // 정답
-            answers.put(2, incorrectOptionNo(2));     // 오답
-            answers.put(3, null);                 // 시간 초과
+            Map<Integer, Integer> optionNoByQuestionNo = new HashMap<>();
+            optionNoByQuestionNo.put(1, answerOptionNo(1));   // 정답
+            optionNoByQuestionNo.put(2, incorrectOptionNo(2));     // 오답
+            optionNoByQuestionNo.put(3, null);                 // 시간 초과
             // 4번은 아예 없음 (미응답)
 
             Exam exam = start(4);
-            exam.submit(selected(answers), NOW.plusSeconds(30));
+            exam.submit(selected(optionNoByQuestionNo), NOW.plusSeconds(30));
 
             assertThat(exam.getStatus()).isEqualTo(ExamStatus.COMPLETED);
             assertThat(exam.isCompleted()).isTrue();
@@ -165,12 +165,12 @@ class ExamTest {
         @DisplayName("하나라도 틀리면 100점이 아니다 (997문항 중 995개 → 99점, U1)")
         void notPerfectIsNot100() {
             Exam exam = start(997);
-            Map<Integer, Integer> answers = new HashMap<>();
+            Map<Integer, Integer> optionNoByQuestionNo = new HashMap<>();
             for (int no = 1; no <= 995; no++) {
-                answers.put(no, answerOptionNo(no));
+                optionNoByQuestionNo.put(no, answerOptionNo(no));
             }
 
-            exam.submit(selected(answers), NOW);
+            exam.submit(selected(optionNoByQuestionNo), NOW);
 
             assertThat(exam.getGradingResult().correctCount()).isEqualTo(995);
             assertThat(exam.getGradingResult().score()).isEqualTo(99);
@@ -180,12 +180,12 @@ class ExamTest {
         @DisplayName("모두 맞히면 100점")
         void perfect() {
             Exam exam = start(5);
-            Map<Integer, Integer> answers = new HashMap<>();
+            Map<Integer, Integer> optionNoByQuestionNo = new HashMap<>();
             for (int no = 1; no <= 5; no++) {
-                answers.put(no, answerOptionNo(no));
+                optionNoByQuestionNo.put(no, answerOptionNo(no));
             }
 
-            exam.submit(selected(answers), NOW);
+            exam.submit(selected(optionNoByQuestionNo), NOW);
 
             assertThat(exam.getGradingResult().correctCount()).isEqualTo(5);
             assertThat(exam.getGradingResult().score()).isEqualTo(100);

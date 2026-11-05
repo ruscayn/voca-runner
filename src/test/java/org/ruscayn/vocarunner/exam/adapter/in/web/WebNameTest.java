@@ -131,7 +131,7 @@ class WebNameTest {
         }
 
         @Test
-        @DisplayName("제출 본문 : answers[].questionNo · selectedOptionNo 를 읽는다")
+        @DisplayName("제출 본문 : selectedOptions[].questionNo · selectedOptionNo 를 읽는다")
         void submitBody() throws Exception {
             given(examUseCase.submit(any()))
                     .willReturn(new SubmitExamResult(EXAM_ID, 2, 1, 50));
@@ -139,7 +139,7 @@ class WebNameTest {
             mockMvc.perform(post("/api/exams/" + EXAM_ID + "/submit").cookie(DEVICE_COOKIE)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""
-                                    {"answers": [{"questionNo": 1, "selectedOptionNo": 2}, {"questionNo": 2}]}
+                                    {"selectedOptions": [{"questionNo": 1, "selectedOptionNo": 2}, {"questionNo": 2}]}
                                     """))
                     .andExpect(status().isOk());
 
@@ -147,11 +147,11 @@ class WebNameTest {
             verify(examUseCase).submit(captor.capture());
             assertThat(captor.getValue().examId()).isEqualTo(EXAM_ID);
             assertThat(captor.getValue().deviceId()).isEqualTo(DEVICE_ID);
-            List<SubmitExamCommand.Answer> answers = captor.getValue().answers();
-            assertThat(answers.get(0).questionNo()).isEqualTo(1);
-            assertThat(answers.get(0).selectedOptionNo()).isEqualTo(2);
-            assertThat(answers.get(1).questionNo()).isEqualTo(2);
-            assertThat(answers.get(1).selectedOptionNo()).isNull();
+            List<SubmitExamCommand.SelectedOptionItem> items = captor.getValue().selectedOptions();
+            assertThat(items.get(0).questionNo()).isEqualTo(1);
+            assertThat(items.get(0).selectedOptionNo()).isEqualTo(2);
+            assertThat(items.get(1).questionNo()).isEqualTo(2);
+            assertThat(items.get(1).selectedOptionNo()).isNull();
         }
 
         @Test
@@ -163,7 +163,7 @@ class WebNameTest {
             String json = mockMvc.perform(post("/api/exams/" + EXAM_ID + "/submit").cookie(DEVICE_COOKIE)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""
-                                    {"answers": [{"questionNo": 1, "selectedOptionNo": 2}]}
+                                    {"selectedOptions": [{"questionNo": 1, "selectedOptionNo": 2}]}
                                     """))
                     .andExpect(status().isOk())
                     .andReturn().getResponse().getContentAsString();

@@ -65,7 +65,7 @@ class ExamServiceTest {
     private void submitIn(PlatformTransactionManager transactionManager) {
         given(repository.findById(exam.getId())).willReturn(Optional.of(exam));
         SubmitExamCommand command = new SubmitExamCommand(exam.getId(), DEVICE_ID,
-                List.of(new SubmitExamCommand.Answer(1, answerOptionNo(1))));
+                List.of(new SubmitExamCommand.SelectedOptionItem(1, answerOptionNo(1))));
         new TransactionTemplate(transactionManager)
                 .executeWithoutResult(tx -> service.submit(command));
     }

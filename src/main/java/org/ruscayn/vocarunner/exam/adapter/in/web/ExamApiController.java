@@ -59,7 +59,8 @@ public class ExamApiController {
     @PostMapping("/{examId}/submit")
     public SubmitExamResult submit(@PathVariable UUID examId, @RequestBody SubmitExamRequest request,
                                    HttpServletRequest httpRequest) {
-        SubmitExamCommand command = new SubmitExamCommand(examId, DeviceCookie.find(httpRequest), request.answers());
+        SubmitExamCommand command = new SubmitExamCommand(examId, DeviceCookie.find(httpRequest),
+                request.selectedOptions());
         try {
             return examUseCase.submit(command);
         } catch (OptimisticLockingFailureException e) {

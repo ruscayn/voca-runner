@@ -156,12 +156,23 @@ class ExamApiControllerTest {
         @DisplayName("올바른 본문이면 서비스로 넘긴다")
         void valid() throws Exception {
             submit(MediaType.APPLICATION_JSON, """
-                    {"answers": [{"questionNo": 1, "selectedOptionNo": 2}, {"questionNo": 2, "selectedOptionNo": null}]}
+                    {"selectedOptions": [{"questionNo": 1, "selectedOptionNo": 2}, {"questionNo": 2, "selectedOptionNo": null}]}
                     """)
                     .andExpect(status().isOk());
 
             verify(examUseCase).submit(argThat(command ->
                     command.examId().equals(EXAM_ID) && DEVICE_ID.equals(command.deviceId())));
+        }
+
+        @Test
+        @DisplayName("옛 이름 answers 로 보내도 받는다 (배포할 때 시험을 풀던 옛 화면)")
+        void oldName() throws Exception {
+            submit(MediaType.APPLICATION_JSON, """
+                    {"answers": [{"questionNo": 1, "selectedOptionNo": 2}]}
+                    """)
+                    .andExpect(status().isOk());
+
+            verify(examUseCase).submit(argThat(command -> command.selectedOptions().size() == 1));
         }
 
         @Test
@@ -178,12 +189,12 @@ class ExamApiControllerTest {
         @DisplayName("문제 번호·보기 번호 타입이 틀리면 400 (U44)")
         void wrongType() throws Exception {
             submit(MediaType.APPLICATION_JSON, """
-                    {"answers": [{"questionNo": "x", "selectedOptionNo": 1}]}
+                    {"selectedOptions": [{"questionNo": "x", "selectedOptionNo": 1}]}
                     """)
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("COMMON_002"));
             submit(MediaType.APPLICATION_JSON, """
-                    {"answers": [{"questionNo": 1, "selectedOptionNo": "x"}]}
+                    {"selectedOptions": [{"questionNo": 1, "selectedOptionNo": "x"}]}
                     """)
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("COMMON_002"));
@@ -192,10 +203,10 @@ class ExamApiControllerTest {
         }
 
         @Test
-        @DisplayName("선택한 보기 목록(answers)에 null 항목이 있으면 400 (U44)")
-        void nullAnswer() throws Exception {
+        @DisplayName("선택한 보기 목록(selectedOptions)에 null 항목이 있으면 400 (U44)")
+        void nullSelectedOption() throws Exception {
             submit(MediaType.APPLICATION_JSON, """
-                    {"answers": [null]}
+                    {"selectedOptions": [null]}
                     """)
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("COMMON_002"));
@@ -210,7 +221,7 @@ class ExamApiControllerTest {
                     .willThrow(new ObjectOptimisticLockingFailureException(Exam.class, EXAM_ID));
 
             submit(MediaType.APPLICATION_JSON, """
-                    {"answers": [{"questionNo": 1, "selectedOptionNo": 2}]}
+                    {"selectedOptions": [{"questionNo": 1, "selectedOptionNo": 2}]}
                     """)
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("EXAM_002"));
@@ -220,7 +231,7 @@ class ExamApiControllerTest {
         @DisplayName("JSON 이 아닌 형식(text/plain)은 415 (U44)")
         void notJsonContentType() throws Exception {
             submit(MediaType.TEXT_PLAIN, """
-                    {"answers": []}
+                    {"selectedOptions": []}
                     """)
                     .andExpect(status().isUnsupportedMediaType())
                     .andExpect(jsonPath("$.code").value("COMMON_005"));
@@ -242,7 +253,7 @@ class ExamApiControllerTest {
                     .willThrow(new CustomException(ErrorCode.EXAM_EXPIRED));
 
             submit(MediaType.APPLICATION_JSON, """
-                    {"answers": []}
+                    {"selectedOptions": []}
                     """)
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("EXAM_005"));

@@ -66,7 +66,7 @@
         questionEndAt: 0,     // 현재 문제 마감 시각 (performance.now() 기준)
         clockId: null,
         index: -1,
-        answers: [],          // { questionNo, selectedOptionNo | null }
+        selectedOptions: [],  // { questionNo, selectedOptionNo | null }
         lockedUntil: 0,
         pausedRemainMs: 0,    // 그만둘지 묻는 동안 멈춘 현재 문제의 남은 시간
         submitFailed: false,  // 제출이 네트워크·서버 오류로 실패해 [다시 제출]을 기다리는 중 (답안은 아직 서버에 없음)
@@ -278,13 +278,13 @@
      * 다음 문제는 이전 문제의 마감 시각부터 시작한 것으로 본다 (화면을 벗어나 있어도 기다려 주지 않음)
      */
     function settleTimeouts() {
-        if (state.status !== 'RUNNING' || state.answers.length >= state.questions.length) return;
+        if (state.status !== 'RUNNING' || state.selectedOptions.length >= state.questions.length) return;
         const now = performance.now();
         if (now < state.questionEndAt) return;
 
         while (now >= state.questionEndAt) {
             const q = state.questions[state.index];
-            state.answers.push({ questionNo: q.no, selectedOptionNo: null });
+            state.selectedOptions.push({ questionNo: q.no, selectedOptionNo: null });
             if (state.index + 1 >= state.questions.length) {
                 finish();
                 return;
@@ -405,7 +405,7 @@
         if (state.status !== 'RUNNING' || state.index !== index) return;
 
         const q = state.questions[index];
-        state.answers.push({ questionNo: q.no, selectedOptionNo });
+        state.selectedOptions.push({ questionNo: q.no, selectedOptionNo });
 
         if (index + 1 < state.questions.length) {
             state.questionEndAt = performance.now() + state.timePerQuestionMs;
@@ -519,7 +519,7 @@
             const res = await fetch(api('/submit'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ answers: state.answers }),
+                body: JSON.stringify({ selectedOptions: state.selectedOptions }),
             });
             if (!res.ok) throw await errorOf(res);
             goResult();
