@@ -5,7 +5,7 @@
     <title>VocaRunner</title>
 </head>
 <body>
-<form class="app main-app" id="start-form" th:action="@{/exam/start}" method="post">
+<form class="app main-app" id="start-form" th:action="@{/exam/ready}" method="get">
 
     <header class="app-header main-header">
         <span th:replace="~{fragments/common :: brand}"></span>
@@ -91,12 +91,12 @@
         }
         form.addEventListener('change', syncLabel);
 
-        // 쿠키를 막은 브라우저는 시작해도 시험 화면에 들어갈 수 없다 (입장권·기기 구분이 쿠키).
-        // 들어가려다 "이미 시작된 시험입니다"로 돌아오면 이유를 알 수 없으므로 미리 알리고 시작하지 않는다 (U41)
+        // 쿠키를 막은 브라우저는 시험을 볼 수 없다 (기기 구분이 쿠키 — 시작해도 문항을 받을 때 다른 기기로 보임).
+        // 준비 화면에서 [시작]을 누른 뒤에야 막히면 이유를 알 수 없으므로 미리 알리고 넘어가지 않는다 (U41)
         const cookieNotice = document.getElementById('cookie-notice');
         cookieNotice.hidden = navigator.cookieEnabled;
 
-        // 문제 생성 중 중복 클릭 방지
+        // 준비 화면을 여는 동안 중복 클릭 방지
         form.addEventListener('submit', (e) => {
             if (!navigator.cookieEnabled) {
                 e.preventDefault();
@@ -104,7 +104,7 @@
                 return;
             }
             btn.disabled = true;
-            label.textContent = '문제 만드는 중...';
+            label.textContent = '여는 중...';
         });
 
         // 뒤로가기로 돌아왔을 때(bfcache) 버튼 복구

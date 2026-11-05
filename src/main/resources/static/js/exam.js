@@ -12,7 +12,8 @@
  * - 새로고침·뒤로가기·창 닫기는 답안이 사라지므로 시험을 만료한다
  *   풀이 중 뒤로가기는 "그만둘까요?" 확인(그동안 문제 시간 멈춤), 새로고침·창 닫기는 브라우저 기본 확인창
  * - 마감(분 단위)까지 남은 전체 시간을 표시하고, 지나면 시험은 무효
- *   마감 시각은 메인에서 시험을 만든 순간부터 계산되므로 [시작] 대기 시간도 포함된다
+ * - 시험은 준비 화면에서 [시작]을 누를 때 서버에 만들어지고 마감도 그때부터 센다 (P13).
+ *   시작 전 안내 · 소리 확인 시간은 허용 시간에 들어가지 않는다
  */
 (() => {
     'use strict';
@@ -29,7 +30,8 @@
     const PROMPT_SUB_GAP_PX = 8;   // 아래 줄은 단어보다 이만큼 작게. 단어가 32px 아래로 줄면 아래 줄도 같이 줄어 28px일 때 20px
 
     const app = document.getElementById('exam-app');
-    const examId = app.dataset.examId;
+    const info = app.dataset;          // 준비 화면 값 (레벨 · 문항 수 · 시간). 시험 아이디는 [시작] 뒤에 생긴다
+    let examId = null;
     const api = (path) => `/api/exams/${examId}${path}`;
     const $ = (id) => document.getElementById(id);
 
@@ -69,7 +71,7 @@
         pausedRemainMs: 0,    // 그만둘지 묻는 동안 멈춘 현재 문제의 남은 시간
         submitFailed: false,  // 제출이 네트워크·서버 오류로 실패해 [다시 제출]을 기다리는 중 (답안은 아직 서버에 없음)
         runUntil: 0,          // 사람이 이 시각까지 뛴다 (performance.now() 기준)
-        status: 'LOADING',    // LOADING → READY → RUNNING (⇄ PAUSED) → SUBMITTING → DONE | ABORTED
+        status: 'READY',      // READY → STARTING → RUNNING (⇄ PAUSED) → SUBMITTING → DONE | ABORTED
     };
 
     // ---------- TTS ----------
@@ -242,13 +244,11 @@
         el.overlayBack.hidden = false;
     }
 
-    /** 시작 전 [이전] : 아직 풀지 않았으므로 안내 없이 시험을 취소하고 메인으로 */
+    /** 시작 전 [이전] : 아직 시험을 만들지 않았으므로 그냥 메인으로 */
     function cancelReady() {
         if (state.status !== 'READY') return;
         state.status = 'ABORTED';
-        stopClock();
         soundCheck.stop();
-        navigator.sendBeacon(api('/abort'));
         goMain();
     }
 
@@ -333,7 +333,7 @@
 
     /** 마감 시각 경과 : 시험 무효 (서버도 마감 후 제출은 거절) */
     function timeOver() {
-        if (state.status !== 'RUNNING' && state.status !== 'READY' && state.status !== 'PAUSED') return;
+        if (state.status !== 'RUNNING' && state.status !== 'PAUSED') return;
         state.status = 'ABORTED';
         stopClock();
         tts.stop();
@@ -453,46 +453,62 @@
         });
     });
 
-    function begin() {
+    /** [시작] : 이때 서버에 시험을 만들고(마감도 이때부터) 문제를 받아 1번 문제부터 진행 */
+    async function begin() {
         if (state.status !== 'READY') return;
         soundCheck.stop();            // [소리 확인]으로 읽던 소리가 첫 문제 발음과 겹치지 않게
         tts.unlock();                 // 터치 이벤트 안에서 호출 (iOS)
+        state.status = 'STARTING';
+        showOverlay('문제 불러오는 중...');
+        try {
+            examId = await startExam();
+            run(await loadQuestions());
+        } catch (e) {
+            failToStart(e);
+        }
+    }
+
+    function run(data) {
+        if (state.status !== 'STARTING') return;     // 기다리는 동안 화면을 떠남
+        state.questions = data.questions;
+        state.timePerQuestionMs = data.timePerQuestionSec * 1000;
+        state.direction = data.direction;
+        state.questionCount = data.questionCount;
+        el.total.textContent = data.questionCount;
+        el.timerSec.textContent = data.timePerQuestionSec;
+        el.levelCaption.textContent = `${data.level} · ${data.groupName}`;
         hideOverlay();
         state.status = 'RUNNING';
         state.questionEndAt = performance.now() + state.timePerQuestionMs;
         showQuestion(0);
+        startClock(data.remainingSec);    // 첫 문제를 정한 뒤에 켠다 (먼저 켜면 문제 없이 시간 초과 처리가 돈다)
+    }
+
+    function failToStart(e) {
+        if (state.status !== 'STARTING') return;
+        state.status = 'ABORTED';
+        // 만든 시험이 동시 진행 개수를 차지하지 않게 중단 요청.
+        // 연결이 끊겨 못 보내면 서버가 '문제를 받아 가지 않은 시험'으로 몇 분 뒤 정리한다
+        if (examId) navigator.sendBeacon(api('/abort'));
+        if (isExamGone(e)) {
+            showOverlay('시험이 종료되었습니다', MSG_EXAM_GONE, '확인', goMain);
+            return;
+        }
+        showOverlay('시험을 시작할 수 없습니다', isNetworkError(e) ? MSG_OFFLINE_LOAD : e.message, '확인', goMain);
     }
 
     // ---------- 서버 통신 ----------
-    async function load() {
-        showOverlay('문제 불러오는 중...');
-        try {
-            const res = await fetch(api('/questions'));
-            if (!res.ok) throw await errorOf(res);
-            const data = await res.json();
+    /** 시험을 만든다. 응시자가 많아 거절되면 그 안내(오류 문구)를 그대로 보여 준다 */
+    async function startExam() {
+        const res = await fetch('/api/exams', { method: 'POST', body: new URLSearchParams({ level: info.level }) });
+        if (!res.ok) throw await errorOf(res);
+        return (await res.json()).examId;
+    }
 
-            state.questions = data.questions;
-            state.timePerQuestionMs = data.timePerQuestionSec * 1000;
-            state.direction = data.direction;
-            state.questionCount = data.questionCount;
-            el.total.textContent = data.questionCount;
-            el.timerSec.textContent = data.timePerQuestionSec;
-            el.levelCaption.textContent = `${data.level} · ${data.groupName}`;
-
-            state.status = 'READY';
-            showReady(data);
-            startClock(data.remainingSec);
-        } catch (e) {
-            state.status = 'ABORTED';
-            if (isExamGone(e)) {
-                showOverlay('시험이 종료되었습니다', MSG_EXAM_GONE, '확인', goMain);
-                return;
-            }
-            // 서버에 남은 시험이 동시 진행 개수를 차지하지 않게 만료 요청.
-            // 연결이 끊겨 못 보내면 서버가 '문제를 받아 가지 않은 시험'으로 몇 분 뒤 정리한다
-            navigator.sendBeacon(api('/abort'));
-            showOverlay('시험을 시작할 수 없습니다', isNetworkError(e) ? MSG_OFFLINE_LOAD : e.message, '확인', goMain);
-        }
+    async function loadQuestions() {
+        const res = await fetch(api('/questions'));
+        if (!res.ok) throw await errorOf(res);
+        return res.json();
     }
 
     async function submit() {
@@ -617,11 +633,11 @@
 
     // ---------- 페이지 이탈 (새로고침·창 닫기·뒤로가기) : 답안이 사라지므로 만료 ----------
     function abort() {
-        if (state.status !== 'RUNNING' && state.status !== 'READY' && state.status !== 'PAUSED') return;
+        if (state.status !== 'RUNNING' && state.status !== 'STARTING' && state.status !== 'PAUSED') return;
         state.status = 'ABORTED';
         stopClock();
         tts.stop();
-        navigator.sendBeacon(api('/abort'));
+        if (examId) navigator.sendBeacon(api('/abort'));
         showOverlay('시험이 종료되었습니다', '시험 중에 이전 화면으로 이동해\n시험이 종료되었습니다.', '확인', goMain);
     }
 
@@ -671,13 +687,14 @@
         goMain();
     }
 
-    // 뒤로가기 : 시작 전이면 조용히 취소, 풀이 중·제출 실패면 그만둘지 확인, 채점 중이면 머묾, 그 밖에는 만료 후 안내
+    // 뒤로가기 : 시작 전이면 조용히 메인으로, 풀이 중·제출 실패면 그만둘지 확인, 시험 만드는 중·채점 중이면 머묾,
+    // 그 밖에는 중단 후 안내
     history.pushState(null, '', location.href);
     window.addEventListener('popstate', () => {
         if (state.status === 'READY') {
             cancelReady();
-        } else if (state.status === 'SUBMITTING') {
-            history.pushState(null, '', location.href);   // 채점 중 : 결과가 올 때까지 이 화면에 머문다
+        } else if (state.status === 'STARTING' || state.status === 'SUBMITTING') {
+            history.pushState(null, '', location.href);   // 응답이 올 때까지 이 화면에 머문다
         } else if (state.status === 'RUNNING' && state.submitFailed) {
             history.pushState(null, '', location.href);
             confirmDiscardAnswers();
@@ -696,5 +713,11 @@
         if (e.persisted) goMain();
     });
 
-    load();
+    showReady({
+        level: info.level,
+        groupName: info.groupName,
+        questionCount: Number(info.questionCount),
+        timePerQuestionSec: info.timePerQuestionSec,
+        allowedMinutes: info.allowedMinutes,
+    });
 })();

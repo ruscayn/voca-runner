@@ -18,13 +18,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequiredArgsConstructor
 public class MainController {
 
-    public static final String NOTICE_EXAM_IN_USE = "exam-in-use";
-    public static final String NOTICE_EXAM_ENDED = "exam-ended";
     public static final String NOTICE_RESULT_EXPIRED = "result-expired";
 
     private static final Map<String, String> NOTICE_MESSAGES = Map.of(
-            NOTICE_EXAM_IN_USE, "이미 시작된 시험입니다. 시험을 시작한 화면에서만 풀 수 있습니다.",
-            NOTICE_EXAM_ENDED, "이미 끝난 시험입니다. 새 시험을 시작해 주세요.",
             NOTICE_RESULT_EXPIRED, "결과 보관 시간이 지났습니다. 결과는 제출 후 잠시 동안만 볼 수 있어요.");
 
     private final ExamLevelOverviewQuery examLevelOverviewQuery;

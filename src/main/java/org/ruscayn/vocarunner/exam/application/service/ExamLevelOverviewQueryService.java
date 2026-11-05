@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.ruscayn.vocarunner.common.CustomException;
+import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.common.UseCase;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamLevelOverview;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamLevelOverviewGroup;
@@ -44,6 +46,14 @@ public class ExamLevelOverviewQueryService implements ExamLevelOverviewQuery {
         int questionCount = QuestionGenerator.questionCount(wordCount, examProperties.maxQuestionCount());
         long allowedMinutes = Exam.calculateAllowedTime(questionCount, examProperties.grace()).toMinutes();
         return new ExamLevelOverview(level, wordCount, questionCount, allowedMinutes);
+    }
+
+    @Override
+    public ExamLevelOverview getExamLevelOverview(Level level) {
+        if (level.isGroup()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "묶음 레벨 시험은 아직 볼 수 없습니다: " + level);
+        }
+        return toOverview(level);
     }
 
 }

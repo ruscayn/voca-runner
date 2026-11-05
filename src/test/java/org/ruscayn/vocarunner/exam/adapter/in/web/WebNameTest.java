@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -44,7 +43,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -97,6 +95,18 @@ class WebNameTest {
     @Nested
     @DisplayName("API JSON 칸")
     class ApiJson {
+
+        @Test
+        @DisplayName("시험 시작 응답 : examId")
+        void start() throws Exception {
+            given(startExamUseCase.start(any())).willReturn(EXAM_ID);
+
+            String json = mockMvc.perform(post("/api/exams").param("level", "A1"))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            assertThat(readObject(json, "$").keySet()).containsExactly("examId");
+        }
 
         @Test
         @DisplayName("문제 받기 응답 : 시험 · 문항 · 보기 칸")
@@ -217,7 +227,7 @@ class WebNameTest {
         }
 
         @ParameterizedTest
-        @ValueSource(strings = {"exam-in-use", "exam-ended", "result-expired"})
+        @ValueSource(strings = {"result-expired"})
         @DisplayName("메인 안내 코드 : 정해진 값이면 message 를 넣는다")
         void mainNotice(String notice) throws Exception {
             given(examLevelOverviewQuery.getExamLevelOverviews()).willReturn(List.of(
@@ -229,19 +239,20 @@ class WebNameTest {
         }
 
         @Test
-        @DisplayName("시험 화면 : examId 를 data-exam-id 로 그린다")
-        void exam() throws Exception {
-            given(startExamUseCase.start(any())).willReturn(EXAM_ID);
-            given(examQuery.isInProgress(EXAM_ID)).willReturn(true);
-            MockHttpSession httpSession = new MockHttpSession();
-            mockMvc.perform(post("/exam/start").param("level", "A1").session(httpSession).cookie(DEVICE_COOKIE))
-                    .andExpect(redirectedUrl("/exam/" + EXAM_ID));
+        @DisplayName("준비 화면 : overview · groupName · timePerQuestionSec 를 data-* 로 그린다 (exam.js 가 읽음)")
+        void ready() throws Exception {
+            given(examLevelOverviewQuery.getExamLevelOverview(Level.A1))
+                    .willReturn(new ExamLevelOverview(Level.A1, 1049, 500, 43));
 
-            mockMvc.perform(get("/exam/" + EXAM_ID).session(httpSession).cookie(DEVICE_COOKIE))
+            mockMvc.perform(get("/exam/ready").param("level", "A1"))
                     .andExpect(status().isOk())
                     .andExpect(view().name("exam"))
-                    .andExpect(model().attribute("examId", EXAM_ID))
-                    .andExpect(content().string(containsString("data-exam-id=\"" + EXAM_ID + "\"")));
+                    .andExpect(model().attributeExists("overview", "groupName", "timePerQuestionSec"))
+                    .andExpect(content().string(containsString("data-level=\"A1\"")))
+                    .andExpect(content().string(containsString("data-group-name=\"Basic\"")))
+                    .andExpect(content().string(containsString("data-question-count=\"500\"")))
+                    .andExpect(content().string(containsString("data-time-per-question-sec=\"5\"")))
+                    .andExpect(content().string(containsString("data-allowed-minutes=\"43\"")));
         }
 
         @Test

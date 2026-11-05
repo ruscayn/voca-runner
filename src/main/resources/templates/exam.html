@@ -6,10 +6,12 @@
     <title>시험 - VocaRunner</title>
 </head>
 <body class="exam-page">
-<div class="app" id="exam-app" th:attr="data-exam-id=${examId}">
+<!-- 준비 화면 : 아직 시험이 없다. [시작]을 누르면 exam.js 가 서버에 시험을 만들고(마감도 이때부터) 문항을 받는다 (P13) -->
+<div class="app" id="exam-app"
+     th:attr="data-level=${overview.code()},data-group-name=${groupName},data-question-count=${overview.questionCount()},data-time-per-question-sec=${timePerQuestionSec},data-allowed-minutes=${overview.allowedMinutes()}">
 
-    <!-- 처음에는 뒤 화면을 막아 두고 "문제 불러오는 중..." 안내를 보인다. 느린 인터넷에서 exam.js 가 늦게 실행돼도
-         빈 보기 버튼·0 / 0 이 먼저 보이지 않게 (U20). 문제를 받으면 exam.js 가 안내를 바꾸고 막은 것을 푼다 -->
+    <!-- 처음에는 뒤 화면을 막아 두고 "준비 중..." 안내를 보인다. 느린 인터넷에서 exam.js 가 늦게 실행돼도
+         빈 보기 버튼·0 / 0 이 먼저 보이지 않게 (U20). exam.js 가 시작 전 안내로 바꾸고, 문제를 받으면 막은 것을 푼다 -->
     <header class="app-header exam-header" inert>
         <div class="exam-status">
             <p class="progress-text" aria-live="off">
@@ -70,9 +72,9 @@
             <!-- 안내 글. 안내창이 화면보다 높으면(가로 화면 + 큰 글자) 이 부분만 스크롤하고 아래 버튼 줄은 늘 보인다 (U46) -->
             <div class="sheet-body">
                 <p class="sheet-eyebrow" id="sheet-eyebrow" hidden></p>
-                <h2 class="sheet-title" id="overlay-title">문제 불러오는 중...</h2>
+                <h2 class="sheet-title" id="overlay-title">준비 중...</h2>
                 <p class="sheet-text" id="overlay-text"></p>
-                <!-- 자바스크립트를 끈 브라우저 : "문제 불러오는 중..." 대신 켜 달라는 안내 (U36). 서버의 시험은 문제를 받아 가지 않아 몇 분 뒤 정리된다 -->
+                <!-- 자바스크립트를 끈 브라우저 : "준비 중..." 대신 켜 달라는 안내 (U36). 아직 시험을 만들지 않았으므로 서버에 남는 것은 없다 -->
                 <noscript>
                     <style>#overlay-title { display: none; }</style>
                     <p class="sheet-text">자바스크립트가 꺼져 있어 시험을 볼 수 없습니다.<br>브라우저 설정에서 자바스크립트를 켠 뒤 다시 시작해 주세요.</p>

@@ -1,6 +1,5 @@
 package org.ruscayn.vocarunner.exam.application.service;
 
-import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -19,23 +18,6 @@ public class ExamQueryService implements ExamQuery {
     private final ExamPersistencePort examPersistencePort;
     private final WordCatalog wordCatalog;
     private final ExamProperties examProperties;
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean isInProgress(UUID examId) {
-        Instant now = Instant.now();
-        return examPersistencePort.findById(examId)
-                .map(exam -> exam.isInProgress(now))
-                .orElse(false);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean hasResult(UUID examId) {
-        return examPersistencePort.findById(examId)
-                .filter(Exam::isCompleted)
-                .isPresent();
-    }
 
     @Override
     @Transactional(readOnly = true)

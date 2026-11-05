@@ -1,6 +1,8 @@
 package org.ruscayn.vocarunner.exam.adapter.in.web;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.ruscayn.vocarunner.common.CustomException;
@@ -10,8 +12,12 @@ import org.ruscayn.vocarunner.exam.application.port.in.ExamQuery;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamQuestionsResult;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
+import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
+import org.ruscayn.vocarunner.exam.application.port.in.StartExamUseCase;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamResult;
+import org.ruscayn.vocarunner.exam.domain.Examinee;
+import org.ruscayn.vocarunner.word.domain.Level;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +25,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @WebAdapter
@@ -27,8 +34,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class ExamApiController {
 
+    private final StartExamUseCase startExamUseCase;
     private final ExamUseCase examUseCase;
     private final ExamQuery examQuery;
+    private final ClientIpProperties clientIpProperties;
+
+    @PostMapping
+    public Map<String, UUID> start(@RequestParam Level level, HttpServletRequest httpRequest,
+                                   HttpServletResponse httpResponse) {
+        Examinee examinee = new Examinee(DeviceCookie.findOrCreate(httpRequest, httpResponse),
+                ClientIp.find(httpRequest, clientIpProperties.header()));
+        return Map.of("examId", startExamUseCase.start(new StartExamCommand(level, examinee)));
+    }
 
     @GetMapping("/{examId}/questions")
     public ExamQuestionsResult questions(@PathVariable UUID examId, HttpServletRequest httpRequest) {
