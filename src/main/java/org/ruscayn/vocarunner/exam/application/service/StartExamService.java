@@ -38,20 +38,21 @@ public class StartExamService implements StartExamUseCase {
     public UUID start(StartExamCommand command) {
         long begin = System.currentTimeMillis();
         Instant now = Instant.now();
-        checkCapacity(command.examinee(), now);
+        checkCapacity(command.examinee(), findInProgressByDevice(command.examinee(), now), now);
         Exam exam = newExam(command, now);
         transactionTemplate.executeWithoutResult(tx -> saveReplacingOld(exam));
         logStarted(exam, begin);
         return exam.getId();
     }
 
-    /** 돌려주는 값 = 새로 시작하면 중단할 그 기기의 진행 중 시험 */
-    private List<Exam> checkCapacity(Examinee examinee, Instant now) {
-        List<Exam> examsOnDevice = examPersistencePort.findInProgressByDevice(examinee.deviceId(), now);
+    private List<Exam> findInProgressByDevice(Examinee examinee, Instant now) {
+        return examPersistencePort.findInProgressByDevice(examinee.deviceId(), now);
+    }
+
+    private void checkCapacity(Examinee examinee, List<Exam> examsOnDevice, Instant now) {
         int inProgressCount = examPersistencePort.countInProgress(now);
         int inProgressCountByIp = examPersistencePort.countInProgressByIp(examinee.clientIp(), now);
         requireCapacity(examinee, inProgressCount, inProgressCountByIp, examsOnDevice);
-        return examsOnDevice;
     }
 
     private void requireCapacity(Examinee examinee, int inProgressCount, int inProgressCountByIp,
@@ -73,7 +74,10 @@ public class StartExamService implements StartExamUseCase {
 
     private void saveReplacingOld(Exam exam) {
         examPersistencePort.lockForStart();
-        checkCapacity(exam.getExaminee(), Instant.now()).forEach(this::deleteReplaced);
+        Instant now = Instant.now();
+        List<Exam> examsOnDevice = findInProgressByDevice(exam.getExaminee(), now);
+        checkCapacity(exam.getExaminee(), examsOnDevice, now);
+        examsOnDevice.forEach(this::deleteReplaced);
         examPersistencePort.save(exam);
     }
 

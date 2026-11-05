@@ -87,7 +87,7 @@ public class Exam {
         return questions.getQuestionCount();
     }
 
-    /** 문제 받기 · 제출 · 중단은 시험을 시작한 기기만 할 수 있다 */
+    /** 문항 전달 · 제출 · 중단은 시험을 시작한 기기만 할 수 있다 */
     public boolean isStartedBy(String deviceId) {
         return examinee.deviceId().equals(deviceId);
     }

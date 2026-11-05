@@ -13,14 +13,7 @@ import org.ruscayn.vocarunner.word.domain.CatalogWord;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
 
-/**
- * 출제 규칙 (보기 규칙은 {@link OptionGenerator})
- * <ul>
- *   <li>한 시험에서 같은 단어는 한 번만</li>
- *   <li>묶음 레벨은 소속 세부 레벨 단어를 함께 쓰고, 두 레벨에 모두 있는 단어는 낮은 레벨(뜻)을 쓴다</li>
- *   <li>시험 제외 단어는 정답으로도 오답 보기로도 내지 않는다</li>
- * </ul>
- */
+/** 한 시험에서 같은 단어는 한 번만 낸다 (정답 후보 규칙은 {@link WordCatalog}, 보기 규칙은 {@link OptionGenerator}) */
 @RequiredArgsConstructor
 public class QuestionGenerator {
 

@@ -2,7 +2,6 @@ package org.ruscayn.vocarunner.word.domain;
 
 import java.util.List;
 
-/** JPA Entity 를 그대로 두지 않고 필요한 값만 복사해 둔다 (지연 로딩 오류 · 공유 객체 변경을 피하려고) */
 public record CatalogWord(long levelWordId, long wordId, String headword, String headwordSub,
                           Level level, List<String> optionMeanings, boolean excluded) {
 

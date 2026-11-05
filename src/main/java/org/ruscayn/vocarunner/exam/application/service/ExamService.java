@@ -38,7 +38,7 @@ public class ExamService implements ExamUseCase {
         return ExamQuestionsResult.of(exam, wordCatalogQuery.getWordCatalog(), now);
     }
 
-    /** 다른 기기면 없는 시험과 같은 응답을 준다. 시험 id 가 새어도 다른 사람이 문제를 받아 가거나 대신 제출할 수 없게 */
+    /** 다른 기기면 없는 시험과 같은 응답을 준다. 시험 아이디가 새어도 다른 사람이 문항을 전달받거나 대신 제출할 수 없게 */
     private Exam findStartedBy(UUID examId, String deviceId) {
         Exam exam = find(examId);
         if (!exam.isStartedBy(deviceId)) {
