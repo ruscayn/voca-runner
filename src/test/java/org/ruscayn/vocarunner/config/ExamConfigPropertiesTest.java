@@ -34,12 +34,12 @@ class ExamConfigPropertiesTest {
     }
 
     @Test
-    @DisplayName("값이 없으면 기본값 (최대 문항 수 500, 여유 3분)")
+    @DisplayName("값이 없으면 기본값 (최대 문항 수 500, 여유 1분)")
     void defaults() {
-        ExamProperties properties = bind(Map.of("voca-runner.exam.grace", "3m"));
+        ExamProperties properties = bind(Map.of("voca-runner.exam.result-retention", "1h"));
 
         assertThat(properties.maxQuestionCount()).isEqualTo(500);
-        assertThat(properties.grace()).isEqualTo(Duration.ofMinutes(3));
+        assertThat(properties.grace()).isEqualTo(Duration.ofMinutes(1));
     }
 
 }

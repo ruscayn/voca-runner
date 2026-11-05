@@ -11,7 +11,7 @@ public record ExamTime(Instant startedAt, Instant deadline) {
 
     /**
      * (문항 수 × 문항당 시간 + 여유 시간)을 분 단위로 올림. 안내 문구를 "45분"처럼 분 단위로 보여 주므로 마감도 같은 값으로 맞춘다.
-     * 예: 500문항 × 5초 + 3분 = 44분 40초 → 45분
+     * 예: 500문항 × 5초 + 1분 = 42분 40초 → 43분
      */
     static Duration calculateAllowedTime(int questionCount, int timePerQuestionSec, Duration grace) {
         long seconds = Duration.ofSeconds((long) questionCount * timePerQuestionSec).plus(grace).toSeconds();
