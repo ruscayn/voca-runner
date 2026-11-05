@@ -26,7 +26,6 @@ import org.ruscayn.vocarunner.exam.application.port.in.ExamUseCase;
 import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
-import org.ruscayn.vocarunner.exam.domain.Direction;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.support.TestWords;
@@ -120,8 +119,7 @@ class ExamServicePersistenceTest {
 
     /** 서비스를 거치지 않고 시작 시각을 정한 시험 (마감 지남 · 오래된 결과 등을 만들 때) */
     private static Exam exam(String deviceId, Instant startedAt) {
-        return Exam.start(Level.A1, Direction.EN_KO, TIME_PER_QUESTION_SEC, TestWords.questions(QUESTION_COUNT),
-                new Examinee(deviceId, IP), startedAt, GRACE);
+        return Exam.start(Level.A1, TestWords.questions(QUESTION_COUNT), new Examinee(deviceId, IP), startedAt, GRACE);
     }
 
     private Exam saved(Exam exam) {
@@ -390,7 +388,7 @@ class ExamServicePersistenceTest {
     void cleanup() {
         Instant now = Instant.now();
         Exam delivered = exam("d1", now.minus(Duration.ofMinutes(1)));
-        delivered.markQuestionsDelivered();
+        delivered.deliverQuestions(now);
         Exam justStarted = exam("d2", now.minus(Duration.ofMinutes(1)));        // 아직 문제를 받기 전
         Exam pastDeadline = exam("d3", now.minus(Duration.ofMinutes(30)));
         Exam undelivered = exam("d4", now.minus(Duration.ofMinutes(6)));        // 5분 넘게 문제를 안 받아 감

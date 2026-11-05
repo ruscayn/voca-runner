@@ -15,8 +15,6 @@ import org.ruscayn.vocarunner.word.domain.Level;
 public class Exam {
 
     public static final int DEFAULT_TIME_PER_QUESTION_SEC = 5;
-    public static final int MIN_TIME_PER_QUESTION_SEC = 5;
-    public static final int MAX_TIME_PER_QUESTION_SEC = 10;
 
     private final UUID id;
     private final Level level;
@@ -49,14 +47,11 @@ public class Exam {
         this.version = version;
     }
 
-    public static Exam start(Level level, Direction direction, int timePerQuestionSec,
-                             List<Question> questions, Examinee examinee,
-                             Instant now, Duration grace) {
+    public static Exam start(Level level, List<Question> questions, Examinee examinee, Instant now, Duration grace) {
         requireQuestions(questions);
-        requireTimePerQuestion(timePerQuestionSec);
         int count = questions.size();
-        return new Exam(UUID.randomUUID(), level, direction, timePerQuestionSec, examinee,
-                ExamTime.start(now, count, timePerQuestionSec, grace), AnswerKey.from(questions),
+        return new Exam(UUID.randomUUID(), level, Direction.EN_KO, DEFAULT_TIME_PER_QUESTION_SEC, examinee,
+                ExamTime.start(now, count, DEFAULT_TIME_PER_QUESTION_SEC, grace), AnswerKey.from(questions),
                 SelectedOptions.none(count), ExamStatus.IN_PROGRESS, false, null, null);
     }
 
@@ -66,11 +61,8 @@ public class Exam {
         }
     }
 
-    private static void requireTimePerQuestion(int timePerQuestionSec) {
-        if (timePerQuestionSec < MIN_TIME_PER_QUESTION_SEC || timePerQuestionSec > MAX_TIME_PER_QUESTION_SEC) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE,
-                    "문항당 시간은 " + MIN_TIME_PER_QUESTION_SEC + "~" + MAX_TIME_PER_QUESTION_SEC + "초여야 합니다.");
-        }
+    public static Duration allowedTime(int questionCount, Duration grace) {
+        return ExamTime.allowedTime(questionCount, DEFAULT_TIME_PER_QUESTION_SEC, grace);
     }
 
     public static Exam withId(UUID id, Level level, Direction direction, int timePerQuestionSec, Examinee examinee,
@@ -83,8 +75,11 @@ public class Exam {
                 questionsDelivered, gradingResult, version);
     }
 
-    public static Duration allowedTime(int questionCount, int timePerQuestionSec, Duration grace) {
-        return ExamTime.allowedTime(questionCount, timePerQuestionSec, grace);
+    public void deliverQuestions(Instant now) {
+        if (!isInProgress(now)) {
+            throw new CustomException(ErrorCode.EXAM_NOT_IN_PROGRESS);
+        }
+        this.questionsDelivered = true;
     }
 
     public void submit(Map<Integer, Integer> selectedByQuestionNo, Instant now) {
@@ -93,6 +88,12 @@ public class Exam {
         this.selectedOptions = SelectedOptions.record(selectedByQuestionNo, getQuestionCount());
         this.gradingResult = GradingResult.of(countCorrect(), getQuestionCount(), now);
         this.status = ExamStatus.COMPLETED;
+    }
+
+    private void requireInProgress() {
+        if (status != ExamStatus.IN_PROGRESS) {
+            throw new CustomException(ErrorCode.EXAM_NOT_IN_PROGRESS);
+        }
     }
 
     private void expireIfPastDeadline(Instant now) {
@@ -106,14 +107,8 @@ public class Exam {
         return (int) IntStream.rangeClosed(1, getQuestionCount()).filter(this::isCorrect).count();
     }
 
-    public void markQuestionsDelivered() {
-        this.questionsDelivered = true;
-    }
-
-    public void expire() {
-        if (status == ExamStatus.IN_PROGRESS) {
-            status = ExamStatus.EXPIRED;
-        }
+    public boolean isAbortableBy(String deviceId, Instant now) {
+        return isStartedBy(deviceId) && isInProgress(now);
     }
 
     public int getQuestionCount() {
@@ -131,6 +126,12 @@ public class Exam {
 
     public boolean isCompleted() {
         return status == ExamStatus.COMPLETED;
+    }
+
+    public void requireCompleted() {
+        if (!isCompleted()) {
+            throw new CustomException(ErrorCode.EXAM_NOT_COMPLETED);
+        }
     }
 
     public long answerLevelWordId(int no) {
@@ -152,10 +153,11 @@ public class Exam {
         return selectedOptions.isSelected(no) && answerKey.isAnswer(no, selectedOptions.optionNo(no));
     }
 
-    private void requireInProgress() {
-        if (status != ExamStatus.IN_PROGRESS) {
-            throw new CustomException(ErrorCode.EXAM_NOT_IN_PROGRESS);
-        }
+    public List<Integer> wrongQuestionNos() {
+        return IntStream.rangeClosed(1, getQuestionCount())
+                .filter(no -> !isCorrect(no))
+                .boxed()
+                .toList();
     }
 
 }

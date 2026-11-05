@@ -16,8 +16,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.adapter.out.persistence.JpaConfig;
-import org.ruscayn.vocarunner.exam.domain.Direction;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.ExamStatus;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
@@ -78,8 +78,14 @@ class ExamPersistenceAdapterTest {
 
     /** 문항 4개(마감 = 시작 + 4분), 진행 중 */
     private static Exam exam(String deviceId, String ip, Instant startedAt) {
-        return Exam.start(Level.A1, Direction.EN_KO, 5, questions(4),
-                new Examinee(deviceId, ip), startedAt, GRACE);
+        return Exam.start(Level.A1, questions(4), new Examinee(deviceId, ip), startedAt, GRACE);
+    }
+
+    /** 마감이 지난 뒤 제출해 만료 상태로 만든다 */
+    private static Exam expired(Exam exam) {
+        assertThatThrownBy(() -> exam.submit(Map.of(), exam.getTime().deadline().plusSeconds(1)))
+                .isInstanceOf(CustomException.class);
+        return exam;
     }
 
     private Exam saved(Exam exam) {
@@ -176,9 +182,7 @@ class ExamPersistenceAdapterTest {
             Exam completed = exam("device-2", "10.0.0.1", NOW);
             completed.submit(Map.of(), NOW.plusSeconds(10));
             saved(completed);
-            Exam expired = exam("device-3", "10.0.0.1", NOW);
-            expired.expire();
-            saved(expired);
+            saved(expired(exam("device-3", "10.0.0.1", NOW)));
             saved(exam("device-4", "10.0.0.1", NOW.minus(Duration.ofHours(1))));   // 마감 지남
 
             assertThat(repository.countInProgress(NOW.plusSeconds(20))).isEqualTo(1);
@@ -226,19 +230,18 @@ class ExamPersistenceAdapterTest {
         Instant now = NOW.plus(Duration.ofHours(3));
         // 남아야 하는 시험
         Exam delivered = exam("d1", "10.0.0.1", now.minus(Duration.ofMinutes(3)));
-        delivered.markQuestionsDelivered();
+        delivered.deliverQuestions(now);
         Exam recentResult = exam("d3", "10.0.0.1", now.minus(Duration.ofMinutes(10)));
         recentResult.submit(Map.of(), now.minus(Duration.ofMinutes(9)));                            // 결과 보관 중
         // CHECKSTYLE.SUPPRESS: VariableDeclarationUsageDistance — 남을 시험 · 지울 시험을 묶어 만들고 마지막에 한꺼번에 저장
         Exam justStarted = exam("d2", "10.0.0.1", now.minus(Duration.ofMinutes(1)));     // 아직 문제를 받기 전
         // 지워야 하는 시험
         Exam pastDeadline = exam("d4", "10.0.0.1", now.minus(Duration.ofMinutes(30)));
-        pastDeadline.markQuestionsDelivered();
+        pastDeadline.deliverQuestions(pastDeadline.getTime().startedAt());
         Exam undelivered = exam("d5", "10.0.0.1", now.minus(Duration.ofMinutes(6)));      // 5분 넘게 문제를 안 받아 감
         Exam oldResult = exam("d6", "10.0.0.1", now.minus(Duration.ofHours(3)));
         oldResult.submit(Map.of(), now.minus(Duration.ofHours(3)).plusSeconds(30));                 // 보관 1시간 지남
-        Exam expired = exam("d7", "10.0.0.1", now.minus(Duration.ofMinutes(1)));
-        expired.expire();
+        Exam expired = expired(exam("d7", "10.0.0.1", now.minus(Duration.ofMinutes(1))));
 
         List<Exam> all = List.of(delivered, justStarted, recentResult, pastDeadline, undelivered, oldResult, expired);
         all.forEach(repository::save);

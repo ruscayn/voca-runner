@@ -4,10 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
-import org.ruscayn.vocarunner.common.CustomException;
-import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.common.UseCase;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamQuery;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamResult;
@@ -46,9 +43,7 @@ public class ExamQueryService implements ExamQuery {
     @Transactional(readOnly = true)
     public ExamResult getResult(UUID examId) {
         Exam exam = examPersistencePort.findById(examId).orElseThrow(ExamNotFoundException::new);
-        if (!exam.isCompleted()) {
-            throw new CustomException(ErrorCode.EXAM_NOT_COMPLETED);
-        }
+        exam.requireCompleted();
         return toResult(exam);
     }
 
@@ -70,9 +65,8 @@ public class ExamQueryService implements ExamQuery {
     }
 
     private List<ExamResult.WrongItem> toWrongItems(Exam exam) {
-        return IntStream.rangeClosed(1, exam.getQuestionCount())
-                .filter(no -> !exam.isCorrect(no))
-                .mapToObj(no -> toWrongItem(exam, no))
+        return exam.wrongQuestionNos().stream()
+                .map(no -> toWrongItem(exam, no))
                 .toList();
     }
 

@@ -28,16 +28,7 @@ class ExamTest {
     private static final Examinee EXAMINEE = new Examinee("device-1", "127.0.0.1");
 
     private static Exam start(int questionCount) {
-        return Exam.start(Level.B1, Direction.EN_KO, 5, questions(questionCount), EXAMINEE, NOW, GRACE);
-    }
-
-    @Test
-    @DisplayName("마감 시각 = 시작 시각 + 분 단위 허용 시간 (500문항 × 5초 + 3분 → 45분)")
-    void deadline() {
-        Exam exam = start(500);
-
-        assertThat(exam.getTime().startedAt()).isEqualTo(NOW);
-        assertThat(exam.getTime().deadline()).isEqualTo(NOW.plus(Duration.ofMinutes(45)));
+        return Exam.start(Level.B1, questions(questionCount), EXAMINEE, NOW, GRACE);
     }
 
     @Nested
@@ -48,7 +39,7 @@ class ExamTest {
         @DisplayName("진행 중 상태로 만들어지고 문항 수·정답이 기록된다")
         void createsInProgress() {
             List<Question> questions = questions(4);
-            Exam exam = Exam.start(Level.A1, Direction.EN_KO, 5, questions, EXAMINEE, NOW, GRACE);
+            Exam exam = Exam.start(Level.A1, questions, EXAMINEE, NOW, GRACE);
 
             assertThat(exam.getStatus()).isEqualTo(ExamStatus.IN_PROGRESS);
             assertThat(exam.getQuestionCount()).isEqualTo(4);
@@ -59,6 +50,18 @@ class ExamTest {
                 assertThat(exam.optionLevelWordIds(no))
                         .containsExactlyElementsOf(q.options().stream().map(o -> o.levelWordId()).toList());
             }
+        }
+
+        @Test
+        @DisplayName("방향은 EN_KO, 문항당 시간은 기본 5초, 마감 = 시작 + 분 단위 허용 시간 (500문항 × 5초 + 3분 → 45분)")
+        void defaults() {
+            Exam exam = start(500);
+
+            assertThat(exam.getDirection()).isEqualTo(Direction.EN_KO);
+            assertThat(exam.getTimePerQuestionSec()).isEqualTo(Exam.DEFAULT_TIME_PER_QUESTION_SEC);
+            assertThat(exam.getTime().startedAt()).isEqualTo(NOW);
+            assertThat(exam.getTime().deadline()).isEqualTo(NOW.plus(Duration.ofMinutes(45)));
+            assertThat(Exam.allowedTime(500, GRACE)).isEqualTo(Duration.ofMinutes(45));
         }
 
         @Test
@@ -74,17 +77,7 @@ class ExamTest {
         @Test
         @DisplayName("문제가 없으면 시작할 수 없다")
         void emptyQuestions() {
-            assertThatThrownBy(() -> Exam.start(Level.A1, Direction.EN_KO, 5, List.of(), EXAMINEE, NOW, GRACE))
-                    .isInstanceOf(CustomException.class)
-                    .extracting(e -> ((CustomException) e).getErrorCode())
-                    .isEqualTo(ErrorCode.INVALID_INPUT_VALUE);
-        }
-
-        @ParameterizedTest(name = "문항당 시간 {0}초")
-        @CsvSource({"4", "11"})
-        @DisplayName("문항당 시간은 5~10초만 허용")
-        void timeLimitRange(int sec) {
-            assertThatThrownBy(() -> Exam.start(Level.A1, Direction.EN_KO, sec, questions(1), EXAMINEE, NOW, GRACE))
+            assertThatThrownBy(() -> Exam.start(Level.A1, List.of(), EXAMINEE, NOW, GRACE))
                     .isInstanceOf(CustomException.class)
                     .extracting(e -> ((CustomException) e).getErrorCode())
                     .isEqualTo(ErrorCode.INVALID_INPUT_VALUE);
@@ -97,6 +90,41 @@ class ExamTest {
 
             assertThatThrownBy(() -> exam.answerLevelWordId(0)).isInstanceOf(IllegalArgumentException.class);
             assertThatThrownBy(() -> exam.answerLevelWordId(4)).isInstanceOf(IllegalArgumentException.class);
+        }
+
+    }
+
+    @Nested
+    @DisplayName("문항 전달")
+    class DeliverQuestions {
+
+        @Test
+        @DisplayName("진행 중이면 문항 전달 여부를 남긴다")
+        void marksDelivered() {
+            Exam exam = start(2);
+
+            exam.deliverQuestions(NOW);
+
+            assertThat(exam.isQuestionsDelivered()).isTrue();
+        }
+
+        @Test
+        @DisplayName("마감이 지났거나 제출한 시험이면 EXAM_NOT_IN_PROGRESS, 전달 여부는 그대로")
+        void notInProgress() {
+            Exam pastDeadline = start(2);
+            Exam completed = start(2);
+            completed.submit(Map.of(), NOW);
+
+            assertThatThrownBy(() -> pastDeadline.deliverQuestions(pastDeadline.getTime().deadline().plusMillis(1)))
+                    .isInstanceOf(CustomException.class)
+                    .extracting(e -> ((CustomException) e).getErrorCode())
+                    .isEqualTo(ErrorCode.EXAM_NOT_IN_PROGRESS);
+            assertThatThrownBy(() -> completed.deliverQuestions(NOW))
+                    .isInstanceOf(CustomException.class)
+                    .extracting(e -> ((CustomException) e).getErrorCode())
+                    .isEqualTo(ErrorCode.EXAM_NOT_IN_PROGRESS);
+            assertThat(pastDeadline.isQuestionsDelivered()).isFalse();
+            assertThat(completed.isQuestionsDelivered()).isFalse();
         }
 
     }
@@ -133,6 +161,7 @@ class ExamTest {
                     .isEqualTo(exam.optionLevelWordIds(2).get(incorrectOptionNo(2) - 1));
             assertThat(exam.selectedLevelWordId(3)).isNull();
             assertThat(exam.selectedLevelWordId(4)).isNull();
+            assertThat(exam.wrongQuestionNos()).containsExactly(2, 3, 4);
         }
 
         @Test
@@ -224,12 +253,13 @@ class ExamTest {
         }
 
         @Test
-        @DisplayName("만료된 시험은 제출할 수 없다")
+        @DisplayName("만료된 시험은 다시 제출할 수 없다")
         void afterExpire() {
             Exam exam = start(2);
-            exam.expire();
+            Instant late = exam.getTime().deadline().plusMillis(1);
+            assertThatThrownBy(() -> exam.submit(Map.of(), late)).isInstanceOf(CustomException.class);
 
-            assertThatThrownBy(() -> exam.submit(Map.of(), NOW))
+            assertThatThrownBy(() -> exam.submit(Map.of(), late))
                     .isInstanceOf(CustomException.class)
                     .extracting(e -> ((CustomException) e).getErrorCode())
                     .isEqualTo(ErrorCode.EXAM_NOT_IN_PROGRESS);
@@ -251,17 +281,30 @@ class ExamTest {
         }
 
         @Test
-        @DisplayName("만료 : 진행 중이면 EXPIRED, 완료된 시험은 그대로")
-        void expire() {
+        @DisplayName("중단은 시작한 기기가 진행 중일 때만 할 수 있다")
+        void abortable() {
             Exam inProgress = start(2);
-            inProgress.expire();
-            assertThat(inProgress.getStatus()).isEqualTo(ExamStatus.EXPIRED);
-            assertThat(inProgress.isInProgress(NOW)).isFalse();
-
             Exam completed = start(2);
             completed.submit(Map.of(), NOW);
-            completed.expire();
-            assertThat(completed.getStatus()).isEqualTo(ExamStatus.COMPLETED);
+
+            assertThat(inProgress.isAbortableBy("device-1", NOW)).isTrue();
+            assertThat(inProgress.isAbortableBy("device-2", NOW)).isFalse();
+            assertThat(inProgress.isAbortableBy("device-1", inProgress.getTime().deadline().plusMillis(1))).isFalse();
+            assertThat(completed.isAbortableBy("device-1", NOW)).isFalse();
+        }
+
+        @Test
+        @DisplayName("완료 검사 : 제출하지 않았으면 EXAM_NOT_COMPLETED")
+        void requireCompleted() {
+            Exam inProgress = start(2);
+            Exam completed = start(2);
+            completed.submit(Map.of(), NOW);
+
+            completed.requireCompleted();
+            assertThatThrownBy(inProgress::requireCompleted)
+                    .isInstanceOf(CustomException.class)
+                    .extracting(e -> ((CustomException) e).getErrorCode())
+                    .isEqualTo(ErrorCode.EXAM_NOT_COMPLETED);
         }
 
     }

@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
-import org.ruscayn.vocarunner.exam.domain.Direction;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.word.domain.Level;
@@ -43,8 +42,8 @@ class ExamServiceTest {
     // 제출에는 저장소만 쓴다
     private final ExamService service = new ExamService(repository, null, null, null);
 
-    private final Exam exam = Exam.start(Level.A1, Direction.EN_KO, 5, questions(2),
-            new Examinee(DEVICE_ID, "10.0.0.1"), Instant.now(), Duration.ofMinutes(3));
+    private final Exam exam = Exam.start(Level.A1, questions(2), new Examinee(DEVICE_ID, "10.0.0.1"), Instant.now(),
+            Duration.ofMinutes(3));
 
     @Test
     @DisplayName("저장(커밋)이 끝나면 제출 로그를 남긴다")

@@ -42,8 +42,7 @@ public class ExamLevelOverviewQueryService implements ExamLevelOverviewQuery {
     private ExamLevelOverview toOverview(Level level) {
         int wordCount = wordCatalog.countByLevel(level);
         int questionCount = QuestionGenerator.questionCount(wordCount, examProperties.maxQuestionCount());
-        long allowedMinutes = Exam.allowedTime(
-                questionCount, Exam.DEFAULT_TIME_PER_QUESTION_SEC, examProperties.grace()).toMinutes();
+        long allowedMinutes = Exam.allowedTime(questionCount, examProperties.grace()).toMinutes();
         return new ExamLevelOverview(level, wordCount, questionCount, allowedMinutes);
     }
 

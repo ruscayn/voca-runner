@@ -17,7 +17,6 @@ import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.in.SubmitExamResult;
 import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
-import org.ruscayn.vocarunner.exam.domain.Direction;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.exam.domain.Question;
@@ -70,8 +69,7 @@ public class ExamService implements ExamUseCase {
     private Exam newExam(StartExamCommand command, Instant now) {
         List<Question> questions = questionGenerator.generate(wordCatalog, command.level(),
                 examProperties.maxQuestionCount());
-        return Exam.start(command.level(), Direction.EN_KO, Exam.DEFAULT_TIME_PER_QUESTION_SEC,
-                questions, command.examinee(), now, examProperties.grace());
+        return Exam.start(command.level(), questions, command.examinee(), now, examProperties.grace());
     }
 
     private void saveReplacingOld(Exam exam) {
@@ -110,10 +108,7 @@ public class ExamService implements ExamUseCase {
     public ExamQuestionsResult deliverQuestions(UUID examId, String deviceId) {
         Exam exam = findStartedBy(examId, deviceId);
         Instant now = Instant.now();
-        if (!exam.isInProgress(now)) {
-            throw new CustomException(ErrorCode.EXAM_NOT_IN_PROGRESS);
-        }
-        exam.markQuestionsDelivered();
+        exam.deliverQuestions(now);
         examPersistencePort.save(exam);
         return toQuestionsResult(exam, now);
     }
@@ -226,7 +221,7 @@ public class ExamService implements ExamUseCase {
     public void abortIfInProgress(UUID examId, String deviceId) {
         Instant now = Instant.now();
         examPersistencePort.findById(examId)
-                .filter(exam -> exam.isStartedBy(deviceId) && exam.isInProgress(now))
+                .filter(exam -> exam.isAbortableBy(deviceId, now))
                 .ifPresent(exam -> {
                     examPersistencePort.delete(examId);
                     log.info("시험 중단 exam={}", examId);
