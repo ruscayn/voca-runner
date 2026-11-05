@@ -1,8 +1,13 @@
 package org.ruscayn.vocarunner.exam.application.port.in;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.ruscayn.vocarunner.exam.domain.Exam;
+import org.ruscayn.vocarunner.exam.domain.GradingResult;
+import org.ruscayn.vocarunner.word.domain.CatalogWord;
+import org.ruscayn.vocarunner.word.domain.WordCatalog;
 
 public record ExamResult(
         UUID examId,
@@ -15,6 +20,20 @@ public record ExamResult(
         long retentionMinutes,
         List<WrongItem> wrongItems
 ) {
+
+    public static ExamResult of(Exam exam, WordCatalog wordCatalog, Duration resultRetention) {
+        GradingResult gradingResult = exam.getGradingResult();
+        return new ExamResult(exam.getId(), exam.getLevel().name(), exam.getLevel().groupName(),
+                exam.getQuestionCount(), gradingResult.correctCount(), gradingResult.score(),
+                gradingResult.retentionDeadline(resultRetention), resultRetention.toMinutes(),
+                wrongItems(exam, wordCatalog));
+    }
+
+    private static List<WrongItem> wrongItems(Exam exam, WordCatalog wordCatalog) {
+        return exam.wrongQuestionNos().stream()
+                .map(no -> WrongItem.of(exam, no, wordCatalog))
+                .toList();
+    }
 
     public String retentionText() {
         return retentionMinutes % 60 == 0 ? (retentionMinutes / 60) + "시간" : retentionMinutes + "분";
@@ -30,6 +49,20 @@ public record ExamResult(
 
     public record WrongItem(int no, String prompt, String promptSub, String selectedText, String answerText,
                             String headword) {
+
+        static WrongItem of(Exam exam, int no, WordCatalog wordCatalog) {
+            CatalogWord answer = wordCatalog.get(exam.answerLevelWordId(no));
+            return new WrongItem(no, answer.headword(), answer.headwordSub(), selectedText(exam, no, wordCatalog),
+                    answer.optionText(), answer.headword());
+        }
+
+        private static String selectedText(Exam exam, int no, WordCatalog wordCatalog) {
+            Long selectedLevelWordId = exam.selectedLevelWordId(no);
+            if (selectedLevelWordId == null) {
+                return null;
+            }
+            return wordCatalog.get(selectedLevelWordId).optionText();
+        }
 
     }
 

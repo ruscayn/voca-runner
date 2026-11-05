@@ -6,7 +6,9 @@ import java.util.Map;
 import org.ruscayn.vocarunner.exam.domain.Question;
 import org.ruscayn.vocarunner.exam.domain.SelectedOption;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
+import org.ruscayn.vocarunner.word.domain.InMemoryWordCatalog;
 import org.ruscayn.vocarunner.word.domain.Level;
+import org.ruscayn.vocarunner.word.domain.WordCatalog;
 
 /** 테스트용 단어·문항 만들기 도구 */
 public final class TestWords {
@@ -60,6 +62,11 @@ public final class TestWords {
             list.add(new Question(answer, options));
         }
         return list;
+    }
+
+    /** 문제들의 보기 단어로 만든 출제 목록 (결과에서 아이디를 글로 바꿀 때) */
+    public static WordCatalog catalogOf(List<Question> questions) {
+        return new InMemoryWordCatalog(questions.stream().flatMap(q -> q.options().stream()).toList(), List.of());
     }
 
     /** questions() 로 만든 문제 n 의 정답 보기 번호 */

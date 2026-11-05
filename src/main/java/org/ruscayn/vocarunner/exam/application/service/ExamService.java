@@ -3,7 +3,6 @@ package org.ruscayn.vocarunner.exam.application.service;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ruscayn.vocarunner.common.CustomException;
@@ -20,7 +19,6 @@ import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.exam.domain.Question;
 import org.ruscayn.vocarunner.exam.domain.QuestionGenerator;
 import org.ruscayn.vocarunner.exam.domain.SelectedOption;
-import org.ruscayn.vocarunner.word.domain.CatalogWord;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -105,7 +103,7 @@ public class ExamService implements ExamUseCase {
         Instant now = Instant.now();
         exam.deliverQuestions(now);
         examPersistencePort.save(exam);
-        return toQuestionsResult(exam, now);
+        return ExamQuestionsResult.of(exam, wordCatalog, now);
     }
 
     /** 다른 기기면 없는 시험과 같은 응답을 준다. 시험 id 가 새어도 다른 사람이 문제를 받아 가거나 대신 제출할 수 없게 */
@@ -123,27 +121,6 @@ public class ExamService implements ExamUseCase {
                 .orElseThrow(ExamNotFoundException::new);
     }
 
-    private ExamQuestionsResult toQuestionsResult(Exam exam, Instant now) {
-        return new ExamQuestionsResult(exam.getId(), exam.getLevel().name(), exam.getLevel().groupName(),
-                exam.getDirection().name(), exam.getQuestionCount(), exam.getTimePerQuestionSec(),
-                exam.getTime().allowedMinutes(), exam.getTime().remainingSec(now), toQuestionItems(exam));
-    }
-
-    private List<ExamQuestionsResult.QuestionItem> toQuestionItems(Exam exam) {
-        return IntStream.rangeClosed(1, exam.getQuestionCount())
-                .mapToObj(no -> toQuestionItem(exam, no))
-                .toList();
-    }
-
-    private ExamQuestionsResult.QuestionItem toQuestionItem(Exam exam, int no) {
-        List<Long> optionIds = exam.optionLevelWordIds(no);
-        List<ExamQuestionsResult.Option> options = IntStream.range(0, optionIds.size())
-                .mapToObj(i -> new ExamQuestionsResult.Option(i + 1, wordCatalog.get(optionIds.get(i)).optionText()))
-                .toList();
-        CatalogWord answer = wordCatalog.get(exam.answerLevelWordId(no));
-        return new ExamQuestionsResult.QuestionItem(no, answer.headword(), answer.headwordSub(), options);
-    }
-
     /** 거절해도 마감 초과 삭제는 반영해야 하므로 업무 예외로는 되돌리지 않는다 (채점 전 검사에서 거절하면 바뀐 것이 없다) */
     @Override
     @Transactional(noRollbackFor = CustomException.class)
@@ -152,8 +129,7 @@ public class ExamService implements ExamUseCase {
         submitOrDeleteIfExpired(exam, command.toSelectedOptions());
         examPersistencePort.save(exam);
         logSubmittedAfterCommit(exam);
-        return new SubmitExamResult(exam.getId(), exam.getQuestionCount(), exam.getGradingResult().correctCount(),
-                exam.getGradingResult().score());
+        return SubmitExamResult.from(exam);
     }
 
     private void submitOrDeleteIfExpired(Exam exam, List<SelectedOption> selected) {
