@@ -51,6 +51,7 @@ class ExamControllerTest {
     private static final UUID EXAM_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final String DEVICE_ID = "22222222-2222-2222-2222-222222222222";
     private static final Cookie DEVICE_COOKIE = new Cookie("VR_DEVICE", DEVICE_ID);
+    private static final int ONE_DAY_SEC = 24 * 60 * 60;
 
     @Autowired
     private MockMvc mockMvc;
@@ -78,14 +79,25 @@ class ExamControllerTest {
     class Start {
 
         @Test
-        @DisplayName("시작하면 시험 화면으로 보내고, 기기 쿠키가 없으면 새로 준다")
+        @DisplayName("시작하면 시험 화면으로 보내고, 기기 쿠키가 없으면 새로 준다 (1일)")
         void redirectsToTest() throws Exception {
             given(startExamUseCase.start(argThat(command -> command.level() == Level.A1))).willReturn(EXAM_ID);
 
             mockMvc.perform(post("/exam/start").param("level", "A1"))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl("/exam/" + EXAM_ID))
-                    .andExpect(cookie().exists("VR_DEVICE"));
+                    .andExpect(cookie().exists("VR_DEVICE"))
+                    .andExpect(cookie().maxAge("VR_DEVICE", ONE_DAY_SEC));
+        }
+
+        @Test
+        @DisplayName("기기 쿠키가 있으면 같은 값으로 다시 줘 기간을 시작 때부터 새로 센다")
+        void renewsDeviceCookie() throws Exception {
+            given(startExamUseCase.start(argThat(command -> command.level() == Level.A1))).willReturn(EXAM_ID);
+
+            mockMvc.perform(post("/exam/start").param("level", "A1").cookie(DEVICE_COOKIE))
+                    .andExpect(cookie().value("VR_DEVICE", DEVICE_ID))
+                    .andExpect(cookie().maxAge("VR_DEVICE", ONE_DAY_SEC));
         }
 
         @Test

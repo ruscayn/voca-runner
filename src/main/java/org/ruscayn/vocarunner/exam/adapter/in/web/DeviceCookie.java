@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.UUID;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -12,7 +13,7 @@ import org.springframework.http.ResponseCookie;
 final class DeviceCookie {
 
     private static final String NAME = "VR_DEVICE";
-    private static final Duration MAX_AGE = Duration.ofDays(365);
+    private static final Duration MAX_AGE = Duration.ofDays(1);
 
     private DeviceCookie() {
     }
@@ -37,12 +38,9 @@ final class DeviceCookie {
         }
     }
 
+    /** 이미 있어도 같은 값으로 다시 붙여, 쿠키가 시험 도중 만료되지 않게 기간을 시작 때부터 새로 센다 */
     static String findOrCreate(HttpServletRequest request, HttpServletResponse response) {
-        String found = find(request);
-        if (found != null) {
-            return found;
-        }
-        String deviceId = UUID.randomUUID().toString();
+        String deviceId = Objects.requireNonNullElseGet(find(request), () -> UUID.randomUUID().toString());
         response.addHeader(HttpHeaders.SET_COOKIE, toCookie(deviceId, request.isSecure()).toString());
         return deviceId;
     }
