@@ -38,7 +38,7 @@ public class QuestionGenerator {
         List<CatalogWord> answerPool = wordCatalog.findAnswerPool(level);
         int count = requireQuestionCount(level, answerPool.size(), maxCount);
         RandomGenerator random = randomSupplier.get();
-        OptionGenerator optionGenerator = new OptionGenerator(wordCatalog, wordCatalog.findOptionPool(level), random);
+        OptionGenerator optionGenerator = new OptionGenerator(wordCatalog, answerPool, random);
         return shuffled(answerPool, random).subList(0, count).stream()
                 .map(answer -> new Question(answer, optionGenerator.generate(answer)))
                 .toList();

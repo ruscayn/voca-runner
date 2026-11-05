@@ -83,10 +83,6 @@ public final class WordCatalog {
         return answerPool.get(level);
     }
 
-    public List<CatalogWord> findOptionPool(Level level) {
-        return answerPool.get(level);
-    }
-
     public CatalogWord get(long levelWordId) {
         CatalogWord word = byId.get(levelWordId);
         if (word == null) {
