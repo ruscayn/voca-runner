@@ -1,6 +1,8 @@
 package org.ruscayn.vocarunner.exam.domain;
 
-import java.util.Map;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 
@@ -23,21 +25,45 @@ public final class SelectedOptions {
         return new SelectedOptions(selectedOptionNo.clone());
     }
 
-    static SelectedOptions record(Map<Integer, Integer> selectedByQuestionNo, int questionCount) {
-        selectedByQuestionNo.forEach(SelectedOptions::requireValidOption);
-        byte[] selected = new byte[questionCount];
-        for (int q = 0; q < questionCount; q++) {
-            Integer optionNo = selectedByQuestionNo.get(q + 1);
-            selected[q] = optionNo == null ? NONE : optionNo.byteValue();
-        }
-        return new SelectedOptions(selected);
+    static SelectedOptions record(List<SelectedOption> selected, int questionCount) {
+        requireValidQuestionNos(selected, questionCount);
+        selected.forEach(SelectedOptions::requireValidOption);
+        byte[] selectedOptionNo = new byte[questionCount];
+        selected.forEach(option ->
+                selectedOptionNo[Question.index(option.questionNo(), questionCount)] = toByte(option.optionNo()));
+        return new SelectedOptions(selectedOptionNo);
     }
 
-    private static void requireValidOption(Integer no, Integer selected) {
-        if (selected != null && (selected < 1 || selected > Question.OPTION_COUNT)) {
-            throw new CustomException(ErrorCode.EXAM_INVALID_OPTION,
-                    "문제 " + no + "의 보기 번호가 올바르지 않습니다: " + selected);
+    private static void requireValidQuestionNos(List<SelectedOption> selected, int questionCount) {
+        Set<Integer> questionNos = new HashSet<>();
+        for (SelectedOption option : selected) {
+            requireExistingQuestionNo(option.questionNo(), questionCount);
+            requireNotDuplicated(questionNos, option.questionNo());
         }
+    }
+
+    private static void requireExistingQuestionNo(int no, int questionCount) {
+        if (no < 1 || no > questionCount) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "없는 문제 번호입니다: " + no);
+        }
+    }
+
+    private static void requireNotDuplicated(Set<Integer> questionNos, int no) {
+        if (!questionNos.add(no)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "중복된 문제 번호입니다: " + no);
+        }
+    }
+
+    private static void requireValidOption(SelectedOption option) {
+        Integer optionNo = option.optionNo();
+        if (optionNo != null && (optionNo < 1 || optionNo > Question.OPTION_COUNT)) {
+            throw new CustomException(ErrorCode.EXAM_INVALID_OPTION,
+                    "문제 " + option.questionNo() + "의 보기 번호가 올바르지 않습니다: " + optionNo);
+        }
+    }
+
+    private static byte toByte(Integer optionNo) {
+        return optionNo == null ? NONE : optionNo.byteValue();
     }
 
     int questionCount() {

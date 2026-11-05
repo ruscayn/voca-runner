@@ -393,7 +393,7 @@ class ExamServicePersistenceTest {
         Exam pastDeadline = exam("d3", now.minus(Duration.ofMinutes(30)));
         Exam undelivered = exam("d4", now.minus(Duration.ofMinutes(6)));        // 5분 넘게 문제를 안 받아 감
         Exam oldResult = exam("d5", now.minus(Duration.ofHours(3)));
-        oldResult.submit(Map.of(), now.minus(Duration.ofHours(3)).plusSeconds(30));   // 보관 1시간 지남
+        oldResult.submit(List.of(), now.minus(Duration.ofHours(3)).plusSeconds(30));   // 보관 1시간 지남
         List.of(delivered, justStarted, pastDeadline, undelivered, oldResult).forEach(this::saved);
 
         examUseCase.cleanup();

@@ -1,9 +1,7 @@
 package org.ruscayn.vocarunner.exam.application.service;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +19,7 @@ import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.exam.domain.Question;
 import org.ruscayn.vocarunner.exam.domain.QuestionGenerator;
+import org.ruscayn.vocarunner.exam.domain.SelectedOption;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
 import org.springframework.transaction.annotation.Transactional;
@@ -154,37 +153,16 @@ public class ExamService implements ExamUseCase {
     @Transactional(noRollbackFor = CustomException.class)
     public SubmitExamResult submit(SubmitExamCommand command) {
         Exam exam = findStartedBy(command.examId(), command.deviceId());
-        Map<Integer, Integer> selectedByNo = toSelectedByNo(command.answers(), exam.getQuestionCount());
-        submitOrDeleteIfExpired(exam, selectedByNo);
+        submitOrDeleteIfExpired(exam, command.toSelectedOptions());
         examPersistencePort.save(exam);
         logSubmittedAfterCommit(exam);
         return new SubmitExamResult(exam.getId(), exam.getQuestionCount(), exam.getGradingResult().correctCount(),
                 exam.getGradingResult().score());
     }
 
-    private static Map<Integer, Integer> toSelectedByNo(List<SubmitExamCommand.Answer> answers, int questionCount) {
-        Map<Integer, Integer> selectedByNo = new HashMap<>();
-        for (SubmitExamCommand.Answer answer : answers) {
-            putAnswer(selectedByNo, answer, questionCount);
-        }
-        return selectedByNo;
-    }
-
-    private static void putAnswer(Map<Integer, Integer> selectedByNo, SubmitExamCommand.Answer answer,
-                                  int questionCount) {
-        int no = answer.questionNo();
-        if (no > questionCount) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "없는 문제 번호입니다: " + no);
-        }
-        if (selectedByNo.containsKey(no)) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "중복된 문제 번호입니다: " + no);
-        }
-        selectedByNo.put(no, answer.selectedOptionNo());
-    }
-
-    private void submitOrDeleteIfExpired(Exam exam, Map<Integer, Integer> selectedByNo) {
+    private void submitOrDeleteIfExpired(Exam exam, List<SelectedOption> selected) {
         try {
-            exam.submit(selectedByNo, Instant.now());
+            exam.submit(selected, Instant.now());
         } catch (CustomException e) {
             deleteIfExpired(exam, e);
             throw e;

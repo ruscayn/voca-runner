@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.ruscayn.vocarunner.support.TestWords.answerOptionNo;
 import static org.ruscayn.vocarunner.support.TestWords.incorrectOptionNo;
 import static org.ruscayn.vocarunner.support.TestWords.questions;
+import static org.ruscayn.vocarunner.support.TestWords.selected;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -113,7 +114,7 @@ class ExamTest {
         void notInProgress() {
             Exam pastDeadline = start(2);
             Exam completed = start(2);
-            completed.submit(Map.of(), NOW);
+            completed.submit(List.of(), NOW);
 
             assertThatThrownBy(() -> pastDeadline.deliverQuestions(pastDeadline.getTime().deadline().plusMillis(1)))
                     .isInstanceOf(CustomException.class)
@@ -143,7 +144,7 @@ class ExamTest {
             // 4번은 아예 없음 (미응답)
 
             Exam exam = start(4);
-            exam.submit(answers, NOW.plusSeconds(30));
+            exam.submit(selected(answers), NOW.plusSeconds(30));
 
             assertThat(exam.getStatus()).isEqualTo(ExamStatus.COMPLETED);
             assertThat(exam.isCompleted()).isTrue();
@@ -169,7 +170,7 @@ class ExamTest {
         void scoreFloor() {
             Exam exam = start(3);
 
-            exam.submit(Map.of(1, answerOptionNo(1), 2, answerOptionNo(2)), NOW);
+            exam.submit(selected(Map.of(1, answerOptionNo(1), 2, answerOptionNo(2))), NOW);
 
             assertThat(exam.getGradingResult().score()).isEqualTo(66);
         }
@@ -183,7 +184,7 @@ class ExamTest {
                 answers.put(no, answerOptionNo(no));
             }
 
-            exam.submit(answers, NOW);
+            exam.submit(selected(answers), NOW);
 
             assertThat(exam.getGradingResult().correctCount()).isEqualTo(995);
             assertThat(exam.getGradingResult().score()).isEqualTo(99);
@@ -198,7 +199,7 @@ class ExamTest {
                 answers.put(no, answerOptionNo(no));
             }
 
-            exam.submit(answers, NOW);
+            exam.submit(selected(answers), NOW);
 
             assertThat(exam.getGradingResult().correctCount()).isEqualTo(5);
             assertThat(exam.getGradingResult().score()).isEqualTo(100);
@@ -209,7 +210,7 @@ class ExamTest {
         void atDeadline() {
             Exam exam = start(5);
 
-            exam.submit(Map.of(), exam.getTime().deadline());
+            exam.submit(List.of(), exam.getTime().deadline());
 
             assertThat(exam.isCompleted()).isTrue();
         }
@@ -220,7 +221,7 @@ class ExamTest {
             Exam exam = start(5);
             Instant late = exam.getTime().deadline().plusMillis(1);
 
-            assertThatThrownBy(() -> exam.submit(Map.of(1, 1), late))
+            assertThatThrownBy(() -> exam.submit(selected(Map.of(1, 1)), late))
                     .isInstanceOf(CustomException.class)
                     .extracting(e -> ((CustomException) e).getErrorCode())
                     .isEqualTo(ErrorCode.EXAM_EXPIRED);
@@ -233,7 +234,7 @@ class ExamTest {
         void invalidOption(int optionNo) {
             Exam exam = start(2);
 
-            assertThatThrownBy(() -> exam.submit(Map.of(1, optionNo), NOW))
+            assertThatThrownBy(() -> exam.submit(selected(Map.of(1, optionNo)), NOW))
                     .isInstanceOf(CustomException.class)
                     .extracting(e -> ((CustomException) e).getErrorCode())
                     .isEqualTo(ErrorCode.EXAM_INVALID_OPTION);
@@ -244,9 +245,9 @@ class ExamTest {
         @DisplayName("이미 제출한 시험은 다시 제출할 수 없다")
         void twice() {
             Exam exam = start(2);
-            exam.submit(Map.of(), NOW);
+            exam.submit(List.of(), NOW);
 
-            assertThatThrownBy(() -> exam.submit(Map.of(), NOW))
+            assertThatThrownBy(() -> exam.submit(List.of(), NOW))
                     .isInstanceOf(CustomException.class)
                     .extracting(e -> ((CustomException) e).getErrorCode())
                     .isEqualTo(ErrorCode.EXAM_NOT_IN_PROGRESS);
@@ -257,9 +258,9 @@ class ExamTest {
         void afterExpire() {
             Exam exam = start(2);
             Instant late = exam.getTime().deadline().plusMillis(1);
-            assertThatThrownBy(() -> exam.submit(Map.of(), late)).isInstanceOf(CustomException.class);
+            assertThatThrownBy(() -> exam.submit(List.of(), late)).isInstanceOf(CustomException.class);
 
-            assertThatThrownBy(() -> exam.submit(Map.of(), late))
+            assertThatThrownBy(() -> exam.submit(List.of(), late))
                     .isInstanceOf(CustomException.class)
                     .extracting(e -> ((CustomException) e).getErrorCode())
                     .isEqualTo(ErrorCode.EXAM_NOT_IN_PROGRESS);
@@ -285,7 +286,7 @@ class ExamTest {
         void abortable() {
             Exam inProgress = start(2);
             Exam completed = start(2);
-            completed.submit(Map.of(), NOW);
+            completed.submit(List.of(), NOW);
 
             assertThat(inProgress.isAbortableBy("device-1", NOW)).isTrue();
             assertThat(inProgress.isAbortableBy("device-2", NOW)).isFalse();
@@ -298,7 +299,7 @@ class ExamTest {
         void requireCompleted() {
             Exam inProgress = start(2);
             Exam completed = start(2);
-            completed.submit(Map.of(), NOW);
+            completed.submit(List.of(), NOW);
 
             completed.requireCompleted();
             assertThatThrownBy(inProgress::requireCompleted)

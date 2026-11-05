@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.ruscayn.vocarunner.support.TestWords.answerOptionNo;
 import static org.ruscayn.vocarunner.support.TestWords.incorrectOptionNo;
 import static org.ruscayn.vocarunner.support.TestWords.questions;
+import static org.ruscayn.vocarunner.support.TestWords.selected;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -83,7 +84,7 @@ class ExamPersistenceAdapterTest {
 
     /** 마감이 지난 뒤 제출해 만료 상태로 만든다 */
     private static Exam expired(Exam exam) {
-        assertThatThrownBy(() -> exam.submit(Map.of(), exam.getTime().deadline().plusSeconds(1)))
+        assertThatThrownBy(() -> exam.submit(List.of(), exam.getTime().deadline().plusSeconds(1)))
                 .isInstanceOf(CustomException.class);
         return exam;
     }
@@ -127,7 +128,7 @@ class ExamPersistenceAdapterTest {
         void completed() {
             Exam exam = saved(exam("device-1", "10.0.0.1", NOW));
             Exam inProgress = load(exam.getId());
-            inProgress.submit(Map.of(1, answerOptionNo(1), 2, incorrectOptionNo(2), 3, answerOptionNo(3)),
+            inProgress.submit(selected(Map.of(1, answerOptionNo(1), 2, incorrectOptionNo(2), 3, answerOptionNo(3))),
                     NOW.plusSeconds(30));
             repository.save(inProgress);
 
@@ -160,9 +161,9 @@ class ExamPersistenceAdapterTest {
         Exam first = load(exam.getId());
         Exam second = load(exam.getId());
 
-        first.submit(Map.of(1, answerOptionNo(1)), NOW.plusSeconds(10));
+        first.submit(selected(Map.of(1, answerOptionNo(1))), NOW.plusSeconds(10));
         repository.save(first);
-        second.submit(Map.of(1, answerOptionNo(1), 2, answerOptionNo(2)), NOW.plusSeconds(11));
+        second.submit(selected(Map.of(1, answerOptionNo(1), 2, answerOptionNo(2))), NOW.plusSeconds(11));
 
         assertThatThrownBy(() -> repository.save(second))
                 .isInstanceOf(ObjectOptimisticLockingFailureException.class);
@@ -180,7 +181,7 @@ class ExamPersistenceAdapterTest {
         void count() {
             saved(exam("device-1", "10.0.0.1", NOW));
             Exam completed = exam("device-2", "10.0.0.1", NOW);
-            completed.submit(Map.of(), NOW.plusSeconds(10));
+            completed.submit(List.of(), NOW.plusSeconds(10));
             saved(completed);
             saved(expired(exam("device-3", "10.0.0.1", NOW)));
             saved(exam("device-4", "10.0.0.1", NOW.minus(Duration.ofHours(1))));   // 마감 지남
@@ -232,7 +233,7 @@ class ExamPersistenceAdapterTest {
         Exam delivered = exam("d1", "10.0.0.1", now.minus(Duration.ofMinutes(3)));
         delivered.deliverQuestions(now);
         Exam recentResult = exam("d3", "10.0.0.1", now.minus(Duration.ofMinutes(10)));
-        recentResult.submit(Map.of(), now.minus(Duration.ofMinutes(9)));                            // 결과 보관 중
+        recentResult.submit(List.of(), now.minus(Duration.ofMinutes(9)));                            // 결과 보관 중
         // CHECKSTYLE.SUPPRESS: VariableDeclarationUsageDistance — 남을 시험 · 지울 시험을 묶어 만들고 마지막에 한꺼번에 저장
         Exam justStarted = exam("d2", "10.0.0.1", now.minus(Duration.ofMinutes(1)));     // 아직 문제를 받기 전
         // 지워야 하는 시험
@@ -240,7 +241,7 @@ class ExamPersistenceAdapterTest {
         pastDeadline.deliverQuestions(pastDeadline.getTime().startedAt());
         Exam undelivered = exam("d5", "10.0.0.1", now.minus(Duration.ofMinutes(6)));      // 5분 넘게 문제를 안 받아 감
         Exam oldResult = exam("d6", "10.0.0.1", now.minus(Duration.ofHours(3)));
-        oldResult.submit(Map.of(), now.minus(Duration.ofHours(3)).plusSeconds(30));                 // 보관 1시간 지남
+        oldResult.submit(List.of(), now.minus(Duration.ofHours(3)).plusSeconds(30));                 // 보관 1시간 지남
         Exam expired = expired(exam("d7", "10.0.0.1", now.minus(Duration.ofMinutes(1))));
 
         List<Exam> all = List.of(delivered, justStarted, recentResult, pastDeadline, undelivered, oldResult, expired);

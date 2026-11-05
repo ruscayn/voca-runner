@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.UUID;
 import org.ruscayn.vocarunner.common.SelfValidating;
+import org.ruscayn.vocarunner.exam.domain.SelectedOption;
 
 public record SubmitExamCommand(
         @NotNull UUID examId,
@@ -19,6 +20,12 @@ public record SubmitExamCommand(
         this.deviceId = deviceId;
         this.answers = answers;
         SelfValidating.validate(this);
+    }
+
+    public List<SelectedOption> toSelectedOptions() {
+        return answers.stream()
+                .map(answer -> new SelectedOption(answer.questionNo(), answer.selectedOptionNo()))
+                .toList();
     }
 
     public record Answer(

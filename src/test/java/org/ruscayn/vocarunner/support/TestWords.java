@@ -2,7 +2,9 @@ package org.ruscayn.vocarunner.support;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.ruscayn.vocarunner.exam.domain.Question;
+import org.ruscayn.vocarunner.exam.domain.SelectedOption;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
 import org.ruscayn.vocarunner.word.domain.Level;
 
@@ -68,6 +70,13 @@ public final class TestWords {
     /** questions() 로 만든 문제 n 의 오답 보기 번호 하나 */
     public static int incorrectOptionNo(int questionNo) {
         return answerOptionNo(questionNo) % Question.OPTION_COUNT + 1;
+    }
+
+    /** 문항 번호 → 고른 보기 번호(null = 시간 초과)를 고른 보기 목록으로 */
+    public static List<SelectedOption> selected(Map<Integer, Integer> optionNoByQuestionNo) {
+        return optionNoByQuestionNo.entrySet().stream()
+                .map(entry -> new SelectedOption(entry.getKey(), entry.getValue()))
+                .toList();
     }
 
 }

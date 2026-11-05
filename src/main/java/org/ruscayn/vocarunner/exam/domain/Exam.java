@@ -3,7 +3,6 @@ package org.ruscayn.vocarunner.exam.domain;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.IntStream;
 import lombok.Getter;
@@ -82,10 +81,10 @@ public class Exam {
         this.questionsDelivered = true;
     }
 
-    public void submit(Map<Integer, Integer> selectedByQuestionNo, Instant now) {
+    public void submit(List<SelectedOption> selected, Instant now) {
         requireInProgress();
         expireIfPastDeadline(now);
-        this.selectedOptions = SelectedOptions.record(selectedByQuestionNo, getQuestionCount());
+        this.selectedOptions = SelectedOptions.record(selected, getQuestionCount());
         this.gradingResult = GradingResult.of(countCorrect(), getQuestionCount(), now);
         this.status = ExamStatus.COMPLETED;
     }
