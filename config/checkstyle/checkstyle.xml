@@ -18,6 +18,8 @@
       - 메서드 · 생성자 길이 10줄 이하 (MethodLength, 2026-11-04 결정: 선언 줄 · 괄호 · 빈 줄 · 주석 모두 셈. 테스트는 제외.
         매개변수를 필드에 옮겨 담기만 하는 생성자는 그 위에 CHECKSTYLE.SUPPRESS 주석으로 예외)
       - 들여쓰기 한 단계 (MatchXpath NestedBlock) · else 는 한 번까지 (MatchXpath ElseIf) 를 더함 (2026-11-04 결정, 테스트는 제외)
+      - 파일 길이 120줄 이하 (FileLength, 2026-11-04 결정 · 11/05 켬: 100줄 내외, 한 의미면 120줄까지. 테스트는 제외.
+        InMemoryWordCatalog 123줄은 한 의미라 예외 — 11/05 사용자 결정)
     위반이 하나라도 있으면 빌드 실패 (build.gradle 의 maxWarnings = 0)
  -->
 
@@ -31,7 +33,7 @@
 
   <module name="SuppressWarningsFilter"/>
 
-  <!-- 메서드 크기 · 들여쓰기 한 단계 · else if 규칙은 main 만 (테스트 제외, 2026-11-04 결정) -->
+  <!-- 메서드 크기 · 들여쓰기 한 단계 · else if · 파일 길이 규칙은 main 만 (테스트 제외, 2026-11-04 결정) -->
   <module name="SuppressionSingleFilter">
     <property name="checks" value="MethodLength"/>
     <property name="files" value="[\\/]src[\\/]test[\\/]"/>
@@ -43,6 +45,15 @@
   <module name="SuppressionSingleFilter">
     <property name="id" value="ElseIf"/>
     <property name="files" value="[\\/]src[\\/]test[\\/]"/>
+  </module>
+  <module name="SuppressionSingleFilter">
+    <property name="checks" value="FileLength"/>
+    <property name="files" value="[\\/]src[\\/]test[\\/]"/>
+  </module>
+  <!-- 단어 출제 목록 123줄은 한 의미라 그대로 둠 (2026-11-05 사용자 결정) -->
+  <module name="SuppressionSingleFilter">
+    <property name="checks" value="FileLength"/>
+    <property name="files" value="[\\/]InMemoryWordCatalog\.java$"/>
   </module>
 
   <!-- https://checkstyle.org/filters/suppressionfilter.html -->
@@ -72,6 +83,11 @@
     <property name="minimum" value="0"/>
     <property name="maximum" value="0"/>
     <property name="message" value="Trailing whitespace is not allowed"/>
+  </module>
+
+  <module name="FileLength">
+    <property name="fileExtensions" value="java"/>
+    <property name="max" value="120"/>
   </module>
 
   <module name="LineLength">
