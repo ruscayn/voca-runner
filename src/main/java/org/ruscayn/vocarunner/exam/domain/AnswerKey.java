@@ -20,13 +20,6 @@ public final class AnswerKey {
         return new AnswerKey(toOptionIds(questions), toAnswerOptionNo(questions));
     }
 
-    public static AnswerKey of(int[] optionIds, byte[] answerOptionNo) {
-        if (optionIds.length != answerOptionNo.length * OPTION_COUNT) {
-            throw new IllegalArgumentException("보기 수가 문항 수 × " + OPTION_COUNT + " 가 아닙니다: " + optionIds.length);
-        }
-        return new AnswerKey(optionIds.clone(), answerOptionNo.clone());
-    }
-
     private static int[] toOptionIds(List<Question> questions) {
         return questions.stream()
                 .flatMap(question -> question.options().stream())
@@ -42,12 +35,23 @@ public final class AnswerKey {
         return answerOptionNo;
     }
 
+    public static AnswerKey of(int[] optionIds, byte[] answerOptionNo) {
+        if (optionIds.length != answerOptionNo.length * OPTION_COUNT) {
+            throw new IllegalArgumentException("보기 수가 문항 수 × " + OPTION_COUNT + " 가 아닙니다: " + optionIds.length);
+        }
+        return new AnswerKey(optionIds.clone(), answerOptionNo.clone());
+    }
+
     int questionCount() {
         return answerOptionNo.length;
     }
 
     long answerLevelWordId(int no) {
         return optionLevelWordId(no, answerOptionNo[index(no)]);
+    }
+
+    private int index(int no) {
+        return Question.index(no, questionCount());
     }
 
     long optionLevelWordId(int no, int optionNo) {
@@ -70,10 +74,6 @@ public final class AnswerKey {
 
     public byte[] toAnswerOptionNoArray() {
         return answerOptionNo.clone();
-    }
-
-    private int index(int no) {
-        return Question.index(no, questionCount());
     }
 
 }

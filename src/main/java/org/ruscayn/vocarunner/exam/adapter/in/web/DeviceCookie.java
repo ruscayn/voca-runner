@@ -28,6 +28,15 @@ final class DeviceCookie {
                 .findFirst().orElse(null);
     }
 
+    private static boolean isUuid(String value) {
+        try {
+            UUID.fromString(value);
+            return value.length() == 36;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
     static String findOrCreate(HttpServletRequest request, HttpServletResponse response) {
         String found = find(request);
         if (found != null) {
@@ -46,15 +55,6 @@ final class DeviceCookie {
                 .secure(secure)
                 .sameSite("Lax")
                 .build();
-    }
-
-    private static boolean isUuid(String value) {
-        try {
-            UUID.fromString(value);
-            return value.length() == 36;
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
     }
 
 }

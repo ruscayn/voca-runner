@@ -45,12 +45,6 @@ public class QuestionGenerator {
                 .toList();
     }
 
-    private static List<CatalogWord> shuffled(List<CatalogWord> words, RandomGenerator random) {
-        List<CatalogWord> copy = new ArrayList<>(words);
-        Collections.shuffle(copy, random);
-        return copy;
-    }
-
     private static int requireQuestionCount(Level level, int answerPoolSize, int maxCount) {
         int count = questionCount(answerPoolSize, maxCount);
         if (count == 0) {
@@ -64,6 +58,12 @@ public class QuestionGenerator {
             return answerPoolSize;
         }
         return Math.min(answerPoolSize, maxCount);
+    }
+
+    private static List<CatalogWord> shuffled(List<CatalogWord> words, RandomGenerator random) {
+        List<CatalogWord> copy = new ArrayList<>(words);
+        Collections.shuffle(copy, random);
+        return copy;
     }
 
 }

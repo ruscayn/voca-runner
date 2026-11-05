@@ -60,6 +60,22 @@ class OptionGenerator {
         }
     }
 
+    private static boolean isFull(List<CatalogWord> options) {
+        return options.size() >= Question.OPTION_COUNT;
+    }
+
+    private void tryAdd(CatalogWord candidate, List<CatalogWord> options) {
+        if (options.stream().noneMatch(chosen -> conflicts(chosen, candidate))) {
+            options.add(candidate);
+        }
+    }
+
+    private boolean conflicts(CatalogWord chosen, CatalogWord candidate) {
+        return chosen.wordId() == candidate.wordId()
+                || wordCatalog.findConfusableWordIds(chosen.wordId()).contains(candidate.wordId())
+                || !Collections.disjoint(chosen.optionMeanings(), candidate.optionMeanings());
+    }
+
     private void addInShuffledOrder(List<CatalogWord> sameLevel, List<CatalogWord> options) {
         if (isFull(options)) {
             return;
@@ -76,22 +92,6 @@ class OptionGenerator {
             throw new CustomException(ErrorCode.EXAM_NOT_ENOUGH_WORDS,
                     "'" + answer.headword() + "' 의 오답 보기 " + INCORRECT_OPTION_COUNT + "개를 만들 수 없습니다.");
         }
-    }
-
-    private static boolean isFull(List<CatalogWord> options) {
-        return options.size() >= Question.OPTION_COUNT;
-    }
-
-    private void tryAdd(CatalogWord candidate, List<CatalogWord> options) {
-        if (options.stream().noneMatch(chosen -> conflicts(chosen, candidate))) {
-            options.add(candidate);
-        }
-    }
-
-    private boolean conflicts(CatalogWord chosen, CatalogWord candidate) {
-        return chosen.wordId() == candidate.wordId()
-                || wordCatalog.findConfusableWordIds(chosen.wordId()).contains(candidate.wordId())
-                || !Collections.disjoint(chosen.optionMeanings(), candidate.optionMeanings());
     }
 
 }
