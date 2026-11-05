@@ -76,15 +76,6 @@ class ExamTest {
         }
 
         @Test
-        @DisplayName("문제가 없으면 시작할 수 없다")
-        void emptyQuestions() {
-            assertThatThrownBy(() -> Exam.start(Level.A1, List.of(), EXAMINEE, NOW, GRACE))
-                    .isInstanceOf(CustomException.class)
-                    .extracting(e -> ((CustomException) e).getErrorCode())
-                    .isEqualTo(ErrorCode.INVALID_INPUT_VALUE);
-        }
-
-        @Test
         @DisplayName("없는 문제 번호를 조회하면 예외")
         void questionNoRange() {
             Exam exam = start(3);

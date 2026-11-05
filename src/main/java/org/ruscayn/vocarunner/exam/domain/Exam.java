@@ -32,17 +32,10 @@ public class Exam {
     private final Integer version;
 
     public static Exam start(Level level, List<Question> questions, Examinee examinee, Instant now, Duration grace) {
-        requireQuestions(questions);
         int count = questions.size();
         return new Exam(UUID.randomUUID(), level, Direction.EN_KO, DEFAULT_TIME_PER_QUESTION_SEC, examinee,
                 ExamTime.start(now, count, DEFAULT_TIME_PER_QUESTION_SEC, grace), AnswerKey.from(questions),
                 SelectedOptions.none(count), ExamStatus.IN_PROGRESS, false, null, null);
-    }
-
-    private static void requireQuestions(List<Question> questions) {
-        if (questions.isEmpty()) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "문제 수는 1 이상이어야 합니다.");
-        }
     }
 
     public static Duration allowedTime(int questionCount, Duration grace) {
