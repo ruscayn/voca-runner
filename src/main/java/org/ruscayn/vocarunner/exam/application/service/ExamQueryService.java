@@ -22,10 +22,11 @@ public class ExamQueryService implements ExamQuery {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<ExamResult> findResult(UUID examId) {
+    public boolean isInProgress(UUID examId) {
+        Instant now = Instant.now();
         return examPersistencePort.findById(examId)
-                .filter(Exam::isCompleted)
-                .map(this::toResult);
+                .map(exam -> exam.isInProgress(now))
+                .orElse(false);
     }
 
     @Override
@@ -44,17 +45,16 @@ public class ExamQueryService implements ExamQuery {
         return toResult(exam);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public boolean isInProgress(UUID examId) {
-        Instant now = Instant.now();
-        return examPersistencePort.findById(examId)
-                .map(exam -> exam.isInProgress(now))
-                .orElse(false);
-    }
-
     private ExamResult toResult(Exam exam) {
         return ExamResult.of(exam, wordCatalog, examProperties.resultRetention());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<ExamResult> findResult(UUID examId) {
+        return examPersistencePort.findById(examId)
+                .filter(Exam::isCompleted)
+                .map(this::toResult);
     }
 
 }

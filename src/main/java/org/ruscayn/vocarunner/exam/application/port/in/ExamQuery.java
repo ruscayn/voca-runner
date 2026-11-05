@@ -5,12 +5,12 @@ import java.util.UUID;
 
 public interface ExamQuery {
 
-    Optional<ExamResult> findResult(UUID examId);
+    boolean isInProgress(UUID examId);
 
     boolean hasResult(UUID examId);
 
     ExamResult getResult(UUID examId);
 
-    boolean isInProgress(UUID examId);
+    Optional<ExamResult> findResult(UUID examId);
 
 }
