@@ -693,6 +693,16 @@
         goMain();
     }
 
+    // 결과 화면에서 뒤로가기로 기록에 남은 시험 주소가 다시 열리면 준비 화면 대신 메인으로 (U55)
+    if (isOpenedFromHistory()) {
+        goMain();
+        return;
+    }
+
+    function isOpenedFromHistory() {
+        return performance.getEntriesByType('navigation')[0]?.type === 'back_forward';
+    }
+
     // 뒤로가기 : 시작 전이면 조용히 메인으로, 풀이 중·제출 실패면 그만둘지 확인, 시험 만드는 중·채점 중이면 머묾,
     // 그 밖에는 중단 후 안내
     history.pushState(null, '', location.href);
