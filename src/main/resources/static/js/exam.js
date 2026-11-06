@@ -362,9 +362,15 @@
         p.classList.add('prompt-break');
     }
 
-    // 화면 회전·글꼴 로드가 끝나면 폭이 달라지므로 다시 맞춘다
+    // 화면 회전·글꼴 로드가 끝나면 폭이 달라지므로 다시 맞춘다.
+    // 문제 단어 글꼴은 단어를 넣어야 받기 시작하므로 미리 받는다. 안 그러면 첫 문제를 대신 글꼴로 재서 작게 맞춤 (U53)
     window.addEventListener('resize', () => { if (state.index >= 0) fitPrompt(); });
-    document.fonts?.ready.then(() => { if (state.index >= 0) fitPrompt(); });
+    loadPromptFont().catch(() => {}).then(() => { if (state.index >= 0) fitPrompt(); });
+
+    function loadPromptFont() {
+        const style = getComputedStyle(el.prompt);
+        return document.fonts?.load(`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`) ?? Promise.resolve();
+    }
 
     // ---------- 진행 ----------
     /** state.index 문제를 표시. 마감 시각(state.questionEndAt)은 호출 전에 정해 둔다 */
