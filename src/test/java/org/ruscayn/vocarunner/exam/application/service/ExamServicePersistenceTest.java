@@ -32,6 +32,7 @@ import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.ExamCapacity;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.exam.domain.QuestionGenerator;
+import org.ruscayn.vocarunner.support.TestPostgres;
 import org.ruscayn.vocarunner.support.TestWords;
 import org.ruscayn.vocarunner.word.application.port.in.WordCatalogQuery;
 import org.ruscayn.vocarunner.word.domain.Level;
@@ -39,7 +40,7 @@ import org.ruscayn.vocarunner.word.domain.WordCatalog;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.boot.testcontainers.context.ImportTestcontainers;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
@@ -49,9 +50,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * 안전망: 유스케이스마다 DB(test_session)에 무엇이 남는지 실제 PostgreSQL 로 확인한다.
@@ -61,17 +59,12 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * 표를 직접 읽는다 (같은 영속성 컨텍스트로 다시 읽으면 저장 누락이 가려짐). 그래서 테스트마다 표를 비운다.
  */
 @DataJpaTest
-@Testcontainers
+@ImportTestcontainers(TestPostgres.class)
 @Import({StartExamService.class, ExamService.class, CleanUpExamsService.class, ExamPersistenceAdapter.class,
         JpaConfig.class, ExamServicePersistenceTest.Config.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 @DisplayName("시험 서비스 : 유스케이스별 DB 상태 (PostgreSQL)")
 class ExamServicePersistenceTest {
-
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18")
-            .withInitScript("db/schema.sql");
 
     private static final int QUESTION_COUNT = 4;
     private static final int TIME_PER_QUESTION_SEC = Exam.DEFAULT_TIME_PER_QUESTION_SEC;
