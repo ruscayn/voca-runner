@@ -77,7 +77,7 @@ CREATE TRIGGER trg_word_meaning_updated  BEFORE UPDATE ON word_meaning  FOR EACH
 CREATE TRIGGER trg_level_word_updated    BEFORE UPDATE ON level_word    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- ---------------------------------------------------------------------
--- 4. confusable_group : 헷갈리는 묶음 (2026-10-14 추가)
+-- 4. confusable_group : 혼동 단어 묶음 (2026-10-14 추가)
 --    같은 묶음의 단어끼리는 한 문제의 보기로 함께 내지 않는다.
 --    묶음은 레벨과 무관하게 단어 단위. 보기는 원래 같은 세부 레벨에서만 뽑으므로
 --    두 단어가 같은 레벨에 있을 때만 규칙이 걸린다.
@@ -90,8 +90,8 @@ CREATE TABLE confusable_group (
     updated_at          timestamptz   NOT NULL DEFAULT now()
 );
 
-COMMENT ON TABLE  confusable_group        IS '헷갈리는 묶음. 같은 묶음 단어끼리는 한 문제의 보기로 함께 내지 않음';
-COMMENT ON COLUMN confusable_group.reason IS '헷갈리는 이유 (예: 선생님, 완전히)';
+COMMENT ON TABLE  confusable_group        IS '혼동 단어 묶음. 같은 묶음 단어끼리는 한 문제의 보기로 함께 내지 않음';
+COMMENT ON COLUMN confusable_group.reason IS '혼동 이유 (예: 선생님, 완전히)';
 
 -- ---------------------------------------------------------------------
 -- 5. confusable_group_word : 묶음에 속한 단어
@@ -106,7 +106,7 @@ CREATE TABLE confusable_group_word (
 
 CREATE INDEX ix_confusable_group_word_word ON confusable_group_word (word_id);
 
-COMMENT ON TABLE confusable_group_word IS '헷갈리는 묶음에 속한 단어. 묶음당 2개 이상이어야 의미 있음';
+COMMENT ON TABLE confusable_group_word IS '혼동 단어 묶음에 속한 단어. 묶음당 2개 이상이어야 의미 있음';
 
 CREATE TRIGGER trg_confusable_group_updated BEFORE UPDATE ON confusable_group FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 

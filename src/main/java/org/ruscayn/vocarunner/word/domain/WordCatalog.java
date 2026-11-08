@@ -49,7 +49,7 @@ public final class WordCatalog {
     /**
      * 시험 제외를 먼저 빼고 단어당 한 행(낮은 레벨)만 남긴다. 순서가 반대면 '낮은 레벨은 제외, 높은 레벨은 출제'인
      * 단어가 아예 나오지 않는다. 오답 보기 후보도 이 목록을 쓴다 : 시험 제외 단어가 오답이면 너무 쉽거나,
-     * supermarket · team 처럼 정답과 헷갈린다
+     * supermarket · team 처럼 정답과 혼동된다
      */
     private static Map<Level, List<CatalogWord>> toAnswerPool(Map<Level, List<CatalogWord>> byDetailLevel) {
         Map<Level, List<CatalogWord>> pool = new EnumMap<>(Level.class);

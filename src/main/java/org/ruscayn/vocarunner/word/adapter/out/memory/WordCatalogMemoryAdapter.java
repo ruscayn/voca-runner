@@ -21,7 +21,7 @@ public class WordCatalogMemoryAdapter implements ReplaceWordCatalogPort, GetWord
     public WordCatalog get() {
         WordCatalog loaded = wordCatalog.get();
         if (loaded == null) {
-            throw new IllegalStateException("단어 출제 목록을 아직 싣지 않았습니다");
+            throw new IllegalStateException("단어 출제 목록을 아직 적재하지 않았습니다");
         }
         return loaded;
     }

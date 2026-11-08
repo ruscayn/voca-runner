@@ -22,7 +22,7 @@ public class LoadWordCatalogService implements LoadWordCatalogUseCase {
     private final WordPersistencePort wordPersistencePort;
     private final ReplaceWordCatalogPort replaceWordCatalogPort;
 
-    /** 싣기가 겹치면 먼저 읽은 쪽이 나중에 교체해 새 변경이 빠질 수 있어 한 번에 하나씩 돈다 */
+    /** 적재가 겹치면 먼저 읽은 쪽이 나중에 교체해 새 변경이 빠질 수 있어 한 번에 하나씩 돈다 */
     @Override
     public synchronized void load() {
         long begin = System.currentTimeMillis();
@@ -40,7 +40,7 @@ public class LoadWordCatalogService implements LoadWordCatalogUseCase {
 
     private static void logLoaded(WordCatalog wordCatalog, long elapsedMs) {
         log.info("단어 출제 목록 로딩 완료: 전체 {}행, 시험 제외 {}행, 레벨별 정답 가능 ({}), "
-                        + "헷갈리는 단어 묶음 {}개(단어 {}개) {}ms",
+                        + "혼동 단어 묶음 {}개(단어 {}개) {}ms",
                 wordCatalog.getWordCount(), wordCatalog.getExcludedCount(), answerableCountByDetailLevel(wordCatalog),
                 wordCatalog.getConfusableGroups().getGroupCount(), wordCatalog.getConfusableGroups().getWordCount(),
                 elapsedMs);
