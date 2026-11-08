@@ -47,7 +47,7 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 | 틀림 | `wrong` | 맞히지 못함 = 오답 + 시간 초과 | — | |
 | 오답 | `incorrect` | 정답이 아님 | — | |
 | 시간 초과 | `timeout` | 정해진 시간 안에 끝나지 않음. 문항에서는 문항당 시간 안에 선택하지 못한 경우이며 틀린 것으로 집계 | — | |
-| 점수 | `score` | 맞힌 수 × 100 ÷ 문항 수, **소수점 버림** (0~100). 하나라도 틀리면 100점이 되지 않음 | 칼럼 · JSON `score` | |
+| 점수 | `score` | 맞힌 수 × 100 ÷ 문항 수, **소수점 버림** (0 ~ 100). 하나라도 틀리면 100점이 되지 않음 | 칼럼 · JSON `score` | |
 | 결과 | `result` | 완료된 작업의 결과 | — | |
 | 항목 | `item` | 목록을 구성하는 원소 하나 | — | |
 | 과목 | `subject` | 시험 과목 = 학습 대상 언어. 현재 값은 `ENGLISH`(영어 단어를 보고 한국어 뜻 선택) 하나이며, 다른 과목을 추가할 수 있도록 별도 개념으로 분리 | 칼럼 `direction`(DB 이름 유지), JSON `subject` | 방향 |
@@ -123,7 +123,7 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 | 후보 | `pool` | 추출 대상 목록 | — | |
 | 혼동 | `confusable` | 한 문항의 보기로 함께 출제하면 정답이 둘처럼 보이는 관계 | — | 헷갈림 |
 | 이유 | `reason` | | 칼럼 `reason` | |
-| 원본 | `source` | 단어 데이터의 원본. `CEFRJ` = CEFR-J Wordlist (A1~B2), `OCTANOVE` = Octanove Vocabulary Profile (C1~C2) | 칼럼 `source` (테이블 `word_cefr_level`) | |
+| 원본 | `source` | 단어 데이터의 원본. `CEFRJ` = CEFR-J Wordlist (A1 ~ B2), `OCTANOVE` = Octanove Vocabulary Profile (C1 ~ C2) | 칼럼 `source` (테이블 `word_cefr_level`) | |
 | 노출 | `exposure` | 시험에 출제함 | — | |
 | 처리 | `action` | 단어 노출 판정으로 정한 처리 방식 | 칼럼 `action` | |
 | 유지 | `keep` | 검토했으나 변경하지 않음 (검토 기록) | 처리 값 `KEEP` | |
@@ -148,7 +148,7 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 | 삭제 | `delete` | 저장된 대상을 제거 | — | 지우기 |
 | 확인 | `check` | 조건에 맞는지 검사 | — | |
 | 같음 | `same` | 두 값이 같음 (`isSameIp`) | — | |
-| 만들기 | `create` | 행을 처음 저장 (`createdAt`) | 칼럼 `created_at` (모든 테이블) | |
+| 만들기 | `create` | 대상을 새로 만드는 동작 (DB 행: `createdAt`, 기기 아이디: `findOrCreate`) | 칼럼 `created_at` (모든 테이블) | |
 | 수정 | `update` | 저장된 행을 변경 (`updatedAt`) | 칼럼 `updated_at` (모든 테이블) | 바꿈 |
 | 적재 | `load` | 저장된 데이터를 읽어 애플리케이션이 사용하는 형태로 메모리에 올림 (단어 출제 목록 적재) | — | 싣기 |
 | 교체 | `replace` | 전체를 새 값으로 바꿔 넣음 (단어 출제 목록 교체) | — | |
@@ -160,10 +160,10 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 | 도메인 | 마지막 단어 | 자바 | DB | 범위 · 형식 |
 |---|---|---|---|---|
 | 아이디 | 아이디 `id` | 시험: `UUID` / 기기: `String` / 단어 데이터: `long` | `uuid` / `varchar(36)` / `bigint` | 시험 아이디는 주소에 포함되므로 추측할 수 없는 무작위 값. 기기 아이디는 쿠키 값 그대로 사용. 단어 아이디는 원본 번호를 그대로 사용해 단어 데이터를 다시 가져와도 동일. 문항 목록 배열(`option_ids`) 안의 레벨 단어 아이디는 `integer` (3장) |
-| 번호 | 번호 `no` | `int` | 정답 · 선택한 보기 배열 안 1바이트 (3장) | 1부터. 보기 번호는 1~4 |
-| 순번 | 순번 `seq` | `int` | `smallint` | 1~5 |
+| 번호 | 번호 `no` | `int` | 정답 · 선택한 보기 배열 안 1바이트 (3장) | 1부터. 보기 번호는 1 ~ 4 |
+| 순번 | 순번 `seq` | `int` | `smallint` | 1 ~ 5 |
 | 수 | 수 `count` | `int` · `long` | `integer` | 0 이상 |
-| 점수 | 점수 `score` | `int` | `integer` | 0~100. 제출 전에는 값 없음 |
+| 점수 | 점수 `score` | `int` | `integer` | 0 ~ 100. 제출 전에는 값 없음 |
 | 시각 | 시각 `at` · 마감 `deadline` | `Instant` | `timestamptz` | |
 | 날짜 | 날짜 `date` | `LocalDate` | `date` | |
 | 기간 | 시간 `time` · 여유 · 보관 · 주기 · 시간 초과 | `Duration` | — (설정 값) | 설정 파일에는 `1m` · `1h` 형식으로 기재 |
@@ -183,16 +183,16 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 |---|---|---|---|
 | 시험 아이디 | `examId` (시험 안 `id`) | 시험을 가리키는 값. API 주소 · 결과 화면 주소에 포함 | 칼럼 `test_session_id` |
 | 시험 상태 | `ExamStatus` | 진행 중 · 완료 (만료는 상태가 아니라 마감으로 판정) | 칼럼 `status` (값 동일) |
-| 시험 레벨 | `level` (시험 안) | 시험을 볼 레벨. 현재 화면에서는 세부 레벨(A1~C2)만 선택 가능. `화면: 코스` | 칼럼 `level_code`, 시작 파라미터 · JSON `level` |
+| 시험 레벨 | `level` (시험 안) | 시험을 볼 레벨. 현재 화면에서는 세부 레벨(A1 ~ C2)만 선택 가능. `화면: 코스` | 칼럼 `level_code`, 시작 파라미터 · JSON `level` |
 | 문항 수 | `questionCount` | 시험의 문항 수 = min(정답 후보 수, 최대 문항 수). DB에 별도 칼럼 없이 문항 목록 배열 길이로 계산 | JSON · 템플릿 `questionCount` |
 | 최대 문항 수 | `maxQuestionCount` | 한 시험의 최대 문항 수 (기본 500). 0이면 레벨 단어 전체 (개발용) | 설정 `voca-runner.exam.question-count` |
 | 문항 번호 | `questionNo` (문항 안 `no`) | 1부터 시작 | JSON `questionNo` · `no` |
 | 문항 생성기 | `QuestionGenerator` | 단어 출제 목록으로 문항을 만드는 도메인 서비스 (출제자). 빈으로 등록(`ExamConfig`). 단어 출제 목록은 호출마다 인자로 받음 — 시작 서비스가 요청 시점의 목록을 전달. 생성한 문항은 시작 서비스가 시험에 전달하며, 보기는 보기 생성기가 생성 | — |
 | 보기 생성기 | `OptionGenerator` | 문항 하나의 보기 4개를 생성 = 정답 + 같은 세부 레벨의 오답 3개 (3장 보기 규칙) | — |
 | 제시어 보조 | `promptSub` | 제시어 아래 줄에 함께 표시하는 형태 (표제어 보조) | JSON `promptSub` |
-| 보기 번호 | `optionNo` (보기 안 `no`) | 1~4, 화면에 표시되는 순서 | JSON `options[].no` |
+| 보기 번호 | `optionNo` (보기 안 `no`) | 1 ~ 4, 화면에 표시되는 순서 | JSON `options[].no` |
 | 보기 글 | `text` (보기 안) | 보기에 표시되는 보기 뜻 (`뜻1, 뜻2`) | JSON `options[].text` |
-| 보기 아이디 | `optionId` · `optionIds` | 보기가 가리키는 레벨 단어 아이디. 보기 번호(1~4)는 문항 안의 위치, 보기 아이디는 그 위치에 놓인 단어 | 칼럼 `option_ids` |
+| 보기 아이디 | `optionId` · `optionIds` | 보기가 가리키는 레벨 단어 아이디. 보기 번호(1 ~ 4)는 문항 안의 위치, 보기 아이디는 그 위치에 놓인 단어 | 칼럼 `option_ids` |
 | 정답 보기 아이디 | `answerOptionId` | 정답 보기의 아이디. 제시어 · 정답 글 조회에 사용하며, 문항 목록이 보기[정답 보기 번호]로 계산 | — |
 | 선택한 보기 아이디 | `selectedOptionId` | 선택한 보기의 아이디. 선택한 글 조회에 사용하며, 선택하지 못했으면 값 없음. 문항 목록의 보기[선택한 보기 번호]이므로 시험이 두 값을 조합해 계산 | — |
 | 정답 보기 번호 | `answerOptionNo` | 정답이 몇 번 보기인지 | 칼럼 `correct_option_no` |
@@ -200,7 +200,7 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 | 오답 보기 | `INCORRECT_OPTION_COUNT` (오답 보기 수) | 정답이 아닌 보기 3개 | — |
 | 문항 목록 | `Questions` | 시험의 문항 전체 = 문항 번호 순서대로 보기 4개(보기 아이디) + 정답 보기 번호. 시작 시 확정되어 변경되지 않음. **선택한 보기의 채점**(맞힘 여부 · 맞힌 수 · 틀린 문항)과 제시어(정답 보기) 계산을 담당. 시작 시 확정되는 값(문항 목록)과 제출 시 확정되는 값(선택한 보기)을 분리한 구조. 저장 형식은 3장 | 칼럼 `option_ids` · `correct_option_no` |
 | 시험지 | — | 화면에 전송하는 문항 목록 = 정답 보기 번호를 제외한 제시어 · 보기 글 (문항 전달 결과 `ExamQuestionsResult`). 별도 도메인 객체 없음 | `GET /api/exams/{id}/questions` |
-| 선택한 보기 | `SelectedOptions` | 문항별 선택한 보기 번호 (시험이 직접 보유). 제출 시 한 번에 기록하며, 없는 문항 번호 · 중복 번호 · 1~4 범위 밖의 보기 번호는 거절 | 칼럼 `selected_option_no` |
+| 선택한 보기 | `SelectedOptions` | 문항별 선택한 보기 번호 (시험이 직접 보유). 제출 시 한 번에 기록하며, 없는 문항 번호 · 중복 번호 · 1 ~ 4 범위 밖의 보기 번호는 거절 | 칼럼 `selected_option_no` |
 | 선택한 보기 하나 | `SelectedOption` | 문항 하나의 선택한 보기 = 문항 번호 + 보기 번호 (값이 없으면 시간 초과). 제출 요청 `selectedOptions[]`의 한 항목(`SubmitExamCommand.SelectedOptionItem`)을 도메인 값으로 변환한 것 | — |
 | 채점 결과 | `GradingResult` | 맞힌 수 · 점수. 제출 전에는 값 없음. 점수 버림 계산 담당 | 칼럼 `correct_count` · `score` |
 | 틀린 문항 번호 | `getWrongQuestionNos()` | 맞히지 못한 문항 번호 목록 (오답 + 시간 초과, 번호 순) | — |
@@ -268,7 +268,7 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 | 표제어 보조 | `headwordSub` | 시험 화면에서 표제어 아래 줄에 함께 표시하는 형태 (예: for the sake of → for one's sake) | 칼럼 `headword_sub` |
 | 단어 뜻 | `WordMeaning` (DB 행 `WordMeaningJpaEntity`) | 단어의 뜻 하나. 도메인 값은 순번 · 뜻 글(`text`)만, DB 행에는 품사도 포함 (한국어 뜻 · 품사 · 순번) | 테이블 `word_meaning` |
 | 한국어 뜻 | `meaningKo` | 뜻의 글 | 칼럼 `meaning_ko` |
-| 뜻 순번 | `meaningSeq` (단어 뜻 안 `seq`) | 단어 안 뜻의 순서 1~5 (1이 가장 일반적인 뜻). 단어 데이터를 다시 가져오면 바뀌는 단어 뜻 아이디 대신 이 값으로 뜻을 지정 | 칼럼 `seq` · `meaning_seq` |
+| 뜻 순번 | `meaningSeq` (단어 뜻 안 `seq`) | 단어 안 뜻의 순서 1 ~ 5 (1이 가장 일반적인 뜻). 단어 데이터를 다시 가져오면 바뀌는 단어 뜻 아이디 대신 이 값으로 뜻을 지정 | 칼럼 `seq` · `meaning_seq` |
 | 세부 레벨 | `A1` ~ `C2` · `getDetailLevels()` | 단어 데이터와 시험의 기본 레벨 | 값 동일 |
 | 묶음 레벨 | `A` · `B` · `C` · `isGroup()` | 세부 레벨 둘을 합친 레벨 (A = A1 + A2). 문항 생성은 지원하지만 DB에 저장하지 않고 화면에서도 선택하지 않음. 준비 화면 · 시험 시작 요청 시 400 "묶음 레벨 시험은 아직 볼 수 없습니다" | — |
 | 묶음 이름 | `getGroupName()` (레벨 안. 결과 객체 · JSON 필드는 `groupName`) | A = Basic, B = Independent, C = Proficient (CEFR 원문의 단계 묶음 이름). 결과 화면 표기 `B1 · Independent` | — |
@@ -277,7 +277,7 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 | 단어 수 | `wordCount` | 레벨의 정답 후보 수. `화면: 레벨 카드의 N 단어` | 템플릿 `levelGroups` 안 `wordCount` |
 | 레벨 단어 | `LevelWord` (DB 행 `LevelWordJpaEntity`) | 한 단어의 한 세부 레벨 = `level_word` 1행. 원본에 있는 레벨마다 존재하며, 출제 여부는 단어 노출로 결정. 도메인 값은 단어 노출 적용 전의 값 = 표제어 · 표제어 보조 · 보기 뜻(순번 포함) | 테이블 `level_word` |
 | 레벨 단어 아이디 | `levelWordId` | 보기 · 정답을 이 값으로 저장 | 칼럼 `level_word_id` |
-| 보기 뜻 | `optionMeanings` | 레벨 단어마다 보기에 표시할 뜻 1~2개. 화면에는 `뜻1, 뜻2` 형식으로 표시 | 칼럼 `meaning1_id` · `meaning2_id` |
+| 보기 뜻 | `optionMeanings` | 레벨 단어마다 보기에 표시할 뜻 1 ~ 2개. 화면에는 `뜻1, 뜻2` 형식으로 표시 | 칼럼 `meaning1_id` · `meaning2_id` |
 
 ### 2-7. 출제 목록
 
@@ -336,7 +336,7 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 | 민감 단어 | 비하어 · 차별 표현 · 욕설 · 성적 표현 · 신체 관련 표현 등의 이슈 유형에 해당해 노출 판정이 필요한 단어 |
 | 판정 이력 | 판정을 변경할 때마다 1행씩 추가만 하는 기록 (최초 · 변경 · 삭제). 애플리케이션은 조회하지 않음 (테이블 `word_exposure_history`) |
 | 혼동 단어 쌍 | 혼동 단어 묶음 안의 두 단어. 데이터 검토에서 묶음 여부를 판단할 때 사용하는 단위 |
-| CEFR | 유럽평의회의 유럽 언어 공통 참조 기준. 레벨 이름(A1~C2, Basic · Independent · Proficient)을 차용. 시험 결과는 CEFR 등급 판정이 아님 |
+| CEFR | 유럽평의회의 유럽 언어 공통 참조 기준. 레벨 이름(A1 ~ C2, Basic · Independent · Proficient)을 차용. 시험 결과는 CEFR 등급 판정이 아님 |
 | CEFR 원본 테이블 | 두 원본 파일(CEFR-J Wordlist 1.5판, Octanove Vocabulary Profile 1.0판 · CC BY-SA 4.0)의 행을 수정하지 않고 그대로 보관. 애플리케이션은 조회하지 않음 (테이블 `word_cefr_level`) |
 | 단어 데이터 가져오기 | 단어 데이터(CSV)를 DB에 넣는 작업. 애플리케이션 밖에서 수행하며, 애플리케이션은 단어를 조회만 함. 메모리의 단어 출제 목록 적재와 구분 |
 
@@ -514,7 +514,7 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
   - 메인 화면의 'N 단어'는 정답 가능한 출제 목록 단어 수
 - **뜻 · 보기 뜻 · 보기 글**
   - 뜻 = 단어의 뜻 전체 (최대 5개)
-  - 보기 뜻 = 레벨 단어마다 보기에 표시할 1~2개
+  - 보기 뜻 = 레벨 단어마다 보기에 표시할 1 ~ 2개
   - 보기 글 = 보기 뜻을 이어 붙인 화면 문구
 - **적재 · 단어 데이터 가져오기**
   - 적재 = DB의 단어 데이터를 메모리의 단어 출제 목록으로 올림 (애플리케이션 기동 시)
