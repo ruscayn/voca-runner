@@ -313,7 +313,7 @@ erDiagram
 - **자동 테스트** (JUnit 6, 234건)
   - 도메인: 문항 생성 · 채점 · 시험 시간 · 수용량 규칙
   - 웹: MockMvc로 화면 · API 응답과 오류 처리 검증 (서비스는 모킹)
-  - DB: Testcontainers로 임시 PostgreSQL 18을 띄워 31건 검증
+  - DB: Testcontainers로 임시 PostgreSQL 18을 띄워 37건 검증
     - 매핑 · 쿼리 조건 · 잠금 · 동시성 위주
     - 프레임워크가 보장하는 단순 저장 · 조회는 대상에서 제외
   - 설정: 비밀 헤더 필터, 사용자 IP 추출, Parameter Store 설정
@@ -327,7 +327,8 @@ erDiagram
   - 기록 자체는 비공개
 - **실행**
   - `./gradlew check` (테스트 + 코드 스타일 검사)
-  - Docker · 로컬 DB · `secret.yml` 필요
+  - Docker만 필요 — DB 테스트 · 앱 기동 테스트는 임시 PostgreSQL을 사용하므로 로컬 DB · `secret.yml` 불필요
+  - `dev` · `main` · `release/**` 대상 PR과 push마다 GitHub Actions에서 같은 검사를 자동 실행
 
 ## AI 활용
 
