@@ -1,5 +1,7 @@
 # VocaRunner
 
+[![CI](https://github.com/ruscayn/voca-runner/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ruscayn/voca-runner/actions/workflows/ci.yml)
+
 **내 영어 단어, 몇 레벨일까?** A1부터 C2까지, 단어마다 5초 안에 뜻을 고르는 영어 어휘 레벨 테스트입니다.
 
 🔗 **https://vocarunner.com** (휴대폰 화면 기준)
@@ -327,7 +329,7 @@ erDiagram
   - 기록 자체는 비공개
 - **실행**
   - `./gradlew check` (테스트 + 코드 스타일 검사)
-  - Docker만 필요 — DB 테스트 · 앱 기동 테스트는 임시 PostgreSQL을 사용하므로 로컬 DB · `secret.yml` 불필요
+  - JDK 25 · Docker만 필요 — DB 테스트 · 앱 기동 테스트는 임시 PostgreSQL을 사용하므로 로컬 DB · `secret.yml` 불필요
   - `dev` · `main` · `release/**` 대상 PR과 push마다 GitHub Actions에서 같은 검사를 자동 실행
 
 ## AI 활용
