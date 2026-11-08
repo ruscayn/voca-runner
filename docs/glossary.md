@@ -318,7 +318,6 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 | 정답 보기 번호 | `answerOptionNo` | 칼럼 `correct_option_no` | |
 | 과목 | `subject` (`Subject`) | 칼럼 `direction` | 초기 이름 방향(`EN_KO`). DB 칼럼 이름은 유지, 값은 `ENGLISH` |
 | 보기 뜻 | `optionMeanings` | 칼럼 `meaning1_id` · `meaning2_id` | |
-| 선택한 보기 (제출 JSON) | `selectedOptions` | JSON `answers` (별칭) | 이전 화면 스크립트와의 배포 호환을 위한 임시 별칭 (`@JsonAlias`) |
 
 ## 3. 규칙과 개념
 
