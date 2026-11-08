@@ -17,7 +17,7 @@ import org.ruscayn.vocarunner.word.domain.WordCatalog;
  * <ul>
  *   <li>보기 4개는 정답과 같은 세부 레벨에서 고른다</li>
  *   <li>보기끼리 보기 뜻이 하나라도 같으면 안 된다</li>
- *   <li>헷갈리는 단어 묶음에 함께 속한 단어는 같은 문항의 보기로 내지 않는다 (예: sir 문항에 teacher. 오답끼리도)</li>
+ *   <li>혼동 단어 묶음에 함께 속한 단어는 같은 문항의 보기로 내지 않는다 (예: sir 문항에 teacher. 오답끼리도)</li>
  * </ul>
  */
 class OptionGenerator {

@@ -16,7 +16,7 @@ import org.ruscayn.vocarunner.word.domain.WordCatalog;
 import org.ruscayn.vocarunner.word.domain.WordExposureRules.Rule;
 import org.ruscayn.vocarunner.word.domain.WordMeaning;
 
-@DisplayName("LoadWordCatalogService : 단어 출제 목록 싣기")
+@DisplayName("LoadWordCatalogService : 단어 출제 목록 적재")
 class LoadWordCatalogServiceTest {
 
     /**
@@ -24,7 +24,7 @@ class LoadWordCatalogServiceTest {
      * 1 lark : B2 · C2 (C2 레벨 제외)
      * 2 sex  : B1 성별 · 성관계 (뜻 2 뜻 제외)
      * 3 gook : B2 (단어 제외)
-     * 4 bus  : A1, 헷갈리는 묶음 {lark, bus}
+     * 4 bus  : A1, 혼동 단어 묶음 {lark, bus}
      * </pre>
      */
     private static final WordPersistencePort WORDS = new WordPersistencePort() {

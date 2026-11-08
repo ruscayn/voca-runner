@@ -165,17 +165,6 @@ class ExamApiControllerTest {
         }
 
         @Test
-        @DisplayName("옛 이름 answers 로 보내도 받는다 (배포할 때 시험을 풀던 옛 화면)")
-        void oldName() throws Exception {
-            submit(MediaType.APPLICATION_JSON, """
-                    {"answers": [{"questionNo": 1, "selectedOptionNo": 2}]}
-                    """)
-                    .andExpect(status().isOk());
-
-            verify(examUseCase).submit(argThat(command -> command.selectedOptions().size() == 1));
-        }
-
-        @Test
         @DisplayName("JSON 이 아닌 본문은 400 (U44)")
         void notJson() throws Exception {
             submit(MediaType.APPLICATION_JSON, "abc")

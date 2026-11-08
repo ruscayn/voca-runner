@@ -16,7 +16,7 @@ class WordCatalogMemoryAdapterTest {
     private final WordCatalogMemoryAdapter adapter = new WordCatalogMemoryAdapter();
 
     @Test
-    @DisplayName("싣기 전에 꺼내면 예외")
+    @DisplayName("적재 전에 꺼내면 예외")
     void getBeforeReplace() {
         assertThatThrownBy(adapter::get).isInstanceOf(IllegalStateException.class);
     }

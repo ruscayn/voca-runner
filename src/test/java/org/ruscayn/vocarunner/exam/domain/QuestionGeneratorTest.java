@@ -269,7 +269,7 @@ class QuestionGeneratorTest {
 
     @ParameterizedTest(name = "seed {0}")
     @ValueSource(longs = {1, 2, 3, 7, 42, 100, 2026, 9999})
-    @DisplayName("헷갈리는 단어 묶음 : 같은 묶음 단어는 한 문제의 보기로 함께 나오지 않는다 (정답·오답 모두)")
+    @DisplayName("혼동 단어 묶음 : 같은 묶음 단어는 한 문제의 보기로 함께 나오지 않는다 (정답·오답 모두)")
     void confusableNotTogether(long seed) {
         List<CatalogWord> catalog = words(Level.A1, 1, 60);
         // 2개 묶음 15개 (1,2) (3,4) ... (29,30) + 3개 묶음 5개 (31,32,33) ... (43,44,45)
@@ -291,7 +291,7 @@ class QuestionGeneratorTest {
             for (CatalogWord a : q.options()) {
                 for (CatalogWord b : q.options()) {
                     assertThat(wordCatalog.findConfusableWordIds(a.wordId()))
-                            .as("문제 %s : 헷갈리는 보기 %s, %s", q.answer().headword(), a.headword(), b.headword())
+                            .as("문제 %s : 혼동 단어 보기 %s, %s", q.answer().headword(), a.headword(), b.headword())
                             .doesNotContain(b.wordId());
                 }
             }
@@ -299,7 +299,7 @@ class QuestionGeneratorTest {
     }
 
     @Test
-    @DisplayName("헷갈리는 단어 묶음 : 묶음이 다르면 함께 나올 수 있다 (sir-teacher, sir-Mr. 이어도 teacher-Mr. 는 가능)")
+    @DisplayName("혼동 단어 묶음 : 묶음이 다르면 함께 나올 수 있다 (sir-teacher, sir-Mr. 이어도 teacher-Mr. 는 가능)")
     void confusableNotTransitive() {
         // 1=sir, 2=teacher, 3=Mr. / 묶음 {1,2}, {1,3}
         // 단어 6개 (sir 문제는 teacher·Mr. 를 빼고 4,5,6 으로 오답을 채울 수 있음)
@@ -323,7 +323,7 @@ class QuestionGeneratorTest {
     }
 
     @Test
-    @DisplayName("헷갈리는 단어 묶음 때문에 오답 보기를 만들 수 없으면 EXAM_NOT_ENOUGH_WORDS")
+    @DisplayName("혼동 단어 묶음 때문에 오답 보기를 만들 수 없으면 EXAM_NOT_ENOUGH_WORDS")
     void confusableLeavesNotEnoughDistractors() {
         // 단어 4개 중 1·2 가 같은 묶음 → 1 문제의 오답 후보는 3, 4 뿐
         List<CatalogWord> catalog = words(Level.A1, 1, 4);
