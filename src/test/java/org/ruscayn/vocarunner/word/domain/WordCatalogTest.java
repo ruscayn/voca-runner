@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 
-@DisplayName("WordCatalog : 단어 출제 목록 (정답 후보 · 찾기 · 헷갈리는 묶음)")
+@DisplayName("WordCatalog : 단어 출제 목록 (정답 후보 · 찾기 · 혼동 단어 묶음)")
 class WordCatalogTest {
 
     @Test
@@ -105,7 +105,7 @@ class WordCatalogTest {
     }
 
     @Test
-    @DisplayName("헷갈리는 단어 : 양방향, 여러 묶음은 합침, 묶음 없는 단어는 빈 집합")
+    @DisplayName("혼동 단어 : 양방향, 여러 묶음은 합침, 묶음 없는 단어는 빈 집합")
     void confusableWordIds() {
         WordCatalog wordCatalog = new WordCatalog(words(Level.A1, 1, 10),
                 List.of(List.of(1L, 2L), List.of(1L, 3L), List.of(4L, 5L, 6L)));
