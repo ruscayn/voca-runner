@@ -7,7 +7,7 @@ spring:
     name: voca-runner
 
   config:
-    import: classpath:secret.yml   # DB 계정 (git 제외 파일)
+    import: optional:classpath:secret.yml   # DB 계정 (git 제외 파일). 없으면 건너뜀 — 자동 테스트 · CI 는 임시 DB 를 씀
 
   cloud:
     aws:

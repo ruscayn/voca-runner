@@ -22,10 +22,11 @@ import org.ruscayn.vocarunner.common.adapter.out.persistence.JpaConfig;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.ExamStatus;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
+import org.ruscayn.vocarunner.support.TestPostgres;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.boot.testcontainers.context.ImportTestcontainers;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -33,9 +34,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * 시험 저장소를 실제 PostgreSQL 로 확인한다 (U21).
@@ -44,16 +42,11 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * <p>앱의 서비스처럼 저장소 호출마다 따로 커밋되게 테스트 트랜잭션을 끈다. 그래서 테스트마다 표를 비운다.
  */
 @DataJpaTest
-@Testcontainers
+@ImportTestcontainers(TestPostgres.class)
 @Import({ExamPersistenceAdapter.class, JpaConfig.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 @DisplayName("ExamPersistenceAdapter : 시험 저장 (PostgreSQL)")
 class ExamPersistenceAdapterTest {
-
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18")
-            .withInitScript("db/schema.sql");
 
     private static final Instant NOW = Instant.parse("2026-10-08T00:00:00Z");
     private static final Duration GRACE = Duration.ofMinutes(3);

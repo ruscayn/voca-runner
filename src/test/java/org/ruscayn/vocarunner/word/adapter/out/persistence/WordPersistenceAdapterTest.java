@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.ruscayn.vocarunner.common.adapter.out.persistence.JpaConfig;
+import org.ruscayn.vocarunner.support.TestPostgres;
 import org.ruscayn.vocarunner.word.domain.ExposureAction;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.ruscayn.vocarunner.word.domain.LevelWord;
@@ -20,13 +21,10 @@ import org.ruscayn.vocarunner.word.domain.WordExposureRules.Rule;
 import org.ruscayn.vocarunner.word.domain.WordMeaning;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.boot.testcontainers.context.ImportTestcontainers;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * 레벨 단어 · 단어 노출(word_exposure)을 실제 PostgreSQL 에서 그대로 읽는지 확인한다 (단어 노출 적용은 하지 않음).
@@ -34,15 +32,10 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * 테스트마다 트랜잭션을 되돌리므로 넣은 단어는 남지 않는다.
  */
 @DataJpaTest
-@Testcontainers
+@ImportTestcontainers(TestPostgres.class)
 @Import({WordPersistenceAdapter.class, LevelWordMapper.class, JpaConfig.class})
 @DisplayName("WordPersistenceAdapter : 레벨 단어 · 단어 노출 읽기 (PostgreSQL)")
 class WordPersistenceAdapterTest {
-
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18")
-            .withInitScript("db/schema.sql");
 
     @Autowired
     private WordPersistenceAdapter adapter;

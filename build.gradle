@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'org.ruscayn'
-version = '0.0.1-SNAPSHOT'
+version = '1.0.0'
 description = 'voca-runner'
 
 java {
@@ -58,8 +58,9 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
     // DB 테스트용 임시 PostgreSQL (테스트 실행 중에만 Docker 로 띄우고 끝나면 지움. Docker 가 켜져 있어야 함)
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
-    testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
     testImplementation 'org.testcontainers:testcontainers-postgresql'
+    // 구조 검사 (계층 · 기능 간 의존 방향을 테스트로 고정)
+    testImplementation 'com.tngtech.archunit:archunit:1.5.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
