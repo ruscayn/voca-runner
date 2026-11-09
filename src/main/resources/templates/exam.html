@@ -6,12 +6,12 @@
     <title>시험 - VocaRunner</title>
 </head>
 <body class="exam-page">
-<!-- 준비 화면 : 아직 시험이 없다. [시작]을 누르면 exam.js 가 서버에 시험을 만들고(마감도 이때부터) 문항을 받는다 (P13) -->
+<!-- 준비 화면 : 아직 시험이 없다. [시작]을 누르면 exam.js 가 서버에 시험을 만들고(마감도 이때부터) 문항 전달을 요청한다 (P13) -->
 <div class="app" id="exam-app"
      th:attr="data-level=${overview.code()},data-group-name=${groupName},data-question-count=${overview.questionCount()},data-time-per-question-sec=${timePerQuestionSec},data-allowed-minutes=${overview.allowedMinutes()}">
 
     <!-- 처음에는 뒤 화면을 막아 두고 "준비 중..." 안내를 보인다. 느린 인터넷에서 exam.js 가 늦게 실행돼도
-         빈 보기 버튼·0 / 0 이 먼저 보이지 않게 (U20). exam.js 가 시작 전 안내로 바꾸고, 문제를 받으면 막은 것을 푼다 -->
+         빈 보기 버튼·0 / 0 이 먼저 보이지 않게 (U20). exam.js 가 시작 전 안내로 바꾸고, 문항이 전달되면 막은 것을 푼다 -->
     <header class="app-header exam-header" inert>
         <div class="exam-status">
             <p class="progress-text" aria-live="off">
