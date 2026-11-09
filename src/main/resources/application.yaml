@@ -64,6 +64,8 @@ voca-runner:
     header: X-Origin-Verify   # CloudFront 가 원본 요청마다 붙이는 비밀 헤더 (AWS 설계 7-1). 허용 값(secrets)은 prod 프로필에서 Parameter Store 로 채움. 값이 없으면 검사하지 않음 (local·자동 테스트)
   client-ip:
     header: CloudFront-Viewer-Address   # 사용자 IP 를 읽을 헤더 (값 "IP:포트"). CloudFront 뒤라 연결 IP 는 모두 CloudFront 주소 (U32, AWS 설계 8장). 8080 은 CloudFront 만 접속 가능해야 함 (직접 붙어 헤더 위조 방지)
+  device-cookie:
+    secure: true              # 기기 쿠키(VR_DEVICE)에 Secure 속성 (HTTPS 로만 전송). CloudFront → 8080 구간이 HTTP 라 앱은 요청만으로 HTTPS 여부를 알 수 없어 설정으로 정함 (U56)
   exam:
     question-count: 500            # 0 이면 레벨 단어 전체 출제 (local 프로필에서 사용)
     grace: 1m                      # 마감 = (문항 수 × 문항당 시간 + 여유)를 분 단위로 올림. 500문항 → 43분. 시계는 준비 화면의 [시작]부터
