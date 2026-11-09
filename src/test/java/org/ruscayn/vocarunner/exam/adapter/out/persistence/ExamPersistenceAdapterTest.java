@@ -223,7 +223,7 @@ class ExamPersistenceAdapterTest {
         // 지워야 하는 시험
         Exam pastDeadline = exam("d4", "10.0.0.1", now.minus(Duration.ofMinutes(30)));
         pastDeadline.deliverQuestions(pastDeadline.getTime().startedAt());
-        Exam undelivered = exam("d5", "10.0.0.1", now.minus(Duration.ofMinutes(3)));      // 2분 넘게 문제를 안 받아 감
+        Exam undelivered = exam("d5", "10.0.0.1", now.minus(Duration.ofMinutes(3)));      // 2분이 지나도록 문항 미전달
         Exam oldResult = exam("d6", "10.0.0.1", now.minus(Duration.ofHours(3)));
         oldResult.submit(List.of(), now.minus(Duration.ofHours(3)).plusSeconds(30));                 // 보관 1시간 지남
 

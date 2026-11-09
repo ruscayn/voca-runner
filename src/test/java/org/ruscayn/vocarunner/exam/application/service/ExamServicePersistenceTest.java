@@ -392,14 +392,14 @@ class ExamServicePersistenceTest {
     }
 
     @Test
-    @DisplayName("정리 작업은 마감 지남 · 문제 안 받아 감 · 보관 지난 결과만 지운다")
+    @DisplayName("정리 작업은 마감 지남 · 문항 미전달 · 보관 지난 결과만 지운다")
     void cleanup() {
         Instant now = Instant.now();
         Exam delivered = exam("d1", now.minus(Duration.ofMinutes(1)));
         delivered.deliverQuestions(now);
         Exam justStarted = exam("d2", now.minus(Duration.ofMinutes(1)));        // 아직 문항 전달 전
         Exam pastDeadline = exam("d3", now.minus(Duration.ofMinutes(30)));
-        Exam undelivered = exam("d4", now.minus(Duration.ofMinutes(3)));        // 2분 넘게 문제를 안 받아 감
+        Exam undelivered = exam("d4", now.minus(Duration.ofMinutes(3)));        // 2분이 지나도록 문항 미전달
         Exam oldResult = exam("d5", now.minus(Duration.ofHours(3)));
         oldResult.submit(List.of(), now.minus(Duration.ofHours(3)).plusSeconds(30));   // 보관 1시간 지남
         List.of(delivered, justStarted, pastDeadline, undelivered, oldResult).forEach(this::saved);
