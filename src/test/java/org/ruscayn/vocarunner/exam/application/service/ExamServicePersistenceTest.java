@@ -176,7 +176,7 @@ class ExamServicePersistenceTest {
     class Start {
 
         @Test
-        @DisplayName("시작하면 진행 중 행이 하나 생긴다 (문제 받기 전, 선택한 보기는 모두 0, 버전 0)")
+        @DisplayName("시작하면 진행 중 행이 하나 생긴다 (문항 전달 전, 선택한 보기는 모두 0, 버전 0)")
         void inserted() {
             UUID examId = start(DEVICE_ID, IP);
 
@@ -234,11 +234,11 @@ class ExamServicePersistenceTest {
     }
 
     @Nested
-    @DisplayName("문제 받기")
+    @DisplayName("문항 전달")
     class GetQuestions {
 
         @Test
-        @DisplayName("문제를 받으면 questions_delivered 가 true, 버전이 1 오르고 만든 시각은 그대로다")
+        @DisplayName("문항을 전달하면 questions_delivered 가 true, 버전이 1 오르고 만든 시각은 그대로다")
         void markedDelivered() {
             UUID examId = start(DEVICE_ID, IP);
             Timestamp createdAt = (Timestamp) row(examId).get("created_at");
@@ -392,14 +392,14 @@ class ExamServicePersistenceTest {
     }
 
     @Test
-    @DisplayName("정리 작업은 마감 지남 · 문제 안 받아 감 · 보관 지난 결과만 지운다")
+    @DisplayName("정리 작업은 마감 지남 · 문항 미전달 · 보관 지난 결과만 지운다")
     void cleanup() {
         Instant now = Instant.now();
         Exam delivered = exam("d1", now.minus(Duration.ofMinutes(1)));
         delivered.deliverQuestions(now);
-        Exam justStarted = exam("d2", now.minus(Duration.ofMinutes(1)));        // 아직 문제를 받기 전
+        Exam justStarted = exam("d2", now.minus(Duration.ofMinutes(1)));        // 아직 문항 전달 전
         Exam pastDeadline = exam("d3", now.minus(Duration.ofMinutes(30)));
-        Exam undelivered = exam("d4", now.minus(Duration.ofMinutes(3)));        // 2분 넘게 문제를 안 받아 감
+        Exam undelivered = exam("d4", now.minus(Duration.ofMinutes(3)));        // 2분이 지나도록 문항 미전달
         Exam oldResult = exam("d5", now.minus(Duration.ofHours(3)));
         oldResult.submit(List.of(), now.minus(Duration.ofHours(3)).plusSeconds(30));   // 보관 1시간 지남
         List.of(delivered, justStarted, pastDeadline, undelivered, oldResult).forEach(this::saved);
@@ -433,7 +433,7 @@ class ExamServicePersistenceTest {
         }
 
         @Test
-        @DisplayName("중단이 시험을 읽은 뒤 문제 받기가 먼저 커밋하면, 중단이 저장 충돌로 실패하고 시험은 진행 중으로 남는다")
+        @DisplayName("중단이 시험을 읽은 뒤 문항 전달이 먼저 커밋하면, 중단이 저장 충돌로 실패하고 시험은 진행 중으로 남는다")
         void abortAfterQuestionsDelivered() {
             UUID examId = start(DEVICE_ID, IP);
 
@@ -446,7 +446,7 @@ class ExamServicePersistenceTest {
         }
 
         @Test
-        @DisplayName("문제 받기가 시험을 읽은 뒤 중단이 먼저 커밋하면, 문제 받기가 저장 충돌로 실패한다 (시험은 지워짐)")
+        @DisplayName("문항 전달이 시험을 읽은 뒤 중단이 먼저 커밋하면, 문항 전달이 저장 충돌로 실패한다 (시험은 지워짐)")
         void questionsDeliveredAfterAbort() {
             UUID examId = start(DEVICE_ID, IP);
 

@@ -109,7 +109,7 @@ class WebNameTest {
         }
 
         @Test
-        @DisplayName("문제 받기 응답 : 시험 · 문항 · 보기 칸")
+        @DisplayName("문항 전달 응답 : 시험 · 문항 · 보기 칸")
         void questions() throws Exception {
             ExamQuestionsResult.QuestionItem question = new ExamQuestionsResult.QuestionItem(1, "abroad", "go abroad",
                     List.of(new ExamQuestionsResult.Option(1, "해외로"), new ExamQuestionsResult.Option(2, "국내에")));

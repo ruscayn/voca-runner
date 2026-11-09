@@ -227,7 +227,7 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 | 준비 화면 | `ready` | 메인에서 레벨을 선택한 뒤 여는 시작 전 화면 (레벨 · 문항 · 시간 안내, 소리 확인). 이 단계에서는 시험을 만들지 않음 | `GET /exam/ready?level=…` |
 | 시험 시작 | `StartExamUseCase.start` | 준비 화면의 [시작]에서 시험을 만들어 저장 (응답 = 시험 아이디, 화면은 이어서 문항 전달 요청). 처리 순서: 수용량 확인 → 문항 생성 → 시험 시작 잠금 안에서 재확인 · 같은 기기의 시험 중단 · 저장. 묶음 레벨은 시작 입력(`StartExamCommand`)에서 400으로 거절 | `POST /api/exams` |
 | 문항 전달 | `deliverQuestions` | 시험 화면에 문항 전체를 한 번에 전송 (정답 보기 번호 제외). 문항 전달 여부를 기록(시험 안 `deliverQuestions(now)` — 진행 중일 때만). 시험을 시작한 기기만 가능. GET 요청이므로 반복 호출해도 같은 문항을 반환 (멱등) | `GET /api/exams/{id}/questions` |
-| 문항 전달 여부 | `questionsDelivered` | 서버가 시험 화면에 문항을 제공했는지 여부 (화면의 실제 수신 여부는 알 수 없음). 문항을 받지 못한 시험을 조기에 정리하는 데 사용 | 칼럼 `questions_delivered` |
+| 문항 전달 여부 | `questionsDelivered` | 서버가 시험 화면에 문항을 제공했는지 여부 (화면의 실제 수신 여부는 알 수 없음). 문항이 전달되지 않은 시험을 조기에 정리하는 데 사용 | 칼럼 `questions_delivered` |
 | 시험 제출 | `ExamUseCase.submit` | 선택한 보기를 마지막에 한 번에 전송해 채점. 시험을 시작한 기기만 가능. 마감이 지났으면 즉시 삭제하고 `EXAM_005` 반환 | `POST /api/exams/{id}/submit` |
 | 중단 가능 | `isAbortableBy` | 시험을 시작한 기기가 진행 중인 시험에 대해서만 중단 가능 | — |
 | 시험 중단 | `abortIfInProgress` | 제출하지 않은 진행 중 시험을 종료하고 즉시 삭제. 그만두기 · 같은 기기의 새 시작 · 응시 중 화면 이탈(새로고침 · 뒤로 가기 · 창 닫기) 시 발생. 다른 기기의 요청은 무시 | `POST /api/exams/{id}/abort` |
