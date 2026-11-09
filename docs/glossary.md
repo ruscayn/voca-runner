@@ -251,7 +251,7 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 | 용어 | 코드 이름 | 설명 | 외부 이름 |
 |---|---|---|---|
 | 기기 아이디 | `deviceId` | 브라우저마다 쿠키로 부여하는 무작위 값 (유효 기간 1일, 시험 시작 시마다 갱신). 같은 공인 IP를 쓰는 여러 사용자(학교 Wi-Fi · 통신사망)를 구분. 문항 조회 · 제출 · 중단은 시험을 시작한 기기만 가능 | 쿠키 `VR_DEVICE`, 칼럼 `device_id` |
-| 기기 쿠키 | `DeviceCookie` | 쿠키에서 기기 아이디를 읽고, 없으면 새 값을 만들어 부여 (`findOrCreate`). 시작 시 같은 값으로 다시 설정해 유효 기간(1일)을 갱신 | 쿠키 `VR_DEVICE` |
+| 기기 쿠키 | `DeviceCookie` | 쿠키에서 기기 아이디를 읽고, 없으면 새 값을 만들어 부여 (`findOrCreate`). 시작 시 같은 값으로 다시 설정해 유효 기간(1일)을 갱신. 운영 환경은 CloudFront 뒤에 있어 앱이 요청의 HTTPS 여부를 판별할 수 없으므로 `Secure` 속성은 설정으로 지정 | 쿠키 `VR_DEVICE`, 설정 `voca-runner.device-cookie.secure` |
 | 사용자 IP | `ClientIp` · `clientIp` | 접속한 사용자의 IP. 운영 환경은 CloudFront 뒤에 있으므로 연결 IP가 아닌 CloudFront가 추가하는 헤더에서 추출 | 헤더 `CloudFront-Viewer-Address`, 설정 `voca-runner.client-ip.header`, 칼럼 `client_ip` |
 | 최대 진행 중 | `maxInProgress` | 전체 진행 중 시험 수의 최대 (기본 20,000) | 설정 `voca-runner.exam.max-in-progress`, 오류 `EXAM_006` |
 | IP당 최대 진행 중 | `maxInProgressPerIp` | IP 하나의 진행 중 시험 수 최대 (기본 50) | 설정 `voca-runner.exam.max-in-progress-per-ip`, 오류 `EXAM_008` |

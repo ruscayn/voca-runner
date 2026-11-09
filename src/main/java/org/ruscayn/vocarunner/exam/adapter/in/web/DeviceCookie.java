@@ -39,9 +39,9 @@ final class DeviceCookie {
     }
 
     /** 이미 있어도 같은 값으로 다시 붙여, 쿠키가 시험 도중 만료되지 않게 기간을 시작 때부터 새로 센다 */
-    static String findOrCreate(HttpServletRequest request, HttpServletResponse response) {
+    static String findOrCreate(HttpServletRequest request, HttpServletResponse response, boolean secure) {
         String deviceId = Objects.requireNonNullElseGet(find(request), () -> UUID.randomUUID().toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, toCookie(deviceId, request.isSecure()).toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, toCookie(deviceId, secure).toString());
         return deviceId;
     }
 

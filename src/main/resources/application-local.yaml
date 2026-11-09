@@ -13,5 +13,7 @@ voca-runner:
   site-url: http://localhost:8080
   client-ip:
     header: ""                # 헤더를 보지 않고 연결 IP 그대로 (CloudFront 없음)
+  device-cookie:
+    secure: false             # 개발 PC 는 HTTP 접속이라 Secure 를 끔
   exam:
     question-count: 0         # 레벨 단어 전체 출제 (베타 테스트용)

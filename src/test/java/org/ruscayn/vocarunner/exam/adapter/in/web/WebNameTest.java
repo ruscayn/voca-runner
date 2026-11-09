@@ -56,7 +56,7 @@ import org.springframework.test.web.servlet.MockMvc;
  * 서비스는 가짜로 바꾼다 (DB 없음).
  */
 @WebMvcTest({ExamApiController.class, ExamController.class, MainController.class})
-@EnableConfigurationProperties(ClientIpProperties.class)
+@EnableConfigurationProperties({ClientIpProperties.class, DeviceCookieProperties.class})
 @DisplayName("바깥 이름 고정 : API JSON 칸 · 화면 모델 이름 · 템플릿")
 class WebNameTest {
 

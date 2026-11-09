@@ -38,11 +38,13 @@ public class ExamApiController {
     private final ExamUseCase examUseCase;
     private final ExamQuery examQuery;
     private final ClientIpProperties clientIpProperties;
+    private final DeviceCookieProperties deviceCookieProperties;
 
     @PostMapping
     public Map<String, UUID> start(@RequestParam Level level, HttpServletRequest httpRequest,
                                    HttpServletResponse httpResponse) {
-        Examinee examinee = new Examinee(DeviceCookie.findOrCreate(httpRequest, httpResponse),
+        Examinee examinee = new Examinee(
+                DeviceCookie.findOrCreate(httpRequest, httpResponse, deviceCookieProperties.secure()),
                 ClientIp.find(httpRequest, clientIpProperties.header()));
         return Map.of("examId", startExamUseCase.start(new StartExamCommand(level, examinee)));
     }
