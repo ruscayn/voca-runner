@@ -210,7 +210,7 @@ class ExamPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("정리 작업은 마감이 지난 시험 · 문제를 받아 가지 않은 시험 · 보관이 끝난 결과만 지운다")
+    @DisplayName("정리 작업은 마감이 지난 시험 · 문항이 전달되지 않은 시험 · 보관이 끝난 결과만 지운다")
     void deleteDisposable() {
         Instant now = NOW.plus(Duration.ofHours(3));
         // 남아야 하는 시험
@@ -219,11 +219,11 @@ class ExamPersistenceAdapterTest {
         Exam recentResult = exam("d3", "10.0.0.1", now.minus(Duration.ofMinutes(10)));
         recentResult.submit(List.of(), now.minus(Duration.ofMinutes(9)));                            // 결과 보관 중
         // CHECKSTYLE.SUPPRESS: VariableDeclarationUsageDistance — 남을 시험 · 지울 시험을 묶어 만들고 마지막에 한꺼번에 저장
-        Exam justStarted = exam("d2", "10.0.0.1", now.minus(Duration.ofMinutes(1)));     // 아직 문제를 받기 전
+        Exam justStarted = exam("d2", "10.0.0.1", now.minus(Duration.ofMinutes(1)));     // 아직 문항 전달 전
         // 지워야 하는 시험
         Exam pastDeadline = exam("d4", "10.0.0.1", now.minus(Duration.ofMinutes(30)));
         pastDeadline.deliverQuestions(pastDeadline.getTime().startedAt());
-        Exam undelivered = exam("d5", "10.0.0.1", now.minus(Duration.ofMinutes(3)));      // 2분 넘게 문제를 안 받아 감
+        Exam undelivered = exam("d5", "10.0.0.1", now.minus(Duration.ofMinutes(3)));      // 2분이 지나도록 문항 미전달
         Exam oldResult = exam("d6", "10.0.0.1", now.minus(Duration.ofHours(3)));
         oldResult.submit(List.of(), now.minus(Duration.ofHours(3)).plusSeconds(30));                 // 보관 1시간 지남
 
