@@ -41,10 +41,10 @@ import org.springframework.test.web.servlet.ResultActions;
 /**
  * 시험 API 요청 형식 검사와 오류 응답.
  * 서비스는 가짜로 바꿔 요청이 서비스까지 가는지만 본다 (DB 없음).
- * IP 헤더 설정은 application.yaml(운영 값 CloudFront-Viewer-Address)을 그대로 쓴다.
+ * IP 헤더 · 기기 쿠키 Secure 설정은 application.yaml(운영 값)을 그대로 쓴다.
  */
 @WebMvcTest(ExamApiController.class)
-@EnableConfigurationProperties(ClientIpProperties.class)
+@EnableConfigurationProperties({ClientIpProperties.class, DeviceCookieProperties.class})
 @DisplayName("ExamApiController : 시험 API 요청 형식")
 class ExamApiControllerTest {
 
@@ -84,6 +84,15 @@ class ExamApiControllerTest {
                     .andExpect(jsonPath("$.examId").value(EXAM_ID.toString()))
                     .andExpect(cookie().exists("VR_DEVICE"))
                     .andExpect(cookie().maxAge("VR_DEVICE", ONE_DAY_SEC));
+        }
+
+        @Test
+        @DisplayName("운영은 CloudFront 뒤라 앱이 받는 요청이 HTTP여도, 설정대로 기기 쿠키에 Secure를 붙인다 (U56)")
+        void secureDeviceCookie() throws Exception {
+            given(startExamUseCase.start(argThat(command -> command.level() == Level.A1))).willReturn(EXAM_ID);
+
+            mockMvc.perform(post("/api/exams").param("level", "A1"))
+                    .andExpect(cookie().secure("VR_DEVICE", true));
         }
 
         @Test
