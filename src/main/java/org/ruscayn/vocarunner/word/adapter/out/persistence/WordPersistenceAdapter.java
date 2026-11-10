@@ -12,8 +12,8 @@ import org.ruscayn.vocarunner.word.domain.LevelWord;
 import org.ruscayn.vocarunner.word.domain.WordExposureRules;
 import org.springframework.transaction.annotation.Transactional;
 
-@PersistenceAdapter
 @Transactional(readOnly = true)
+@PersistenceAdapter
 @RequiredArgsConstructor
 public class WordPersistenceAdapter implements WordPersistencePort {
 

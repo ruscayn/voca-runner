@@ -20,16 +20,16 @@ import org.ruscayn.vocarunner.word.application.port.in.WordCatalogQuery;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
-@UseCase
 @Transactional(readOnly = true)
+@UseCase
 @RequiredArgsConstructor
 public class ExamService implements ExamUseCase {
 
     private final ExamPersistencePort examPersistencePort;
     private final WordCatalogQuery wordCatalogQuery;
 
-    @Override
     @Transactional
+    @Override
     public ExamQuestionsResult deliverQuestions(UUID examId, String deviceId) {
         Exam exam = findStartedBy(examId, deviceId);
         Instant now = Instant.now();
@@ -54,8 +54,8 @@ public class ExamService implements ExamUseCase {
     }
 
     /** 거절해도 마감 초과 삭제는 반영해야 하므로 업무 예외로는 되돌리지 않는다 (채점 전 검사에서 거절하면 바뀐 것이 없다) */
-    @Override
     @Transactional(noRollbackFor = CustomException.class)
+    @Override
     public SubmitExamResult submit(SubmitExamCommand command) {
         Exam exam = findStartedBy(command.examId(), command.deviceId());
         submitOrDeleteIfExpired(exam, command.toSelectedOptions());
@@ -89,8 +89,8 @@ public class ExamService implements ExamUseCase {
                 exam.getGradingResult().correctCount(), exam.getQuestionCount(), exam.getGradingResult().score()));
     }
 
-    @Override
     @Transactional
+    @Override
     public void abortIfInProgress(UUID examId, String deviceId) {
         Instant now = Instant.now();
         examPersistencePort.findById(examId)

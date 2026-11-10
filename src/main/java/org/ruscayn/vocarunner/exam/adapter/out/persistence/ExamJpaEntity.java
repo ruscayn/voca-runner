@@ -20,9 +20,9 @@ import org.ruscayn.vocarunner.exam.domain.Subject;
 import org.ruscayn.vocarunner.word.domain.Level;
 
 /** 문항을 행으로 나누지 않고 배열로 한 행에 둔다 (500문항 기준 약 10KB) */
-@Getter
-@Entity
 @Table(name = "test_session")
+@Entity
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ExamJpaEntity extends BaseEntity {
 

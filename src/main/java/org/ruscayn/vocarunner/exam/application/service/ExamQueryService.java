@@ -11,8 +11,8 @@ import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.word.application.port.in.WordCatalogQuery;
 import org.springframework.transaction.annotation.Transactional;
 
-@UseCase
 @Transactional(readOnly = true)
+@UseCase
 @RequiredArgsConstructor
 public class ExamQueryService implements ExamQuery {
 

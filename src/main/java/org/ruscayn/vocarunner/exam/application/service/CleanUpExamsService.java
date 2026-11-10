@@ -9,16 +9,16 @@ import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
-@UseCase
 @Transactional(readOnly = true)
+@UseCase
 @RequiredArgsConstructor
 public class CleanUpExamsService implements CleanUpExamsUseCase {
 
     private final ExamPersistencePort examPersistencePort;
     private final ExamProperties examProperties;
 
-    @Override
     @Transactional
+    @Override
     public void cleanUp() {
         Instant now = Instant.now();
         int removed = examPersistencePort.deleteDisposable(

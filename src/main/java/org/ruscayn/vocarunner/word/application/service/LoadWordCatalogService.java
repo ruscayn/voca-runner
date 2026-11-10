@@ -16,8 +16,8 @@ import org.ruscayn.vocarunner.word.domain.WordExposureRules;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
-@UseCase
 @Transactional(readOnly = true)
+@UseCase
 @RequiredArgsConstructor
 public class LoadWordCatalogService implements LoadWordCatalogUseCase {
 

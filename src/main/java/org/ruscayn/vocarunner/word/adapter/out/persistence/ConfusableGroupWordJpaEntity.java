@@ -9,8 +9,8 @@ import java.io.Serializable;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
-@Entity
 @Table(name = "confusable_group_word")
+@Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ConfusableGroupWordJpaEntity {
 
