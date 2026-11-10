@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @UseCase
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ExamService implements ExamUseCase {
 

@@ -13,9 +13,11 @@ import org.ruscayn.vocarunner.word.domain.CatalogWord;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
 import org.ruscayn.vocarunner.word.domain.WordExposureRules;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @UseCase
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class LoadWordCatalogService implements LoadWordCatalogUseCase {
 

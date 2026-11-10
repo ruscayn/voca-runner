@@ -6,9 +6,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.ruscayn.vocarunner.common.UseCase;
 import org.ruscayn.vocarunner.exam.application.port.in.CleanUpExamsUseCase;
 import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @UseCase
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class CleanUpExamsService implements CleanUpExamsUseCase {
 
@@ -16,6 +18,7 @@ public class CleanUpExamsService implements CleanUpExamsUseCase {
     private final ExamProperties examProperties;
 
     @Override
+    @Transactional
     public void cleanUp() {
         Instant now = Instant.now();
         int removed = examPersistencePort.deleteDisposable(

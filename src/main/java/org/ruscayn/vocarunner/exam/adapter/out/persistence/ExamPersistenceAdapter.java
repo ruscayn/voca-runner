@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** 진행 중 = 상태 IN_PROGRESS 이고 마감 전. Exam.isInProgress 와 같은 조건이어야 한다 */
 @PersistenceAdapter
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ExamPersistenceAdapter implements ExamPersistencePort {
 
@@ -44,6 +45,7 @@ public class ExamPersistenceAdapter implements ExamPersistencePort {
     }
 
     @Override
+    @Transactional
     public void delete(UUID examId) {
         springDataRepository.deleteById(examId);
     }

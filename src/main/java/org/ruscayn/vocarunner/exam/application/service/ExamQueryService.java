@@ -12,6 +12,7 @@ import org.ruscayn.vocarunner.word.application.port.in.WordCatalogQuery;
 import org.springframework.transaction.annotation.Transactional;
 
 @UseCase
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ExamQueryService implements ExamQuery {
 
@@ -20,7 +21,6 @@ public class ExamQueryService implements ExamQuery {
     private final ExamProperties examProperties;
 
     @Override
-    @Transactional(readOnly = true)
     public ExamResult getResult(UUID examId) {
         Exam exam = examPersistencePort.findById(examId).orElseThrow(ExamNotFoundException::new);
         exam.requireCompleted();
@@ -32,7 +32,6 @@ public class ExamQueryService implements ExamQuery {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Optional<ExamResult> findResult(UUID examId) {
         return examPersistencePort.findById(examId)
                 .filter(Exam::isCompleted)
