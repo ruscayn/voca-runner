@@ -18,8 +18,11 @@ public record ExamConfigProperties(
 ) {
 
     public ExamProperties toExamProperties() {
-        return new ExamProperties(maxQuestionCount, grace, resultRetention,
-                new ExamCapacity(maxInProgress, maxInProgressPerIp), undeliveredTimeout);
+        return new ExamProperties(maxQuestionCount, grace, resultRetention, undeliveredTimeout);
+    }
+
+    public ExamCapacity toExamCapacity() {
+        return new ExamCapacity(maxInProgress, maxInProgressPerIp);
     }
 
 }

@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.ruscayn.vocarunner.common.CustomException;
 import org.ruscayn.vocarunner.common.ErrorCode;
 import org.ruscayn.vocarunner.exam.application.port.in.ExamLevelOverview;
-import org.ruscayn.vocarunner.exam.domain.ExamCapacity;
 import org.ruscayn.vocarunner.support.TestWords;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
@@ -21,8 +20,7 @@ class ExamLevelOverviewQueryServiceTest {
     private static final WordCatalog WORD_CATALOG = new WordCatalog(TestWords.words(Level.A1, 1, 20), List.of());
 
     private final ExamLevelOverviewQueryService service = new ExamLevelOverviewQueryService(() -> WORD_CATALOG,
-            new ExamProperties(10, Duration.ofMinutes(1), Duration.ofHours(1), new ExamCapacity(100, 10),
-                    Duration.ofMinutes(2)));
+            new ExamProperties(10, Duration.ofMinutes(1), Duration.ofHours(1), Duration.ofMinutes(2)));
 
     @Test
     @DisplayName("레벨 하나 (준비 화면) : 문항 수 = 단어 수와 최대 문항 수 중 작은 값, 허용 시간은 분 단위 올림")

@@ -89,12 +89,18 @@ class ExamServicePersistenceTest {
             return new QuestionGenerator();
         }
 
-        /** 문항 4개, IP당 최대 진행 중 2개. 나머지는 기본값 */
+        /** 문항 4개. 나머지는 기본값 */
         @Bean
         @Primary
         ExamProperties examProperties() {
-            return new ExamProperties(QUESTION_COUNT, GRACE, Duration.ofHours(1),
-                    new ExamCapacity(20000, MAX_IN_PROGRESS_PER_IP), Duration.ofMinutes(2));
+            return new ExamProperties(QUESTION_COUNT, GRACE, Duration.ofHours(1), Duration.ofMinutes(2));
+        }
+
+        /** IP당 최대 진행 중 2개. 전체 최대는 기본값 */
+        @Bean
+        @Primary
+        ExamCapacity examCapacity() {
+            return new ExamCapacity(20000, MAX_IN_PROGRESS_PER_IP);
         }
 
     }

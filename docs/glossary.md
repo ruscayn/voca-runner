@@ -256,7 +256,7 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 | 사용자 IP | `ClientIp` · `clientIp` | 접속한 사용자의 IP. 운영 환경은 CloudFront 뒤에 있으므로 연결 IP가 아닌 CloudFront가 추가하는 헤더에서 추출 | 헤더 `CloudFront-Viewer-Address`, 설정 `voca-runner.client-ip.header`, 칼럼 `client_ip` |
 | 최대 진행 중 | `maxInProgress` | 전체 진행 중 시험 수의 최대 (기본 20,000) | 설정 `voca-runner.exam.max-in-progress`, 오류 `EXAM_006` |
 | IP당 최대 진행 중 | `maxInProgressPerIp` | IP 하나의 진행 중 시험 수 최대 (기본 50) | 설정 `voca-runner.exam.max-in-progress-per-ip`, 오류 `EXAM_008` |
-| 시험 수용량 | `ExamCapacity` | 최대 진행 중 · IP당 최대 진행 중을 기준으로 시작 가능 여부를 판정. 같은 기기의 진행 중 시험은 집계에서 제외 (IP 집계에서는 같은 IP의 시험만 제외) | 설정 `max-in-progress` · `max-in-progress-per-ip` |
+| 시험 수용량 | `ExamCapacity` | 최대 진행 중 · IP당 최대 진행 중을 기준으로 시작 가능 여부를 판정. 같은 기기의 진행 중 시험은 집계에서 제외 (IP 집계에서는 같은 IP의 시험만 제외). 빈으로 등록(`ExamConfig`)하여 시작 서비스가 직접 주입받음 | 설정 `max-in-progress` · `max-in-progress-per-ip` |
 | 수용량 확인 | `checkCapacity` | 시작 시 진행 중 시험 수가 최대를 넘는지 확인. 잠금 없이 한 번(문항 생성 전), 시험 시작 잠금 안에서 한 번 더 확인. 같은 기기의 진행 중 시험은 새 시험으로 대체되므로 집계에서 제외 | — |
 | 시험 시작 잠금 | `lockForStart` | 수용량 확인과 저장 사이에 다른 시작 요청이 개입하지 못하도록 시작을 하나씩 처리. PostgreSQL 트랜잭션 잠금(`pg_advisory_xact_lock`)이므로 **트랜잭션 안에서만 유효** | — |
 | 결과 만료 안내 | `NOTICE_RESULT_EXPIRED` | 결과 보관 기간이 지난 결과 화면을 요청했을 때 표시하는 안내 | `?notice=result-expired` |

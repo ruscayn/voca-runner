@@ -1,13 +1,11 @@
 package org.ruscayn.vocarunner.exam.application.service;
 
 import java.time.Duration;
-import org.ruscayn.vocarunner.exam.domain.ExamCapacity;
 
 public record ExamProperties(
         int maxQuestionCount,
         Duration grace,
         Duration resultRetention,
-        ExamCapacity capacity,
         Duration undeliveredTimeout
 ) {
 
