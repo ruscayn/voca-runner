@@ -74,7 +74,7 @@ public final class WordCatalog {
         Map<Long, CatalogWord> byWord = new LinkedHashMap<>();
         for (CatalogWord word : candidates) {
             byWord.merge(word.wordId(), word,
-                    (current, next) -> next.level().isLowerThan(current.level()) ? next : current);
+                    (current, next) -> next.isLowerLevelThan(current) ? next : current);
         }
         return List.copyOf(byWord.values());
     }
