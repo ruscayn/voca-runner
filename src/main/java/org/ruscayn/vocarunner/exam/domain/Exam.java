@@ -106,12 +106,8 @@ public class Exam {
         }
     }
 
-    public Long selectedOptionId(int no) {
-        return questions.selectedOptionId(no, selectedOptions);
-    }
-
-    public List<Integer> getWrongQuestionNos() {
-        return questions.findWrongQuestionNos(selectedOptions);
+    public List<WrongAnswer> getWrongAnswers() {
+        return questions.findWrongAnswers(selectedOptions);
     }
 
 }

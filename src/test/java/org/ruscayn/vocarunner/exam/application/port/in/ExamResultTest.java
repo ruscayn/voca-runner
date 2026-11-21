@@ -46,18 +46,19 @@ class ExamResultTest {
         assertThat(incorrect.answerText()).isEqualTo(second.answer().optionText());
         assertThat(incorrect.selectedText()).isEqualTo(second.options().get(incorrectOptionNo(2) - 1).optionText());
         assertThat(result.wrongItems().get(1).selectedText()).isNull();
+        assertThat(result.wrongItems()).extracting(ExamResult.WrongItem::timeout).containsExactly(false, true);
     }
 
     @Test
     @DisplayName("틀린 항목을 오답(보기를 선택함)과 시간 초과(선택한 보기 없음)로 나눠 센다")
     void wrongAndTimeoutCount() {
         List<ExamResult.WrongItem> wrongItems = List.of(
-                new ExamResult.WrongItem(1, "abandon", null, "채택하다", "버리다", "abandon"),
-                new ExamResult.WrongItem(2, "reluctant", null, null, "꺼리는", "reluctant"),
-                new ExamResult.WrongItem(3, "distinct", null, "먼", "뚜렷한", "distinct"),
-                new ExamResult.WrongItem(4, "compensate", null, null, "보상하다", "compensate"),
+                new ExamResult.WrongItem(1, "abandon", null, "채택하다", "버리다", "abandon", false),
+                new ExamResult.WrongItem(2, "reluctant", null, null, "꺼리는", "reluctant", true),
+                new ExamResult.WrongItem(3, "distinct", null, "먼", "뚜렷한", "distinct", false),
+                new ExamResult.WrongItem(4, "compensate", null, null, "보상하다", "compensate", true),
                 new ExamResult.WrongItem(5, "for the sake of", "for one's sake", null, "~을 위해서",
-                        "for the sake of"));
+                        "for the sake of", true));
 
         ExamResult result = new ExamResult(
                 UUID.randomUUID(), "B1", "Independent", 10, 5, 50, Instant.now(), 20, wrongItems);

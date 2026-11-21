@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.GradingResult;
+import org.ruscayn.vocarunner.exam.domain.WrongAnswer;
 import org.ruscayn.vocarunner.word.domain.CatalogWord;
 import org.ruscayn.vocarunner.word.domain.WordCatalog;
 
@@ -30,8 +31,8 @@ public record ExamResult(
     }
 
     private static List<WrongItem> wrongItems(Exam exam, WordCatalog wordCatalog) {
-        return exam.getWrongQuestionNos().stream()
-                .map(no -> WrongItem.of(exam, no, wordCatalog))
+        return exam.getWrongAnswers().stream()
+                .map(wrongAnswer -> WrongItem.of(wrongAnswer, wordCatalog))
                 .toList();
     }
 
@@ -40,7 +41,7 @@ public record ExamResult(
     }
 
     public long timeoutCount() {
-        return wrongItems.stream().filter(item -> item.selectedText() == null).count();
+        return wrongItems.stream().filter(WrongItem::timeout).count();
     }
 
     public long incorrectCount() {
@@ -48,20 +49,20 @@ public record ExamResult(
     }
 
     public record WrongItem(int no, String prompt, String promptSub, String selectedText, String answerText,
-                            String headword) {
+                            String headword, boolean timeout) {
 
-        static WrongItem of(Exam exam, int no, WordCatalog wordCatalog) {
-            CatalogWord answer = wordCatalog.get(exam.getQuestions().answerOptionId(no));
-            return new WrongItem(no, answer.headword(), answer.headwordSub(), selectedText(exam, no, wordCatalog),
-                    answer.optionText(), answer.headword());
+        static WrongItem of(WrongAnswer wrongAnswer, WordCatalog wordCatalog) {
+            CatalogWord answer = wordCatalog.get(wrongAnswer.answerOptionId());
+            return new WrongItem(wrongAnswer.no(), answer.headword(), answer.headwordSub(),
+                    selectedText(wrongAnswer, wordCatalog), answer.optionText(), answer.headword(),
+                    wrongAnswer.isTimeout());
         }
 
-        private static String selectedText(Exam exam, int no, WordCatalog wordCatalog) {
-            Long selectedOptionId = exam.selectedOptionId(no);
-            if (selectedOptionId == null) {
+        private static String selectedText(WrongAnswer wrongAnswer, WordCatalog wordCatalog) {
+            if (wrongAnswer.isTimeout()) {
                 return null;
             }
-            return wordCatalog.get(selectedOptionId).optionText();
+            return wordCatalog.get(wrongAnswer.selectedOptionId()).optionText();
         }
 
     }

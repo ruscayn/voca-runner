@@ -39,19 +39,24 @@ class QuestionsTest {
         SelectedOptions selected = SelectedOptions.record(selected(marks), 4);
 
         assertThat(questions.countCorrect(selected)).isEqualTo(1);
-        assertThat(questions.findWrongQuestionNos(selected)).containsExactly(2, 3, 4);
+        assertThat(questions.findWrongAnswers(selected)).extracting(WrongAnswer::no).containsExactly(2, 3, 4);
     }
 
     @Test
-    @DisplayName("선택한 보기의 아이디를 돌려주고, 선택하지 않았으면 없다")
-    void selectedOptionId() {
+    @DisplayName("틀린 문항마다 정답 · 선택한 보기의 아이디를 주고, 선택하지 않았으면 시간 초과다")
+    void wrongAnswers() {
         Questions questions = Questions.from(questions(3));
 
         SelectedOptions selected = SelectedOptions.record(selected(Map.of(2, incorrectOptionNo(2))), 3);
 
-        assertThat(questions.selectedOptionId(2, selected))
-                .isEqualTo(questions.optionIds(2).get(incorrectOptionNo(2) - 1));
-        assertThat(questions.selectedOptionId(1, selected)).isNull();
+        List<WrongAnswer> wrongAnswers = questions.findWrongAnswers(selected);
+        assertThat(wrongAnswers).extracting(WrongAnswer::no).containsExactly(1, 2, 3);
+        WrongAnswer incorrect = wrongAnswers.get(1);
+        assertThat(incorrect.answerOptionId()).isEqualTo(questions.answerOptionId(2));
+        assertThat(incorrect.selectedOptionId()).isEqualTo(questions.optionIds(2).get(incorrectOptionNo(2) - 1));
+        assertThat(incorrect.isTimeout()).isFalse();
+        assertThat(wrongAnswers.get(0).selectedOptionId()).isNull();
+        assertThat(wrongAnswers.get(0).isTimeout()).isTrue();
     }
 
     @Test

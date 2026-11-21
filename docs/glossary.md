@@ -194,7 +194,7 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 | 보기 글 | `text` (보기 안) | 보기에 표시되는 보기 뜻 (`뜻1, 뜻2`) | JSON `options[].text` |
 | 보기 아이디 | `optionId` · `optionIds` | 보기가 가리키는 레벨 단어 아이디. 보기 번호(1 ~ 4)는 문항 안의 위치, 보기 아이디는 그 위치에 놓인 단어 | 칼럼 `option_ids` |
 | 정답 보기 아이디 | `answerOptionId` | 정답 보기의 아이디. 제시어 · 정답 글 조회에 사용하며, 문항 목록이 보기[정답 보기 번호]로 계산 | — |
-| 선택한 보기 아이디 | `selectedOptionId` | 선택한 보기의 아이디. 선택한 글 조회에 사용하며, 선택하지 못했으면 값 없음. 문항 목록의 보기[선택한 보기 번호]이므로 시험이 두 값을 조합해 계산 | — |
+| 선택한 보기 아이디 | `selectedOptionId` | 선택한 보기의 아이디. 선택한 글 조회에 사용하며, 선택하지 못했으면 값 없음. 문항 목록의 보기[선택한 보기 번호]이므로 문항 목록이 선택한 보기와 조합해 계산하고, 틀린 문항(`WrongAnswer`)에 포함 | — |
 | 정답 보기 번호 | `answerOptionNo` | 정답이 몇 번 보기인지 | 칼럼 `correct_option_no` |
 | 선택한 보기 번호 | `selectedOptionNo` | 응시자가 선택한 보기 번호. 선택하지 못했으면 값 없음 (DB에는 0). `화면: 내 답` | 칼럼 `selected_option_no`, JSON `selectedOptionNo` (제출 JSON의 `selectedOptions[]` 안) |
 | 오답 보기 | `INCORRECT_OPTION_COUNT` (오답 보기 수) | 정답이 아닌 보기 3개 | — |
@@ -203,7 +203,7 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 | 선택한 보기 | `SelectedOptions` | 문항별 선택한 보기 번호 (시험이 직접 보유). 제출 시 한 번에 기록하며, 없는 문항 번호 · 중복 번호 · 1 ~ 4 범위 밖의 보기 번호는 거절 | 칼럼 `selected_option_no` |
 | 선택한 보기 하나 | `SelectedOption` | 문항 하나의 선택한 보기 = 문항 번호 + 보기 번호 (값이 없으면 시간 초과). 제출 요청 `selectedOptions[]`의 한 항목(`SubmitExamCommand.SelectedOptionItem`)을 도메인 값으로 변환한 것 | — |
 | 채점 결과 | `GradingResult` | 맞힌 수 · 점수. 제출 전에는 값 없음. 점수 버림 계산 담당 | 칼럼 `correct_count` · `score` |
-| 틀린 문항 번호 | `getWrongQuestionNos()` | 맞히지 못한 문항 번호 목록 (오답 + 시간 초과, 번호 순) | — |
+| 틀린 문항 | `WrongAnswer` · `getWrongAnswers()` | 맞히지 못한 문항 하나 = 문항 번호 · 정답 보기 아이디 · 선택한 보기 아이디(시간 초과면 값 없음). 시간 초과 여부(`isTimeout`) 판정 담당. 시험이 문항 번호 순 목록으로 제공 (오답 + 시간 초과) | — |
 
 ### 2-2. 시간
 
@@ -242,9 +242,10 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 | 맞힌 수 | `correctCount` | 선택한 보기가 정답인 문항 수. `화면: 정답` | 칼럼 `correct_count`, JSON `correctCount` |
 | 오답 수 | `incorrectCount` | 보기를 선택했으나 정답이 아닌 문항 수 (시간 초과 제외). `화면: 오답` | — |
 | 시간 초과 수 | `timeoutCount` | 문항당 시간 안에 선택하지 못한 문항 수. 틀린 것으로 집계. `화면: 시간 초과` | — |
-| 틀린 항목 | `WrongItem` | 맞히지 못한 문항 하나 (오답 + 시간 초과). 제시어 · 정답 글 · 선택한 글 · 표제어(발음용) 포함. `화면: 틀린 단어` | JSON `wrongItems[]` |
+| 틀린 항목 | `WrongItem` | 틀린 문항(`WrongAnswer`)의 보기 아이디를 글로 변환한 결과 화면용 항목 (오답 + 시간 초과). 제시어 · 정답 글 · 선택한 글 · 표제어(발음용) · 시간 초과 여부 포함. `화면: 틀린 단어` | JSON `wrongItems[]` |
 | 정답 글 | `answerText` | 틀린 항목의 정답 보기 글 | JSON `answerText` |
 | 선택한 글 | `selectedText` | 틀린 항목의 선택한 보기 글. 시간 초과면 값 없음. `화면: 내 답` | JSON `selectedText` |
+| 시간 초과 여부 | `timeout` | 틀린 항목이 시간 초과인지 (틀린 문항의 `isTimeout` 결과). 화면의 '시간 초과' 표시와 시간 초과 수 집계에 사용 | JSON `timeout` |
 
 ### 2-5. 응시자와 동시 진행
 
