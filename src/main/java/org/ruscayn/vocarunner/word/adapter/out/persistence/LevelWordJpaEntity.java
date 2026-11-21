@@ -19,9 +19,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.ruscayn.vocarunner.word.domain.Level;
 
-@Getter
-@Entity
 @Table(name = "level_word")
+@Entity
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class LevelWordJpaEntity {
 

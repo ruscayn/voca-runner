@@ -14,6 +14,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.transaction.annotation.Transactional;
 
 /** 진행 중 = 상태 IN_PROGRESS 이고 마감 전. Exam.isInProgress 와 같은 조건이어야 한다 */
+@Transactional(readOnly = true)
 @PersistenceAdapter
 @RequiredArgsConstructor
 public class ExamPersistenceAdapter implements ExamPersistencePort {
@@ -25,8 +26,8 @@ public class ExamPersistenceAdapter implements ExamPersistencePort {
      * 새 행으로 merge 하지 않는 까닭: 도메인에 없는 만든 · 고친 시각을 지키고, 바뀐 것이 없으면 UPDATE 를 내지 않아
      * 버전이 그대로이게. 다른 트랜잭션에서 읽은 시험이면 여기서 버전을 비교해 다르거나 행이 없으면 바로 실패한다
      */
-    @Override
     @Transactional
+    @Override
     public void save(Exam exam) {
         if (exam.getVersion() == null) {
             springDataRepository.save(ExamJpaEntity.from(exam));
@@ -43,6 +44,7 @@ public class ExamPersistenceAdapter implements ExamPersistencePort {
         return springDataRepository.findById(examId).map(ExamJpaEntity::toDomain);
     }
 
+    @Transactional
     @Override
     public void delete(UUID examId) {
         springDataRepository.deleteById(examId);
@@ -70,8 +72,8 @@ public class ExamPersistenceAdapter implements ExamPersistencePort {
         return Math.toIntExact(springDataRepository.countActiveByIp(ExamStatus.IN_PROGRESS, now, ip));
     }
 
-    @Override
     @Transactional
+    @Override
     public int deleteDisposable(Instant now, Duration resultRetention, Duration undeliveredTimeout) {
         return springDataRepository.deleteDisposable(now, now.minus(undeliveredTimeout), now.minus(resultRetention));
     }

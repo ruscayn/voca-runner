@@ -12,6 +12,7 @@ import org.ruscayn.vocarunner.word.domain.LevelWord;
 import org.ruscayn.vocarunner.word.domain.WordExposureRules;
 import org.springframework.transaction.annotation.Transactional;
 
+@Transactional(readOnly = true)
 @PersistenceAdapter
 @RequiredArgsConstructor
 public class WordPersistenceAdapter implements WordPersistencePort {
@@ -22,7 +23,6 @@ public class WordPersistenceAdapter implements WordPersistencePort {
     private final LevelWordMapper levelWordMapper;
 
     @Override
-    @Transactional(readOnly = true)
     public List<WordExposureRules.Rule> loadExposureRules() {
         return wordExposureRepository.findAll().stream()
                 .map(WordExposureJpaEntity::toRule)
@@ -30,7 +30,6 @@ public class WordPersistenceAdapter implements WordPersistencePort {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<LevelWord> loadLevelWords() {
         return levelWordRepository.findAllFetch().stream()
                 .map(levelWordMapper::toLevelWord)
@@ -38,7 +37,6 @@ public class WordPersistenceAdapter implements WordPersistencePort {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Collection<List<Long>> loadConfusableGroups() {
         Map<Long, List<Long>> byGroup = new HashMap<>();
         for (ConfusableGroupWordJpaEntity.Id id : confusableGroupWordRepository.findAllIds()) {

@@ -17,8 +17,8 @@ import org.ruscayn.vocarunner.word.domain.Level;
 import org.ruscayn.vocarunner.word.domain.WordExposureRules;
 
 /** 뜻은 meaning_id 가 아니라 단어 안 순번(seq)으로 가리킨다 (meaning_id 는 단어 데이터를 다시 적재할 때마다 새로 매겨진다) */
-@Entity
 @Table(name = "word_exposure")
+@Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class WordExposureJpaEntity {
 
