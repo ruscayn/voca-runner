@@ -414,7 +414,7 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 
 | 형식 | 설명 | 예 |
 |---|---|---|
-| `get…` | 인자 없이 객체의 값을 반환 — 저장된 값과 계산한 값 모두 해당 (JavaBeans getter · Lombok `@Getter`와 같은 형식). 작업을 수행하는 메서드(무거운 계산 · 상태 변경 · 집계나 탐색 과정)는 동사를 사용. 인자로 번호 · 시각 등을 받아 값을 읽기만 하는 조회는 명사도 허용 (`optionIds(no)` · `remainingSec(now)` — 자바 `List.get(i)` · `charAt(i)`와 같은 형식). **레코드는 자바 형식 `x()`** 를 따르며, 레코드 안의 계산 값도 같은 형식 (`getXxx`를 두면 JSON 필드가 추가됨) | `getQuestionCount` · `getWrongQuestionNos` · `getGroupName` / 레코드 `deadline()` · `timeoutCount()` |
+| `get…` | 인자 없이 객체의 값을 반환 — 저장된 값과 계산한 값 모두 해당 (JavaBeans getter · Lombok `@Getter`와 같은 형식). 작업을 수행하는 메서드(무거운 계산 · 상태 변경 · 집계나 탐색 과정)는 동사를 사용. 인자로 번호 · 시각 등을 받아 값을 읽기만 하는 조회는 명사도 허용 (`optionIds(no)` · `remainingSec(now)` — 자바 `List.get(i)` · `charAt(i)`와 같은 형식). **레코드는 자바 형식 `x()`** 를 따르며, 레코드 안의 계산 값도 같은 형식 (`getXxx`를 두면 JSON 필드가 추가됨) | `getQuestionCount` · `getWrongAnswers` · `getGroupName` / 레코드 `deadline()` · `timeoutCount()` |
 | `is…` | 참 · 거짓 (여부 도메인) | `isInProgress` · `isAnswerable` · `isCompleted` |
 | `find…` · `count…By<기준>` | 찾기 · 세기 + 기준 | `findAnswerPool` · `countByLevel` |
 | `…By<주체>` | 수행 주체 | `isStartedBy` · 칼럼 `decided_by` |
