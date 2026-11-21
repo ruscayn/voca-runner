@@ -88,8 +88,8 @@ class WebNameTest {
 
     private static ExamResult resultWithOneIncorrectAndOneTimeout() {
         return new ExamResult(EXAM_ID, "C2", "Proficient", 10, 8, 80, RETENTION_DEADLINE, 60,
-                List.of(new ExamResult.WrongItem(3, "abroad", "go abroad", "국내에", "해외로", "abroad"),
-                        new ExamResult.WrongItem(7, "sail", "sail away", null, "항해하다", "sail")));
+                List.of(new ExamResult.WrongItem(3, "abroad", "go abroad", "국내에", "해외로", "abroad", false),
+                        new ExamResult.WrongItem(7, "sail", "sail away", null, "항해하다", "sail", true)));
     }
 
     @Nested
@@ -185,7 +185,7 @@ class WebNameTest {
                     "examId", "level", "groupName", "questionCount", "correctCount", "score",
                     "retentionDeadline", "retentionMinutes", "wrongItems");
             assertThat(readObject(json, "$.wrongItems[0]").keySet()).containsExactlyInAnyOrder(
-                    "no", "prompt", "promptSub", "selectedText", "answerText", "headword");
+                    "no", "prompt", "promptSub", "selectedText", "answerText", "headword", "timeout");
         }
 
         @Test
@@ -275,6 +275,7 @@ class WebNameTest {
                     .contains("해외로")
                     .contains("국내에");
             assertThat(recordNumbers(html)).containsExactly("8", "1", "1");
+            assertThat(Pattern.compile("class=\"entry-timeout\"").matcher(html).results().count()).isEqualTo(1);
         }
 
         /** 기록 카드의 숫자 (정답 · 오답 · 시간 초과 순) */

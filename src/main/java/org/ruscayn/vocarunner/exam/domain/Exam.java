@@ -89,7 +89,11 @@ public class Exam {
 
     /** 문항 전달 · 제출 · 중단은 시험을 시작한 기기만 할 수 있다 */
     public boolean isStartedBy(String deviceId) {
-        return examinee.deviceId().equals(deviceId);
+        return examinee.isSameDevice(deviceId);
+    }
+
+    boolean isStartedFromSameIpAs(Examinee other) {
+        return examinee.isSameIp(other);
     }
 
     public boolean isInProgress(Instant now) {
@@ -106,12 +110,8 @@ public class Exam {
         }
     }
 
-    public Long selectedOptionId(int no) {
-        return questions.selectedOptionId(no, selectedOptions);
-    }
-
-    public List<Integer> getWrongQuestionNos() {
-        return questions.findWrongQuestionNos(selectedOptions);
+    public List<WrongAnswer> getWrongAnswers() {
+        return questions.findWrongAnswers(selectedOptions);
     }
 
 }

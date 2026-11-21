@@ -41,4 +41,8 @@ public record CatalogWord(long levelWordId, long wordId, String headword, String
         return !excluded;
     }
 
+    boolean isLowerLevelThan(CatalogWord other) {
+        return level.isLowerThan(other.level);
+    }
+
 }

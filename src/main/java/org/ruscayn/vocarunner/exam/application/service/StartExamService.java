@@ -11,6 +11,7 @@ import org.ruscayn.vocarunner.exam.application.port.in.StartExamCommand;
 import org.ruscayn.vocarunner.exam.application.port.in.StartExamUseCase;
 import org.ruscayn.vocarunner.exam.application.port.out.ExamPersistencePort;
 import org.ruscayn.vocarunner.exam.domain.Exam;
+import org.ruscayn.vocarunner.exam.domain.ExamCapacity;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
 import org.ruscayn.vocarunner.exam.domain.Question;
 import org.ruscayn.vocarunner.exam.domain.QuestionGenerator;
@@ -26,6 +27,7 @@ public class StartExamService implements StartExamUseCase {
     private final QuestionGenerator questionGenerator;
     private final WordCatalogQuery wordCatalogQuery;
     private final ExamProperties examProperties;
+    private final ExamCapacity examCapacity;
     private final TransactionTemplate transactionTemplate;
 
     /**
@@ -58,7 +60,7 @@ public class StartExamService implements StartExamUseCase {
     private void requireCapacity(Examinee examinee, int inProgressCount, int inProgressCountByIp,
                                  List<Exam> examsOnDevice) {
         try {
-            examProperties.capacity().check(examinee, inProgressCount, inProgressCountByIp, examsOnDevice);
+            examCapacity.check(examinee, inProgressCount, inProgressCountByIp, examsOnDevice);
         } catch (CustomException e) {
             log.warn("시험 시작 거절 ({}) ip={} 진행 중={} IP 진행 중={}", e.getErrorCode().getCode(),
                     examinee.clientIp(), inProgressCount, inProgressCountByIp);

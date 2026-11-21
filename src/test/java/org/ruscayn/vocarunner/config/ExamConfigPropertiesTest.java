@@ -7,6 +7,7 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.ruscayn.vocarunner.exam.application.service.ExamProperties;
+import org.ruscayn.vocarunner.exam.domain.ExamCapacity;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 
@@ -17,18 +18,16 @@ import org.springframework.boot.context.properties.source.MapConfigurationProper
 @DisplayName("ExamConfigProperties : 설정 이름 묶기")
 class ExamConfigPropertiesTest {
 
-    /** 설정 파일 값을 묶어 서비스가 받는 순수 값까지 만든다 */
-    private static ExamProperties bind(Map<String, String> values) {
+    private static ExamConfigProperties bind(Map<String, String> values) {
         return new Binder(new MapConfigurationPropertySource(values))
                 .bind("voca-runner.exam", ExamConfigProperties.class)
-                .get()
-                .toExamProperties();
+                .get();
     }
 
     @Test
     @DisplayName("question-count 를 최대 문항 수로 읽는다")
     void maxQuestionCount() {
-        ExamProperties properties = bind(Map.of("voca-runner.exam.question-count", "300"));
+        ExamProperties properties = bind(Map.of("voca-runner.exam.question-count", "300")).toExamProperties();
 
         assertThat(properties.maxQuestionCount()).isEqualTo(300);
     }
@@ -36,10 +35,19 @@ class ExamConfigPropertiesTest {
     @Test
     @DisplayName("값이 없으면 기본값 (최대 문항 수 500, 여유 1분)")
     void defaults() {
-        ExamProperties properties = bind(Map.of("voca-runner.exam.result-retention", "1h"));
+        ExamProperties properties = bind(Map.of("voca-runner.exam.result-retention", "1h")).toExamProperties();
 
         assertThat(properties.maxQuestionCount()).isEqualTo(500);
         assertThat(properties.grace()).isEqualTo(Duration.ofMinutes(1));
+    }
+
+    @Test
+    @DisplayName("max-in-progress · max-in-progress-per-ip 를 시험 수용량으로 읽는다 (IP당 기본 50)")
+    void capacity() {
+        ExamCapacity capacity = bind(Map.of("voca-runner.exam.max-in-progress", "300")).toExamCapacity();
+
+        assertThat(capacity.maxInProgress()).isEqualTo(300);
+        assertThat(capacity.maxInProgressPerIp()).isEqualTo(50);
     }
 
 }

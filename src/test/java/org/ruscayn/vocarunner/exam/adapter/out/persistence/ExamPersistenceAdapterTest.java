@@ -22,6 +22,7 @@ import org.ruscayn.vocarunner.common.adapter.out.persistence.JpaConfig;
 import org.ruscayn.vocarunner.exam.domain.Exam;
 import org.ruscayn.vocarunner.exam.domain.ExamStatus;
 import org.ruscayn.vocarunner.exam.domain.Examinee;
+import org.ruscayn.vocarunner.exam.domain.WrongAnswer;
 import org.ruscayn.vocarunner.support.TestPostgres;
 import org.ruscayn.vocarunner.word.domain.Level;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -124,10 +125,11 @@ class ExamPersistenceAdapterTest {
             assertThat(loaded.getGradingResult().correctCount()).isEqualTo(2);
             assertThat(loaded.getGradingResult().score()).isEqualTo(50);
             assertThat(loaded.getTime().submittedAt()).isEqualTo(NOW.plusSeconds(30));
-            assertThat(loaded.getWrongQuestionNos()).containsExactly(2, 4);
-            assertThat(loaded.selectedOptionId(2)).isEqualTo(
+            List<WrongAnswer> wrongAnswers = loaded.getWrongAnswers();
+            assertThat(wrongAnswers).extracting(WrongAnswer::no).containsExactly(2, 4);
+            assertThat(wrongAnswers.get(0).selectedOptionId()).isEqualTo(
                     exam.getQuestions().optionIds(2).get(incorrectOptionNo(2) - 1));
-            assertThat(loaded.selectedOptionId(4)).isNull();
+            assertThat(wrongAnswers.get(1).isTimeout()).isTrue();
         }
 
         @Test

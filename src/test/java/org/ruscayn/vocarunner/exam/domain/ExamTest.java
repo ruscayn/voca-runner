@@ -75,15 +75,6 @@ class ExamTest {
             assertThat(exam.isStartedBy(null)).isFalse();
         }
 
-        @Test
-        @DisplayName("없는 문제 번호를 조회하면 예외")
-        void questionNoRange() {
-            Exam exam = start(3);
-
-            assertThatThrownBy(() -> exam.selectedOptionId(0)).isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> exam.selectedOptionId(4)).isInstanceOf(IllegalArgumentException.class);
-        }
-
     }
 
     @Nested
@@ -143,12 +134,11 @@ class ExamTest {
             assertThat(exam.getGradingResult().score()).isEqualTo(25);
             assertThat(exam.getTime().submittedAt()).isEqualTo(NOW.plusSeconds(30));
 
-            Questions questions = exam.getQuestions();
-            assertThat(exam.selectedOptionId(1)).isEqualTo(questions.answerOptionId(1));
-            assertThat(exam.selectedOptionId(2)).isEqualTo(questions.optionIds(2).get(incorrectOptionNo(2) - 1));
-            assertThat(exam.selectedOptionId(3)).isNull();
-            assertThat(exam.selectedOptionId(4)).isNull();
-            assertThat(exam.getWrongQuestionNos()).containsExactly(2, 3, 4);
+            List<WrongAnswer> wrongAnswers = exam.getWrongAnswers();
+            assertThat(wrongAnswers).extracting(WrongAnswer::no).containsExactly(2, 3, 4);
+            assertThat(wrongAnswers.get(0).selectedOptionId())
+                    .isEqualTo(exam.getQuestions().optionIds(2).get(incorrectOptionNo(2) - 1));
+            assertThat(wrongAnswers).extracting(WrongAnswer::isTimeout).containsExactly(false, true, true);
         }
 
         @Test

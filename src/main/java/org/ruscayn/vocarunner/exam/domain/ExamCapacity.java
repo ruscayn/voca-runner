@@ -19,7 +19,7 @@ public record ExamCapacity(int maxInProgress, int maxInProgressPerIp) {
     }
 
     private static long countSameIp(Examinee examinee, List<Exam> examsOnDevice) {
-        return examsOnDevice.stream().filter(exam -> exam.getExaminee().isSameIp(examinee)).count();
+        return examsOnDevice.stream().filter(exam -> exam.isStartedFromSameIpAs(examinee)).count();
     }
 
     private void requireBelowMaxInProgressPerIp(long inProgressCountByIp) {

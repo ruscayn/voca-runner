@@ -10,4 +10,8 @@ public record Examinee(String deviceId, String clientIp) {
         return clientIp.equals(other.clientIp);
     }
 
+    boolean isSameDevice(String otherDeviceId) {
+        return deviceId.equals(otherDeviceId);
+    }
+
 }

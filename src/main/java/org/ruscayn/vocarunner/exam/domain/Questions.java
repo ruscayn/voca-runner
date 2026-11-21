@@ -71,14 +71,14 @@ public final class Questions {
         return selected.isSelected(no) && selected.optionNo(no) == answerOptionNo(no);
     }
 
-    List<Integer> findWrongQuestionNos(SelectedOptions selected) {
+    List<WrongAnswer> findWrongAnswers(SelectedOptions selected) {
         return IntStream.rangeClosed(1, getQuestionCount())
                 .filter(no -> !isCorrect(no, selected))
-                .boxed()
+                .mapToObj(no -> new WrongAnswer(no, answerOptionId(no), selectedOptionId(no, selected)))
                 .toList();
     }
 
-    Long selectedOptionId(int no, SelectedOptions selected) {
+    private Long selectedOptionId(int no, SelectedOptions selected) {
         if (!selected.isSelected(no)) {
             return null;
         }

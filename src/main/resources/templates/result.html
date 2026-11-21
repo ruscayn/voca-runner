@@ -53,8 +53,8 @@
                         </p>
                         <p class="entry-line">
                             <span class="entry-label">내 답</span>
-                            <span class="entry-mine" th:if="${item.selectedText() != null}" th:text="${item.selectedText()}">채택하다, 입양하다</span>
-                            <span class="entry-timeout" th:if="${item.selectedText() == null}">시간 초과</span>
+                            <span class="entry-mine" th:unless="${item.timeout()}" th:text="${item.selectedText()}">채택하다, 입양하다</span>
+                            <span class="entry-timeout" th:if="${item.timeout()}">시간 초과</span>
                         </p>
                     </div>
                     <button type="button" class="speak" th:attr="data-word=${item.headword()},aria-label=|${item.headword()} 발음 듣기|">

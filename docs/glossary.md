@@ -194,7 +194,7 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 | 보기 글 | `text` (보기 안) | 보기에 표시되는 보기 뜻 (`뜻1, 뜻2`) | JSON `options[].text` |
 | 보기 아이디 | `optionId` · `optionIds` | 보기가 가리키는 레벨 단어 아이디. 보기 번호(1 ~ 4)는 문항 안의 위치, 보기 아이디는 그 위치에 놓인 단어 | 칼럼 `option_ids` |
 | 정답 보기 아이디 | `answerOptionId` | 정답 보기의 아이디. 제시어 · 정답 글 조회에 사용하며, 문항 목록이 보기[정답 보기 번호]로 계산 | — |
-| 선택한 보기 아이디 | `selectedOptionId` | 선택한 보기의 아이디. 선택한 글 조회에 사용하며, 선택하지 못했으면 값 없음. 문항 목록의 보기[선택한 보기 번호]이므로 시험이 두 값을 조합해 계산 | — |
+| 선택한 보기 아이디 | `selectedOptionId` | 선택한 보기의 아이디. 선택한 글 조회에 사용하며, 선택하지 못했으면 값 없음. 문항 목록의 보기[선택한 보기 번호]이므로 문항 목록이 선택한 보기와 조합해 계산하고, 틀린 문항(`WrongAnswer`)에 포함 | — |
 | 정답 보기 번호 | `answerOptionNo` | 정답이 몇 번 보기인지 | 칼럼 `correct_option_no` |
 | 선택한 보기 번호 | `selectedOptionNo` | 응시자가 선택한 보기 번호. 선택하지 못했으면 값 없음 (DB에는 0). `화면: 내 답` | 칼럼 `selected_option_no`, JSON `selectedOptionNo` (제출 JSON의 `selectedOptions[]` 안) |
 | 오답 보기 | `INCORRECT_OPTION_COUNT` (오답 보기 수) | 정답이 아닌 보기 3개 | — |
@@ -203,7 +203,7 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 | 선택한 보기 | `SelectedOptions` | 문항별 선택한 보기 번호 (시험이 직접 보유). 제출 시 한 번에 기록하며, 없는 문항 번호 · 중복 번호 · 1 ~ 4 범위 밖의 보기 번호는 거절 | 칼럼 `selected_option_no` |
 | 선택한 보기 하나 | `SelectedOption` | 문항 하나의 선택한 보기 = 문항 번호 + 보기 번호 (값이 없으면 시간 초과). 제출 요청 `selectedOptions[]`의 한 항목(`SubmitExamCommand.SelectedOptionItem`)을 도메인 값으로 변환한 것 | — |
 | 채점 결과 | `GradingResult` | 맞힌 수 · 점수. 제출 전에는 값 없음. 점수 버림 계산 담당 | 칼럼 `correct_count` · `score` |
-| 틀린 문항 번호 | `getWrongQuestionNos()` | 맞히지 못한 문항 번호 목록 (오답 + 시간 초과, 번호 순) | — |
+| 틀린 문항 | `WrongAnswer` · `getWrongAnswers()` | 맞히지 못한 문항 하나 = 문항 번호 · 정답 보기 아이디 · 선택한 보기 아이디(시간 초과면 값 없음). 시간 초과 여부(`isTimeout`) 판정 담당. 시험이 문항 번호 순 목록으로 제공 (오답 + 시간 초과) | — |
 
 ### 2-2. 시간
 
@@ -242,9 +242,10 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 | 맞힌 수 | `correctCount` | 선택한 보기가 정답인 문항 수. `화면: 정답` | 칼럼 `correct_count`, JSON `correctCount` |
 | 오답 수 | `incorrectCount` | 보기를 선택했으나 정답이 아닌 문항 수 (시간 초과 제외). `화면: 오답` | — |
 | 시간 초과 수 | `timeoutCount` | 문항당 시간 안에 선택하지 못한 문항 수. 틀린 것으로 집계. `화면: 시간 초과` | — |
-| 틀린 항목 | `WrongItem` | 맞히지 못한 문항 하나 (오답 + 시간 초과). 제시어 · 정답 글 · 선택한 글 · 표제어(발음용) 포함. `화면: 틀린 단어` | JSON `wrongItems[]` |
+| 틀린 항목 | `WrongItem` | 틀린 문항(`WrongAnswer`)의 보기 아이디를 글로 변환한 결과 화면용 항목 (오답 + 시간 초과). 제시어 · 정답 글 · 선택한 글 · 표제어(발음용) · 시간 초과 여부 포함. `화면: 틀린 단어` | JSON `wrongItems[]` |
 | 정답 글 | `answerText` | 틀린 항목의 정답 보기 글 | JSON `answerText` |
 | 선택한 글 | `selectedText` | 틀린 항목의 선택한 보기 글. 시간 초과면 값 없음. `화면: 내 답` | JSON `selectedText` |
+| 시간 초과 여부 | `timeout` | 틀린 항목이 시간 초과인지 (틀린 문항의 `isTimeout` 결과). 화면의 '시간 초과' 표시와 시간 초과 수 집계에 사용 | JSON `timeout` |
 
 ### 2-5. 응시자와 동시 진행
 
@@ -255,7 +256,7 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 | 사용자 IP | `ClientIp` · `clientIp` | 접속한 사용자의 IP. 운영 환경은 CloudFront 뒤에 있으므로 연결 IP가 아닌 CloudFront가 추가하는 헤더에서 추출 | 헤더 `CloudFront-Viewer-Address`, 설정 `voca-runner.client-ip.header`, 칼럼 `client_ip` |
 | 최대 진행 중 | `maxInProgress` | 전체 진행 중 시험 수의 최대 (기본 20,000) | 설정 `voca-runner.exam.max-in-progress`, 오류 `EXAM_006` |
 | IP당 최대 진행 중 | `maxInProgressPerIp` | IP 하나의 진행 중 시험 수 최대 (기본 50) | 설정 `voca-runner.exam.max-in-progress-per-ip`, 오류 `EXAM_008` |
-| 시험 수용량 | `ExamCapacity` | 최대 진행 중 · IP당 최대 진행 중을 기준으로 시작 가능 여부를 판정. 같은 기기의 진행 중 시험은 집계에서 제외 (IP 집계에서는 같은 IP의 시험만 제외) | 설정 `max-in-progress` · `max-in-progress-per-ip` |
+| 시험 수용량 | `ExamCapacity` | 최대 진행 중 · IP당 최대 진행 중을 기준으로 시작 가능 여부를 판정. 같은 기기의 진행 중 시험은 집계에서 제외 (IP 집계에서는 같은 IP의 시험만 제외). 빈으로 등록(`ExamConfig`)하여 시작 서비스가 직접 주입받음 | 설정 `max-in-progress` · `max-in-progress-per-ip` |
 | 수용량 확인 | `checkCapacity` | 시작 시 진행 중 시험 수가 최대를 넘는지 확인. 잠금 없이 한 번(문항 생성 전), 시험 시작 잠금 안에서 한 번 더 확인. 같은 기기의 진행 중 시험은 새 시험으로 대체되므로 집계에서 제외 | — |
 | 시험 시작 잠금 | `lockForStart` | 수용량 확인과 저장 사이에 다른 시작 요청이 개입하지 못하도록 시작을 하나씩 처리. PostgreSQL 트랜잭션 잠금(`pg_advisory_xact_lock`)이므로 **트랜잭션 안에서만 유효** | — |
 | 결과 만료 안내 | `NOTICE_RESULT_EXPIRED` | 결과 보관 기간이 지난 결과 화면을 요청했을 때 표시하는 안내 | `?notice=result-expired` |
@@ -413,7 +414,7 @@ VocaRunner의 코드 · 문서 · 화면에서 같은 개념을 같은 이름으
 
 | 형식 | 설명 | 예 |
 |---|---|---|
-| `get…` | 인자 없이 객체의 값을 반환 — 저장된 값과 계산한 값 모두 해당 (JavaBeans getter · Lombok `@Getter`와 같은 형식). 작업을 수행하는 메서드(무거운 계산 · 상태 변경 · 집계나 탐색 과정)는 동사를 사용. 인자로 번호 · 시각 등을 받아 값을 읽기만 하는 조회는 명사도 허용 (`optionIds(no)` · `remainingSec(now)` — 자바 `List.get(i)` · `charAt(i)`와 같은 형식). **레코드는 자바 형식 `x()`** 를 따르며, 레코드 안의 계산 값도 같은 형식 (`getXxx`를 두면 JSON 필드가 추가됨) | `getQuestionCount` · `getWrongQuestionNos` · `getGroupName` / 레코드 `deadline()` · `timeoutCount()` |
+| `get…` | 인자 없이 객체의 값을 반환 — 저장된 값과 계산한 값 모두 해당 (JavaBeans getter · Lombok `@Getter`와 같은 형식). 작업을 수행하는 메서드(무거운 계산 · 상태 변경 · 집계나 탐색 과정)는 동사를 사용. 인자로 번호 · 시각 등을 받아 값을 읽기만 하는 조회는 명사도 허용 (`optionIds(no)` · `remainingSec(now)` — 자바 `List.get(i)` · `charAt(i)`와 같은 형식). **레코드는 자바 형식 `x()`** 를 따르며, 레코드 안의 계산 값도 같은 형식 (`getXxx`를 두면 JSON 필드가 추가됨) | `getQuestionCount` · `getWrongAnswers` · `getGroupName` / 레코드 `deadline()` · `timeoutCount()` |
 | `is…` | 참 · 거짓 (여부 도메인) | `isInProgress` · `isAnswerable` · `isCompleted` |
 | `find…` · `count…By<기준>` | 찾기 · 세기 + 기준 | `findAnswerPool` · `countByLevel` |
 | `…By<주체>` | 수행 주체 | `isStartedBy` · 칼럼 `decided_by` |
